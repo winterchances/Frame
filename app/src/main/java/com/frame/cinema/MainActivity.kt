@@ -645,7 +645,7 @@ private fun FrameNativeApp(
                         SheetHeading("观影记录")
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             (1..5).forEach { n ->
-                                Text(if (n <= editRating) "★" else "☆", color = Color(0xFFFFB800), fontSize = 28.sp, modifier = Modifier.clickable { editRating = n })
+                                Text(if (n <= editRating) "★" else "☆", color = Color(0xFFFFB800), fontSize = 28.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
                         }
                         BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.heightIn(min = 110.dp).background(Color.White, RoundedCornerShape(14.dp)).padding(14.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的观影感想…", color = MutedText); inner() })
@@ -752,7 +752,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                                 .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(PosterBrush(video.bgIndex))
-                                .clickable { onVideo(video) }
+                                .noRippleClickable { onVideo(video) }
                         ) {
                             Thumbnail(video, Modifier.fillMaxSize())
                             Box(
@@ -829,7 +829,7 @@ private fun LibraryPage(
                     horizontalArrangement = Arrangement.spacedBy(25.dp)
                 ) {
                     listOf("全部", "在看", "已看").forEach { value ->
-                        Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(Modifier.noRippleClickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
                             if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
                         }
@@ -842,7 +842,7 @@ private fun LibraryPage(
                 ) {
                     categories.forEach { value ->
                         Surface(
-                            Modifier.clickable { onCategory(value) },
+                            Modifier.noRippleClickable { onCategory(value) },
                             shape = CircleShape,
                             color = if (category == value) ThemeTeal else Color.White,
                             shadowElevation = if (category == value) 2.dp else 1.dp,
@@ -1030,7 +1030,7 @@ private fun RecordsPage(
                         .shadow(1.dp, RoundedCornerShape(20.dp))
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
-                        .clickable { onEdit(video) }
+                        .noRippleClickable { onEdit(video) }
                         .padding(15.dp)
                 ) {
                     Row(
@@ -1302,7 +1302,7 @@ private fun NativePlayerOverlay(
                         Box(
                             Modifier.clip(RoundedCornerShape(8.dp))
                                 .background(Color.White.copy(alpha = .2f))
-                                .clickable { onSpeed() }
+                                .noRippleClickable { onSpeed() }
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -1320,7 +1320,7 @@ private fun NativePlayerOverlay(
                 Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape)
                     .background(Color.Black.copy(alpha = .5f))
                     .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
-                    .clickable { unlockVisible = false; onToggleLock() },
+                    .noRippleClickable { unlockVisible = false; onToggleLock() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
@@ -1429,7 +1429,7 @@ private fun Header(title: String, onSettings: () -> Unit) {
 @Composable
 private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: (() -> Unit)? = null) {
     val rotation by animateFloatAsState(if (expanded == false) -90f else 0f, tween(220), label = "section-chevron")
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp).then(if (onToggle != null) Modifier.clickable { onToggle() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp).then(if (onToggle != null) Modifier.noRippleClickable { onToggle() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeTeal))
         Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(start = 8.dp).weight(1f))
         if (expanded != null) Icon(Icons.Outlined.ExpandMore, null, tint = MutedText, modifier = Modifier.rotate(rotation).size(20.dp))
