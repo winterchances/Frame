@@ -802,37 +802,110 @@ private fun RecordsPage(
     onSort: () -> Unit,
     onEdit: (VideoItem) -> Unit
 ) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                ActionIcon(FrameSortIcon, "记录排序", onSort)
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                    ActionIcon(FrameSortIcon, "记录排序", onSort)
+                }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(vertical = 14.dp).clip(RoundedCornerShape(20.dp)).background(Glass).padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Stat("已看完", videos.size.toString(), "部")
-            Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
-            Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
+        stickyHeader {
+            Row(
+                Modifier.fillMaxWidth()
+                    .background(PageBg.copy(alpha = .95f))
+                    .padding(bottom = 10.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Glass)
+                    .padding(horizontal = 10.dp, vertical = 15.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Stat("已看完", videos.size.toString(), "部")
+                Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
+                Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
+            }
         }
-        if (videos.isEmpty()) EmptyHint("暂无符合条件的观影记录")
-        else LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (videos.isEmpty()) {
+            item { EmptyHint("暂无已看完的视频") }
+        } else {
             items(videos, key = { it.id }) { video ->
-                Card(Modifier.fillMaxWidth().clickable { onEdit(video) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
-                    Row(Modifier.padding(15.dp), verticalAlignment = Alignment.Top) {
-                        Box(Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex))) { Thumbnail(video, Modifier.fillMaxSize()) }
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(displayVideoName(video.name), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MainText, maxLines = 2)
-                            Text("★".repeat(video.rating.coerceIn(0, 5)) + "☆".repeat(5 - video.rating.coerceIn(0, 5)), color = Color(0xFFFFB800), modifier = Modifier.padding(top = 5.dp))
-                            Text(video.review.ifBlank { "点击添加你的观影感想…" }, color = if (video.review.isBlank()) Color.LightGray else Color(0xFF555555), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp), maxLines = 3)
+                Column(
+                    Modifier.fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .shadow(3.dp, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .clickable { onEdit(video) }
+                        .padding(15.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(15.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier.size(75.dp, 100.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(PosterColor(video.bgIndex))
+                        ) { Thumbnail(video, Modifier.fillMaxSize()) }
+                        Column(
+                            Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                displayVideoName(video.name),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFF222222),
+                                lineHeight = 22.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(video.date + " 看完", fontSize = 12.sp, color = Color(0xFF999999))
+                            Text(
+                                "★".repeat(video.rating.coerceIn(0, 5)) + "☆".repeat(5 - video.rating.coerceIn(0, 5)),
+                                color = if (video.rating > 0) Color(0xFFFFB800) else Color(0xFFE0E0E0),
+                                fontSize = 14.sp,
+                                letterSpacing = 2.sp
+                            )
                         }
+                    }
+                    val hasReview = video.review.isNotBlank()
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (hasReview) Color(0xFFF9F9FB) else Color(0xFFF9F9FB))
+                    ) {
+                        Box(
+                            Modifier.width(3.dp).fillMaxHeight()
+                                .background(if (hasReview) ThemeTeal else Color(0xFFE0E0E0))
+                        )
+                        Text(
+                            video.review.ifBlank { "点击添加你的观影感想..." },
+                            color = if (hasReview) Color(0xFF555555) else Color(0xFFB0B0B0),
+                            fontSize = 13.sp,
+                            lineHeight = 20.sp,
+                            fontStyle = if (hasReview) androidx.compose.ui.text.font.FontStyle.Normal else androidx.compose.ui.text.font.FontStyle.Italic,
+                            modifier = Modifier.weight(1f).padding(12.dp)
+                        )
                     }
                 }
             }
         }
+        item { Spacer(Modifier.height(20.dp)) }
     }
 }
-
 @Composable
 private fun NativePlayerOverlay(
     item: VideoItem, player: Player, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
