@@ -520,7 +520,8 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
             val groups = history.groupBy { item ->
                 val today = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date())
                 val yesterday = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000))
-                when (item.date) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
+                val playedDate = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date(item.lastPlayedAt))
+                when (playedDate) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
             }
             groups.forEach { (label, list) ->
                 item { Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(vertical = 10.dp)) }
