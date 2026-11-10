@@ -446,8 +446,7 @@ private fun FrameNativeApp(
                 )
                 Surface(
                     modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
-                    shape = CircleShape, color = Glass, shadowElevation = 4.dp,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
+                    shape = CircleShape, color = Glass, border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(FrameHamburgerIcon, null, tint = Color.Unspecified, modifier = Modifier.size(20.dp).rotate(fabRotation))
@@ -528,7 +527,7 @@ private fun FrameNativeApp(
                                 animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
                             ) { it },
                             exit = slideOutVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, 1f, 1f))
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
                             ) { it }
                         )
                         .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
@@ -986,7 +985,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        .shadow(3.dp, RoundedCornerShape(20.dp))
+                        
                         .clip(RoundedCornerShape(20.dp))
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -1014,7 +1013,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
-                        .shadow(3.dp, RoundedCornerShape(20.dp))
+                        
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
                         .clickable { onEdit(video) }
@@ -1520,8 +1519,7 @@ private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Un
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        shadowElevation = 1.dp
-    ) {
+        ) {
         Text(
             text,
             color = if (danger) Color(0xFFFF3B30) else MainText,
