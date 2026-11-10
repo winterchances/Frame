@@ -123,6 +123,20 @@ private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp,
         moveTo(3f, 14f); lineTo(10f, 14f); lineTo(10f, 21f); lineTo(3f, 21f); close()
     }
 }.build()
+
+private val FrameSearchIcon: ImageVector = ImageVector.Builder("FrameSearch", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(11f, 3f); cubicTo(15.42f, 3f, 19f, 6.58f, 19f, 11f); cubicTo(19f, 15.42f, 15.42f, 19f, 11f, 19f); cubicTo(6.58f, 19f, 3f, 15.42f, 3f, 11f); cubicTo(3f, 6.58f, 6.58f, 3f, 11f, 3f); close()
+        moveTo(21f, 21f); lineTo(16.65f, 16.65f)
+    }
+}.build()
+private val FrameTrashIcon: ImageVector = ImageVector.Builder("FrameTrash", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(3f, 6f); lineTo(21f, 6f); moveTo(19f, 6f); lineTo(19f, 20f); quadraticTo(19f, 22f, 17f, 22f); lineTo(7f, 22f); quadraticTo(5f, 22f, 5f, 20f); lineTo(5f, 6f)
+        moveTo(8f, 6f); lineTo(8f, 4f); quadraticTo(8f, 2f, 10f, 2f); lineTo(14f, 2f); quadraticTo(16f, 2f, 16f, 4f); lineTo(16f, 6f)
+    }
+}.build()
+
 private val FrameHamburgerIcon: ImageVector = ImageVector.Builder("FrameMenu", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color(0xFF333333)), strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(5f, 8f); lineTo(19f, 8f); moveTo(5f, 16f); lineTo(19f, 16f)
@@ -611,7 +625,7 @@ private fun LibraryPage(
             (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             ActionIcon(FrameTagIcon, "分类管理", onCategories)
             ActionIcon(FrameSortIcon, "排序", onSort)
@@ -649,7 +663,7 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            IconButton(onClick = onClear) { Icon(Icons.Outlined.DeleteOutline, "清空播放记录") }
+            ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
         }
         val history = videos.filter { it.progress > 0f || it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
         if (history.isEmpty()) EmptyHint("暂无播放记录")
@@ -690,8 +704,10 @@ private fun RecordsPage(
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            IconButton(onClick = onSearch) { Icon(Icons.Outlined.Search, "搜索观影感想") }
-            IconButton(onClick = onSort) { Icon(Icons.Outlined.Sort, "记录排序") }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                ActionIcon(FrameSortIcon, "记录排序", onSort)
+            }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 14.dp).clip(RoundedCornerShape(20.dp)).background(Glass).padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Stat("已看完", videos.size.toString(), "部")
@@ -855,7 +871,7 @@ private fun formatClock(ms: Long): String {
 @Composable
 private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.padding(start = 5.dp).size(36.dp).clickable(onClick = onClick),
+        modifier = Modifier.size(36.dp).clickable(onClick = onClick),
         shape = CircleShape,
         color = Color.White,
         shadowElevation = 1.dp
