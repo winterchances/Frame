@@ -659,6 +659,7 @@ private fun LibraryPage(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
