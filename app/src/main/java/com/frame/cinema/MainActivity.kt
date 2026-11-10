@@ -721,7 +721,6 @@ private fun BottomPillNavigation(current: MainPage, sheetBlur: androidx.compose.
             .blur(sheetBlur)
             .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
-            .hazeEffect(state = hazeState, style = HazeStyle(tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
             .clip(RoundedCornerShape(28.dp))
             .background(Glass)
             .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(28.dp))
