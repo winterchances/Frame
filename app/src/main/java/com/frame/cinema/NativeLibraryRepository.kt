@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
 import java.text.SimpleDateFormat
@@ -27,7 +29,7 @@ class NativeLibraryRepository(context: Context) {
     fun videos(): List<VideoItem> = store.allVideos()
     fun categories(): List<String> = store.categories()
 
-    fun importUris(uris: List<Uri>): Int {
+    fun importUris(uris: List<Uri>, onMetadataReady: () -> Unit = {}): Int {
         var added = 0
         uris.forEachIndexed { index, uri ->
             if (store.allVideos().any { it.uri == uri.toString() }) return@forEachIndexed
@@ -51,14 +53,15 @@ class NativeLibraryRepository(context: Context) {
             store.upsert(item)
             added++
             thumbnailExecutor.execute {
-                val path = ThumbnailStore.createVideoThumbnail(app, uri, id)
-                if (path != null) store.upsert(item.copy(thumbPath = path))
+                val metadata = ThumbnailStore.createVideoMetadata(app, uri, id)
+                store.upsert(item.copy(thumbPath = metadata.thumbnailPath, durationMs = metadata.durationMs))
+                Handler(Looper.getMainLooper()).post(onMetadataReady)
             }
         }
         return added
     }
 
-    fun importFolder(treeUri: Uri): Int {
+    fun importFolder(treeUri: Uri, onMetadataReady: () -> Unit = {}): Int {
         runCatching {
             app.contentResolver.takePersistableUriPermission(
                 treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -73,7 +76,7 @@ class NativeLibraryRepository(context: Context) {
             }
         }
         collect(root)
-        return importUris(files)
+        return importUris(files, onMetadataReady)
     }
 
     fun update(item: VideoItem) = store.upsert(item)
