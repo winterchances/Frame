@@ -732,15 +732,12 @@ private fun LibraryPage(
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
             (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
     }
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(if (compact) 3 else 2),
-        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp),
-        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp)
-    ) {
-        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+    val columns = if (compact) 3 else 2
+    val gap = if (compact) 10.dp else 15.dp
+    LazyColumn(Modifier.fillMaxSize()) {
+        item {
             Row(
-                Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp),
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -750,46 +747,63 @@ private fun LibraryPage(
                 ActionIcon(FrameGridIcon, "布局管理", onGrid)
             }
         }
-        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                Column(
-                    Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))
+        stickyHeader {
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(PageBg.copy(alpha = .95f))
+                    .padding(horizontal = 20.dp)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(25.dp)
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(25.dp)
-                    ) {
-                        listOf("全部", "在看", "已看").forEach { value ->
-                            Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
-                                if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
-                            }
-                        }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        categories.forEach { value ->
-                            Surface(
-                                Modifier.clickable { onCategory(value) },
-                                shape = CircleShape,
-                                color = if (category == value) ThemeTeal else Color.White,
-                                shadowElevation = if (category == value) 3.dp else 1.dp
-                            ) {
-                                Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                            }
+                    listOf("全部", "在看", "已看").forEach { value ->
+                        Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
+                            if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
                         }
                     }
                 }
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    categories.forEach { value ->
+                        Surface(
+                            Modifier.clickable { onCategory(value) },
+                            shape = CircleShape,
+                            color = if (category == value) ThemeTeal else Color.White,
+                            shadowElevation = if (category == value) 3.dp else 1.dp
+                        ) {
+                            Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        }
+                    }
+                }
+            }
         }
         if (filtered.isEmpty()) {
-            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+            item {
                 EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
             }
         } else {
-            items(filtered, key = { it.id }) { video ->
-                PosterCard(video, compact, onPlay) { onLongVideo(video) }
+            item { Spacer(Modifier.height(5.dp)) }
+            filtered.chunked(columns).forEach { rowVideos ->
+                item {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(gap),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        rowVideos.forEach { video ->
+                            PosterCard(video, compact, onPlay, { onLongVideo(video) }, Modifier.weight(1f))
+                        }
+                        repeat(columns - rowVideos.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+                item { Spacer(Modifier.height(gap)) }
             }
         }
     }
@@ -1357,8 +1371,8 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit) {
-    Column(Modifier.combinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
+private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.combinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
