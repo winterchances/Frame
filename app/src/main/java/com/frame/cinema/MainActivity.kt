@@ -305,8 +305,8 @@ private fun FrameNativeApp(
                     onDragEnd = {
                         if (sheet == SheetType.NONE && playing == null && kotlin.math.abs(horizontalDistance) > 50f) {
                             val next = when {
-                                horizontalDistance < 0f -> MainPage.entries.getOrNull(MainPage.entries.indexOf(page) + 1)
-                                else -> MainPage.entries.getOrNull(MainPage.entries.indexOf(page) - 1)
+                                horizontalDistance < 0f -> MainPage.values().getOrNull(MainPage.values().indexOf(page) + 1)
+                                else -> MainPage.values().getOrNull(MainPage.values().indexOf(page) - 1)
                             }
                             if (next != null) { page = next; showFab = false }
                         }
