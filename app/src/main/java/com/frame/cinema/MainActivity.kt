@@ -810,56 +810,57 @@ private fun LibraryPage(
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
+    val recentItems = videos.sortedByDescending { it.addedAt }
+    val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
+    val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
+    val groups = listOf(
+        "今天" to recentItems.filter { it.date == today },
+        "昨天" to recentItems.filter { it.date == yesterday },
+        "更早" to recentItems.filter { it.date != today && it.date != yesterday }
+    ).filter { it.second.isNotEmpty() }
+    LazyColumn(Modifier.fillMaxSize()) {
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
+            }
         }
-        val recentItems = videos.sortedByDescending { it.addedAt }
         if (recentItems.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.TopCenter) {
+            item {
                 EmptyHint("暂无播放记录")
             }
         } else {
-            val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
-            val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
-            val groups = listOf(
-                "今天" to recentItems.filter { it.date == today },
-                "昨天" to recentItems.filter { it.date == yesterday },
-                "更早" to recentItems.filter { it.date != today && it.date != yesterday }
-            ).filter { it.second.isNotEmpty() }
-            LazyColumn(Modifier.fillMaxWidth()) {
-                groups.forEach { (label, list) ->
-                    stickyHeader {
-                        Text(
-                            label,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF666666),
-                            modifier = Modifier.fillMaxWidth()
-                                .background(Color(0xF2F5F5F7))
-                                .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
-                        )
-                    }
-                    item { Spacer(Modifier.height(10.dp)) }
-                    items(list, key = { it.id }) { video ->
-                        RecentHistoryCard(
-                            video,
-                            onClick = { onVideo(video) },
-                            onMore = { onMore(video) },
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        )
-                    }
-                    item { Spacer(Modifier.height(3.dp)) }
+            groups.forEach { (label, list) ->
+                stickyHeader {
+                    Text(
+                        label,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF666666),
+                        modifier = Modifier.fillMaxWidth()
+                            .background(Color(0xF2F5F5F7))
+                            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+                    )
                 }
-                item { Spacer(Modifier.height(12.dp)) }
+                item { Spacer(Modifier.height(10.dp)) }
+                items(list, key = { it.id }) { video ->
+                    RecentHistoryCard(
+                        video,
+                        onClick = { onVideo(video) },
+                        onMore = { onMore(video) },
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+                item { Spacer(Modifier.height(3.dp)) }
             }
+            item { Spacer(Modifier.height(12.dp)) }
         }
     }
 }
+
 @Composable
 private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
@@ -869,13 +870,20 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             .background(Color.White).clickable(onClick = onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
-        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
+        Box(Modifier.size(104.dp, 72.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
         }
-        Box(Modifier.weight(1f).height(84.dp)) {
+        Box(Modifier.weight(1f).height(72.dp)) {
             Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Text(displayVideoName(video.name), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
-                    lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    displayVideoName(video.name),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color(0xFF222222),
+                    lineHeight = 18.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(FrameRecentIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
@@ -893,7 +901,6 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
         }
     }
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecordsPage(
