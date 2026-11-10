@@ -185,6 +185,13 @@ private fun FrameNativeApp(
 
     fun refresh() { videos = repository.videos(); categories = repository.categories() }
     fun notify(message: String) { toast = message }
+    fun playVideo(item: VideoItem) {
+        speedIndex = 0
+        controlsVisible = true
+        locked = false
+        playing = item
+        onPlay(item)
+    }
 
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         val count = repository.importUris(uris) { refresh() }
@@ -232,7 +239,7 @@ private fun FrameNativeApp(
                             MainPage.HOME -> HomePage(
                                 videos = videos,
                                 onSettings = { sheet = SheetType.SETTINGS },
-                                onVideo = { selected = it; playing = it; onPlay(it) }
+                                onVideo = { selected = it; playVideo(it) }
                             )
                             MainPage.LIBRARY -> LibraryPage(
                                 when (sort) { SortMode.NAME -> videos.sortedBy { it.name.lowercase(Locale.getDefault()) }; else -> videos.sortedByDescending { it.addedAt } }, categories, status, category, compact,
@@ -240,7 +247,7 @@ private fun FrameNativeApp(
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
                                 { selected = it; sheet = SheetType.VIDEO_ACTIONS },
-                                { selected = it; playing = it; onPlay(it) }
+                                { selected = it; playVideo(it) }
                             )
                             MainPage.RECENT -> RecentPage(
                                 videos,
@@ -295,6 +302,9 @@ private fun FrameNativeApp(
                     playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L)) }
                     player.pause()
                     playing = null
+                    locked = false
+                    controlsVisible = true
+                    if (isLandscape) { isLandscape = false; onOrientation(false) }
                     refresh()
                 },
                 onToggleControls = { controlsVisible = !controlsVisible },
@@ -309,6 +319,11 @@ private fun FrameNativeApp(
                 },
                 onEnded = {
                     playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), true) }
+                    player.pause()
+                    playing = null
+                    locked = false
+                    controlsVisible = true
+                    if (isLandscape) { isLandscape = false; onOrientation(false) }
                     refresh()
                 },
                 onProgress = { pos, duration ->
@@ -392,12 +407,12 @@ private fun FrameNativeApp(
                         SheetHeading("搜索视频")
                         BasicTextField(search, { search = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
                         videos.filter { it.name.contains(search, true) }.take(30).forEach { v ->
-                            SheetAction(v.name) { sheet = SheetType.NONE; selected = v; playing = v; onPlay(v) }
+                            SheetAction(v.name) { sheet = SheetType.NONE; selected = v; playVideo(v) }
                         }
                         Spacer(Modifier.height(28.dp))
                     }
                     SheetType.VIDEO_ACTIONS -> SheetContent(selected?.name ?: "视频操作") {
-                        SheetAction("立即播放") { selected?.let { playing = it; onPlay(it) }; sheet = SheetType.NONE }
+                        SheetAction("立即播放") { selected?.let { playVideo(it) }; sheet = SheetType.NONE }
                         SheetAction(if (selected?.isFav == true) "取消收藏" else "加入收藏") {
                             selected?.let { repository.favorite(it.id) }; refresh(); sheet = SheetType.NONE
                         }
@@ -409,7 +424,11 @@ private fun FrameNativeApp(
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
                         BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
-                        SheetAction("保存") { selected?.let { repository.rename(it.id, editName.trim()) }; refresh(); sheet = SheetType.NONE }
+                        SheetAction("保存") {
+                            val newName = editName.trim()
+                            if (newName.isEmpty()) notify("视频名称不能为空")
+                            else { selected?.let { repository.rename(it.id, newName) }; refresh(); sheet = SheetType.NONE }
+                        }
                         Spacer(Modifier.height(24.dp))
                     }
                     SheetType.MOVE -> SheetContent("移动到分类") {
