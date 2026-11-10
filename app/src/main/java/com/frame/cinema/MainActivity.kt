@@ -394,58 +394,51 @@ private fun FrameNativeApp(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 val fabEasing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)
-                val fabOffsetY = with(androidx.compose.ui.platform.LocalDensity.current) { 20.dp.roundToPx() }
-                AnimatedVisibility(
-                    visible = showFab,
-                    enter = fadeIn(tween(300, delayMillis = 50, easing = fabEasing)) +
-                        androidx.compose.animation.scaleIn(
-                            initialScale = .5f,
-                            animationSpec = tween(300, delayMillis = 50, easing = fabEasing)
-                        ) +
-                        slideInVertically(
-                            initialOffsetY = { fabOffsetY },
-                            animationSpec = tween(300, delayMillis = 50, easing = fabEasing)
-                        ),
-                    exit = fadeOut(tween(300, easing = fabEasing)) +
-                        androidx.compose.animation.scaleOut(
-                            targetScale = .5f,
-                            animationSpec = tween(300, easing = fabEasing)
-                        ) +
-                        slideOutVertically(
-                            targetOffsetY = { fabOffsetY },
-                            animationSpec = tween(300, easing = fabEasing)
-                        )
-                ) {
-                    FabAction(Icons.Outlined.Search, "搜索") { sheet = SheetType.SEARCH; showFab = false }
-                }
-                AnimatedVisibility(
-                    visible = showFab,
-                    enter = fadeIn(tween(300, delayMillis = 100, easing = fabEasing)) +
-                        androidx.compose.animation.scaleIn(
-                            initialScale = .5f,
-                            animationSpec = tween(300, delayMillis = 100, easing = fabEasing)
-                        ) +
-                        slideInVertically(
-                            initialOffsetY = { fabOffsetY },
-                            animationSpec = tween(300, delayMillis = 100, easing = fabEasing)
-                        ),
-                    exit = fadeOut(tween(300, easing = fabEasing)) +
-                        androidx.compose.animation.scaleOut(
-                            targetScale = .5f,
-                            animationSpec = tween(300, easing = fabEasing)
-                        ) +
-                        slideOutVertically(
-                            targetOffsetY = { fabOffsetY },
-                            animationSpec = tween(300, easing = fabEasing)
-                        )
-                ) {
-                    FabAction(Icons.Outlined.Add, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
-                }
+                val searchProgress by animateFloatAsState(
+                    if (showFab) 1f else 0f,
+                    tween(300, delayMillis = 50, easing = fabEasing),
+                    label = "fab-search-progress"
+                )
+                val importProgress by animateFloatAsState(
+                    if (showFab) 1f else 0f,
+                    tween(300, delayMillis = 100, easing = fabEasing),
+                    label = "fab-import-progress"
+                )
                 val fabRotation by animateFloatAsState(
                     if (showFab) 45f else 0f,
                     tween(300, easing = fabEasing),
                     label = "fab-rotation"
                 )
+                Box(
+                    Modifier.size(48.dp)
+                        .graphicsLayer {
+                            alpha = searchProgress
+                            scaleX = .5f + .5f * searchProgress
+                            scaleY = .5f + .5f * searchProgress
+                            translationY = 20.dp.toPx() * (1f - searchProgress)
+                        }
+                        .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.SEARCH; showFab = false } else Modifier),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Search, "搜索", tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Box(
+                    Modifier.size(48.dp)
+                        .graphicsLayer {
+                            alpha = importProgress
+                            scaleX = .5f + .5f * importProgress
+                            scaleY = .5f + .5f * importProgress
+                            translationY = 20.dp.toPx() * (1f - importProgress)
+                        }
+                        .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.IMPORT; showFab = false } else Modifier),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
                 Box(
                     Modifier.size(56.dp)
                         .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
