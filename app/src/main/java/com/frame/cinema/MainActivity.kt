@@ -941,7 +941,6 @@ private fun NativePlayerOverlay(
                                 start.x > size.width * 2f / 3f -> "volume"
                                 else -> "progress"
                             }
-                            if (dragMode == "progress") player.pause()
                         }
                     },
                     onDragEnd = {
