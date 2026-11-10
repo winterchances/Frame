@@ -382,7 +382,6 @@ private fun FrameNativeApp(
                             )
                         }
                     }
-                }
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth()) {
                     BottomPillNavigation(page) { page = it; showFab = false }
                 }
