@@ -642,27 +642,43 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSettings: () -> Unit, onVideo: (VideoItem) -> Unit) {
-    val continuing = videos.filter { it.progress > 0f && it.progress < 100f }.take(5)
+    val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(5)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         item {
             Header("首页", onSettings)
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Glass).padding(horizontal = 15.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
+                    .background(Glass).padding(horizontal = 10.dp, vertical = 15.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Stat("视频总数", videos.size.toString(), "个")
+                Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
                 Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个")
+                Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
                 Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h")
             }
-            SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded }
+            Spacer(Modifier.height(15.dp))
+        }
+        stickyHeader {
+            Box(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded }
+            }
         }
         if (continueExpanded) {
             if (continuing.isEmpty()) item { EmptyHint("暂无观看记录") }
             else item {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                     continuing.forEach { video ->
-                        Box(Modifier.width(280.dp).height(160.dp).clip(RoundedCornerShape(20.dp)).background(PosterColor(video.bgIndex)).clickable { onVideo(video) }) {
+                        Box(
+                            Modifier.width(280.dp).height(160.dp).clip(RoundedCornerShape(20.dp))
+                                .background(PosterColor(video.bgIndex)).clickable { onVideo(video) }
+                        ) {
                             Thumbnail(video, Modifier.fillMaxSize())
                             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)))
                             Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
@@ -675,17 +691,23 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                         }
                     }
                 }
+                Spacer(Modifier.height(20.dp))
             }
         }
-        item { SectionHeading("最近添加", recentExpanded) { recentExpanded = !recentExpanded } }
-        if (recentExpanded) items(videos.sortedByDescending { it.addedAt }.take(4), key = { it.id }) { video ->
-            VideoRow(video, "${video.date} 添加", { onVideo(video) })
+        stickyHeader {
+            Box(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                SectionHeading("最近添加", recentExpanded) { recentExpanded = !recentExpanded }
+            }
         }
-        if (videos.isEmpty()) item { EmptyHint("暂无视频，点击右下角添加") }
+        if (recentExpanded) {
+            if (videos.isEmpty()) item { EmptyHint("暂无视频，点击右下角添加") }
+            else items(videos.sortedByDescending { it.addedAt }.take(4), key = { it.id }) { video ->
+                VideoRow(video, "${video.date} 添加", { onVideo(video) })
+            }
+        }
         item { Spacer(Modifier.height(20.dp)) }
     }
-}
-
+}@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryPage(
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
@@ -696,42 +718,68 @@ private fun LibraryPage(
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
             (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
     }
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            ActionIcon(FrameTagIcon, "分类管理", onCategories)
-            ActionIcon(FrameSortIcon, "排序", onSort)
-            ActionIcon(FrameGridIcon, "布局管理", onGrid)
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(if (compact) 3 else 2),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp)
+    ) {
+        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                ActionIcon(FrameTagIcon, "分类管理", onCategories)
+                ActionIcon(FrameSortIcon, "排序", onSort)
+                ActionIcon(FrameGridIcon, "布局管理", onGrid)
+            }
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 15.dp, bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(25.dp)) {
-            listOf("全部", "在看", "已看").forEach { value ->
-                Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
-                    if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
+        stickyHeader {
+            Column(
+                Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(25.dp)
+                ) {
+                    listOf("全部", "在看", "已看").forEach { value ->
+                        Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
+                            if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
+                        }
+                    }
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    categories.forEach { value ->
+                        Surface(
+                            Modifier.clickable { onCategory(value) },
+                            shape = CircleShape,
+                            color = if (category == value) ThemeTeal else Color.White,
+                            shadowElevation = if (category == value) 3.dp else 1.dp
+                        ) {
+                            Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        }
+                    }
                 }
             }
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 2.dp, bottom = 25.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            categories.forEach { value ->
-                Surface(Modifier.clickable { onCategory(value) }, shape = CircleShape, color = if (category == value) ThemeTeal else Color.White, shadowElevation = if (category == value) 3.dp else 1.dp) {
-                    Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                }
+        if (filtered.isEmpty()) {
+            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
             }
-        }
-        if (filtered.isEmpty()) EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
-        else LazyVerticalGrid(
-            columns = GridCells.Fixed(if (compact) 3 else 2), modifier = Modifier.fillMaxSize().padding(top = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp)
-        ) {
+        } else {
             items(filtered, key = { it.id }) { video ->
                 PosterCard(video, compact, onPlay) { onLongVideo(video) }
             }
         }
     }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
+}@Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1237,7 +1285,7 @@ private fun Header(title: String, onSettings: () -> Unit) {
 @Composable
 private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: (() -> Unit)? = null) {
     val rotation by animateFloatAsState(if (expanded == false) -90f else 0f, tween(220), label = "section-chevron")
-    Row(Modifier.fillMaxWidth().padding(top = 25.dp, bottom = 12.dp).then(if (onToggle != null) Modifier.clickable { onToggle() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp).then(if (onToggle != null) Modifier.clickable { onToggle() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeTeal))
         Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(start = 8.dp).weight(1f))
         if (expanded != null) Icon(Icons.Outlined.ExpandMore, null, tint = MutedText, modifier = Modifier.rotate(rotation).size(20.dp))
