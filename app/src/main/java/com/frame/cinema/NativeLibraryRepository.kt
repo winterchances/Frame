@@ -128,27 +128,30 @@ class NativeLibraryRepository(context: Context) {
         store.updateAll(store.allVideos().map {
             it.copy(progress = 0f, status = "all", lastPlayedAt = 0L)
         })
+        store.clearWatchTime()
     }
 
     fun deleteRecent(id: Long) {
         store.allVideos().firstOrNull { it.id == id }?.let {
             store.upsert(it.copy(progress = 0f, status = "all", lastPlayedAt = 0L))
         }
+        store.clearWatchTimeForVideo(id)
     }
 
     fun clearAll() {
         store.allVideos().forEach { ThumbnailStore.delete(app, it.thumbPath) }
         store.clear()
+        store.clearWatchTime()
         ThumbnailStore.clear(app)
         store.saveCategories(listOf("全部分类", "我的最爱"))
     }
 
     fun saveCategories(names: List<String>) = store.saveCategories(names)
 
-    fun recordWatchTime(durationMs: Long, timestamp: Long = System.currentTimeMillis()) {
+    fun recordWatchTime(videoId: Long, durationMs: Long, timestamp: Long = System.currentTimeMillis()) {
         if (durationMs <= 0L) return
         val dayKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(timestamp))
-        store.addWatchTime(dayKey, durationMs)
+        store.addWatchTime(videoId, dayKey, durationMs)
     }
 
     fun weeklyWatchTimeMs(now: Long = System.currentTimeMillis()): Long {
