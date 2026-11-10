@@ -479,10 +479,10 @@ private fun FrameNativeApp(
                         ) { }
                         .animateEnterExit(
                             enter = slideInVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, 1f, 1f))
                             ) { it },
                             exit = slideOutVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, 1f, 1f))
                             ) { it }
                         )
                         .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
@@ -638,7 +638,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
     ) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
-        val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "nav-indicator")
+        val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
         Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
         Row(Modifier.fillMaxSize()) {
             entries.forEach { (item, icon) ->
