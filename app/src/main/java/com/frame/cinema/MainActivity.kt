@@ -292,7 +292,30 @@ private fun FrameNativeApp(
 
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
 
-    Box(Modifier.fillMaxSize().background(PageBg)) {
+    Box(
+        Modifier.fillMaxSize().background(PageBg)
+            .pointerInput(page, sheet, playing) {
+                var horizontalDistance = 0f
+                androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        if (sheet == SheetType.NONE && playing == null) {
+                            horizontalDistance += dragAmount
+                        }
+                    },
+                    onDragEnd = {
+                        if (sheet == SheetType.NONE && playing == null && kotlin.math.abs(horizontalDistance) > 50f) {
+                            val next = when {
+                                horizontalDistance < 0f -> MainPage.entries.getOrNull(MainPage.entries.indexOf(page) + 1)
+                                else -> MainPage.entries.getOrNull(MainPage.entries.indexOf(page) - 1)
+                            }
+                            if (next != null) { page = next; showFab = false }
+                        }
+                        horizontalDistance = 0f
+                    },
+                    onDragCancel = { horizontalDistance = 0f }
+                )
+            }
+    ) {
         if (playing == null) {
             Scaffold(
                 containerColor = PageBg,
@@ -554,7 +577,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         MainPage.RECENT to FrameRecentIcon,
         MainPage.RECORDS to FrameRecordsIcon
     )
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 62.dp, bottom = 16.dp).height(56.dp).clip(RoundedCornerShape(28.dp)).background(Glass).padding(4.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp).height(56.dp).clip(RoundedCornerShape(28.dp)).background(Glass).padding(4.dp)) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "nav-indicator")
@@ -874,7 +897,7 @@ private fun NativePlayerOverlay(
                 }
             }
         }
-        if (locked) Text("点击锁图标解锁", color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).padding(20.dp))
+        if (locked) Text("点击此处解锁", color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).clip(CircleShape).background(Color.Black.copy(alpha = .55f)).clickable { onToggleLock() }.padding(horizontal = 20.dp, vertical = 12.dp))
     }
 }
 
