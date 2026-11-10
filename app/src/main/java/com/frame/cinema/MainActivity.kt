@@ -2,6 +2,7 @@ package com.frame.cinema
 
 import android.app.Activity
 import android.content.Intent
+import android.content.ComponentName
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
@@ -53,7 +54,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.media3.ui.PlayerView
 import android.graphics.BitmapFactory
 import android.view.ViewGroup
@@ -76,39 +79,49 @@ private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, S
 private enum class SortMode { ADDED, NAME, RATING, WATCHED }
 
 class MainActivity : ComponentActivity() {
-    private var player: ExoPlayer? = null
+    private var player: Player? = null
+    private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
     private lateinit var repository: NativeLibraryRepository
     private var backgroundPlaybackAllowed = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = NativeLibraryRepository(this)
-        player = ExoPlayer.Builder(this).build()
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme(background = PageBg, surface = PageBg, primary = ThemeTeal, onBackground = MainText)) {
-                FrameNativeApp(
-                    repository = repository,
-                    player = player!!,
-                    onPlay = { item -> startNativePlayback(item) },
-                    onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
-                    onOrientation = { requested ->
-                        requestedOrientation = if (requested) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    },
-                    onKeepAwake = { enabled ->
-                        if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
+        val future = MediaController.Builder(this, token).buildAsync()
+        controllerFuture = future
+        future.addListener({
+            runOnUiThread {
+                runCatching { future.get() }.onSuccess { controller ->
+                    player = controller
+                    setContent {
+                        MaterialTheme(colorScheme = lightColorScheme(background = PageBg, surface = PageBg, primary = ThemeTeal, onBackground = MainText)) {
+                            FrameNativeApp(
+                                repository = repository,
+                                player = controller,
+                                onPlay = { item -> startNativePlayback(item) },
+                                onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
+                                onOrientation = { requested ->
+                                    requestedOrientation = if (requested) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                },
+                                onKeepAwake = { enabled ->
+                                    if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                    else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
-        }
+        }, java.util.concurrent.Executor { command -> command.run() })
     }
 
     private fun startNativePlayback(item: VideoItem) {
-        val exo = player ?: ExoPlayer.Builder(this).build().also { player = it }
-        exo.setMediaItem(MediaItem.fromUri(item.contentUri))
-        exo.prepare()
-        if (item.durationMs > 0 && item.progress > 0f) exo.seekTo((item.durationMs * item.progress / 100f).toLong())
-        exo.playWhenReady = true
+        val controller = player ?: return
+        controller.setMediaItem(MediaItem.fromUri(item.contentUri))
+        controller.prepare()
+        if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
+        controller.play()
     }
 
     override fun onStop() {
@@ -117,7 +130,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        player?.release()
+        controllerFuture?.let { MediaController.releaseFuture(it) }
+        controllerFuture = null
         player = null
         if (::repository.isInitialized) repository.close()
         super.onDestroy()
@@ -128,7 +142,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun FrameNativeApp(
     repository: NativeLibraryRepository,
-    player: ExoPlayer,
+    player: Player,
     onPlay: (VideoItem) -> Unit,
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
@@ -270,8 +284,14 @@ private fun FrameNativeApp(
                 speedIndex = speedIndex,
                 locked = locked,
                 controlsVisible = controlsVisible,
-                onClose = { player.pause(); playing = null; refresh() },
+                onClose = {
+                    playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L)) }
+                    player.pause()
+                    playing = null
+                    refresh()
+                },
                 onToggleControls = { controlsVisible = !controlsVisible },
+                onAutoHideControls = { controlsVisible = false },
                 onToggleLock = { locked = !locked },
                 onSpeed = {
                     speedIndex = (speedIndex + 1) % speeds.size
@@ -281,7 +301,7 @@ private fun FrameNativeApp(
                     onOrientation(isLandscape)
                 },
                 onEnded = {
-                    playing?.let { repository.updatePlayback(it.id, it.durationMs, it.durationMs, true) }
+                    playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), true) }
                     refresh()
                 },
                 onProgress = { pos, duration ->
@@ -584,11 +604,12 @@ private fun RecordsPage(videos: List<VideoItem>, onEdit: (VideoItem) -> Unit) {
 
 @Composable
 private fun NativePlayerOverlay(
-    item: VideoItem, player: ExoPlayer, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
-    onClose: () -> Unit, onToggleControls: () -> Unit, onToggleLock: () -> Unit,
+    item: VideoItem, player: Player, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
+    onClose: () -> Unit, onToggleControls: () -> Unit, onAutoHideControls: () -> Unit, onToggleLock: () -> Unit,
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onProgress: (Long, Long) -> Unit
 ) {
+    val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
@@ -605,18 +626,23 @@ private fun NativePlayerOverlay(
         onDispose { player.removeListener(listener) }
     }
     LaunchedEffect(player) {
+        var lastPersistedAt = 0L
         while (true) {
             current = player.currentPosition
             if (player.duration > 0) duration = player.duration
-            onProgress(current, duration)
-            delay(1000)
+            val now = System.currentTimeMillis()
+            if (now - lastPersistedAt >= 5000L) {
+                onProgress(current, duration)
+                lastPersistedAt = now
+            }
+            delay(500)
         }
     }
-    LaunchedEffect(speedIndex) { player.setPlaybackSpeed(speeds[speedIndex]) }
-    LaunchedEffect(controlsVisible, isPlaying) {
+    LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
+    LaunchedEffect(controlsVisible, isPlaying, locked) {
         if (controlsVisible && isPlaying && !locked) {
             delay(3000)
-            controlsVisible = false
+            onAutoHideControls()
         }
     }
 
@@ -624,6 +650,10 @@ private fun NativePlayerOverlay(
         Modifier.fillMaxSize().background(Color.Black)
             .pointerInput(locked) {
                 detectTapGestures(
+                    onPress = {
+                        tryAwaitRelease()
+                        if (!locked) player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex]))
+                    },
                     onTap = { if (!locked) { player.playWhenReady = !player.isPlaying; onToggleControls() } },
                     onDoubleTap = { offset ->
                         if (!locked) {
@@ -631,7 +661,7 @@ private fun NativePlayerOverlay(
                             player.seekTo((player.currentPosition + if (forward) 10000 else -10000).coerceAtLeast(0))
                         }
                     },
-                    onLongPress = { if (!locked) player.setPlaybackSpeed(2f) }
+                    onLongPress = { if (!locked) player.setPlaybackParameters(PlaybackParameters(2f)) }
                 )
             }
             .pointerInput(locked) {
