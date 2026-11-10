@@ -796,39 +796,61 @@ private fun LibraryPage(
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
         }
         val recentItems = videos.sortedByDescending { it.addedAt }
-        if (recentItems.isEmpty()) EmptyHint("暂无播放记录")
-        else LazyColumn {
+        if (recentItems.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.TopCenter) {
+                EmptyHint("暂无播放记录")
+            }
+        } else {
             val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
             val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
-            val groups = recentItems.groupBy { item ->
-                when (item.date) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
-            }
-            groups.forEach { (label, list) ->
-                stickyHeader {
-                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF666666),
-                        modifier = Modifier.fillMaxWidth().background(Color(0xF2F5F5F7))
-                            .padding(top = 15.dp, bottom = 5.dp))
+            val groups = listOf(
+                "今天" to recentItems.filter { it.date == today },
+                "昨天" to recentItems.filter { it.date == yesterday },
+                "更早" to recentItems.filter { it.date != today && it.date != yesterday }
+            ).filter { it.second.isNotEmpty() }
+            LazyColumn(Modifier.fillMaxWidth()) {
+                groups.forEach { (label, list) ->
+                    stickyHeader {
+                        Text(
+                            label,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF666666),
+                            modifier = Modifier.fillMaxWidth()
+                                .background(Color(0xF2F5F5F7))
+                                .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+                        )
+                    }
+                    item { Spacer(Modifier.height(10.dp)) }
+                    items(list, key = { it.id }) { video ->
+                        RecentHistoryCard(
+                            video,
+                            onClick = { onVideo(video) },
+                            onMore = { onMore(video) },
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                    }
+                    item { Spacer(Modifier.height(3.dp)) }
                 }
-                items(list, key = { it.id }) { video ->
-                    RecentHistoryCard(video, onClick = { onVideo(video) }, onMore = { onMore(video) })
-                }
+                item { Spacer(Modifier.height(12.dp)) }
             }
         }
     }
 }
-
-
 @Composable
-private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit) {
+private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     Row(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        modifier.fillMaxWidth().padding(bottom = 12.dp)
             .shadow(3.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).clickable(onClick = onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
