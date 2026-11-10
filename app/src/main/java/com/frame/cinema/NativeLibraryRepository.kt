@@ -54,8 +54,20 @@ class NativeLibraryRepository(context: Context) {
             added++
             thumbnailExecutor.execute {
                 val metadata = ThumbnailStore.createVideoMetadata(app, uri, id)
-                store.upsert(item.copy(thumbPath = metadata.thumbnailPath, durationMs = metadata.durationMs))
-                Handler(Looper.getMainLooper()).post(onMetadataReady)
+                // Import may be cancelled by removing the item or clearing the library while
+                // metadata extraction is running. Never resurrect a deleted database row.
+                val current = store.allVideos().firstOrNull { it.id == id }
+                if (current != null) {
+                    store.upsert(
+                        current.copy(
+                            thumbPath = metadata.thumbnailPath ?: current.thumbPath,
+                            durationMs = metadata.durationMs.takeIf { it > 0L } ?: current.durationMs
+                        )
+                    )
+                    Handler(Looper.getMainLooper()).post(onMetadataReady)
+                } else {
+                    ThumbnailStore.delete(app, metadata.thumbnailPath)
+                }
             }
         }
         return added
