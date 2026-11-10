@@ -145,6 +145,26 @@ class NativeLibraryRepository(context: Context) {
 
     fun saveCategories(names: List<String>) = store.saveCategories(names)
 
+    fun recordWatchTime(durationMs: Long, timestamp: Long = System.currentTimeMillis()) {
+        if (durationMs <= 0L) return
+        val dayKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(timestamp))
+        store.addWatchTime(dayKey, durationMs)
+    }
+
+    fun weeklyWatchTimeMs(now: Long = System.currentTimeMillis()): Long {
+        val calendar = java.util.Calendar.getInstance().apply {
+            timeInMillis = now
+            firstDayOfWeek = java.util.Calendar.MONDAY
+            set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val firstDay = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+        return store.watchTimeSince(firstDay)
+    }
+
     fun updatePlayback(id: Long, positionMs: Long, durationMs: Long, ended: Boolean = false) {
         val item = store.allVideos().firstOrNull { it.id == id } ?: return
         val percent = if (durationMs > 0) positionMs.toFloat() / durationMs * 100f else 0f
