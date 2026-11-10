@@ -269,6 +269,7 @@ private fun FrameNativeApp(
     LaunchedEffect(Unit) {
         allowBackground = preferences.getBoolean("allow_background", true)
         keepAwake = preferences.getBoolean("keep_awake", true)
+        onBackgroundPlaybackChanged(allowBackground)
         onKeepAwake(keepAwake)
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
@@ -421,7 +422,7 @@ private fun FrameNativeApp(
                             scaleY = .5f + .5f * searchProgress
                             translationY = 20.dp.toPx() * (1f - searchProgress)
                         }
-                        .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.SEARCH; showFab = false } else Modifier),
+                        .then(if (showFab) Modifier.noRippleClickable { search = ""; sheet = SheetType.SEARCH; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
@@ -554,7 +555,7 @@ private fun FrameNativeApp(
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                                 Text(">", color = MutedText)
                             }
-                            Box(Modifier.fillMaxWidth().padding(start = 20.dp).height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { sheet = SheetType.CLEAR_DATA }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
@@ -614,7 +615,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索视频")
-                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
+                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().heightIn(min = 50.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText, fontSize = 15.sp); inner() })
                         if (search.isNotBlank()) {
                             videos.filter { displayVideoName(it.name).contains(search.trim(), true) }
                                 .take(30).forEach { v ->
@@ -748,7 +749,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
             Header("首页", onSettings)
             Row(
                 Modifier.fillMaxWidth()
-                    .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                    .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Glass)
                     .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -1579,10 +1580,12 @@ private fun SheetHeading(title: String) {
 @Composable
 private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
     Surface(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).noRippleClickable(onClick),
+        Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+            .clip(RoundedCornerShape(16.dp)).noRippleClickable(onClick),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        shadowElevation = 1.dp,
+        shadowElevation = 0.dp,
         ) {
         Text(
             text,
