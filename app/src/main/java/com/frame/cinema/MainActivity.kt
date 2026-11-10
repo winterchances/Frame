@@ -60,10 +60,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.zIndex
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -249,7 +245,6 @@ private fun FrameNativeApp(
     onKeepAwake: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    val hazeState = remember { HazeState() }
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
@@ -349,7 +344,7 @@ private fun FrameNativeApp(
         if (playing == null) {
             Box(Modifier.fillMaxSize()) {
                 androidx.compose.animation.AnimatedContent(
-                    modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 0f).blur(sheetBlur),
+                    modifier = Modifier.fillMaxSize().blur(sheetBlur),
                     targetState = page,
                     transitionSpec = {
                         val forward = targetState.ordinal > initialState.ordinal
@@ -398,7 +393,7 @@ private fun FrameNativeApp(
                     }
             }
             Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
-                BottomPillNavigation(page, hazeState, sheetBlur) { page = it; showFab = false }
+                BottomPillNavigation(page, sheetBlur) { page = it; showFab = false }
             }
             Column(
                 Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
@@ -454,8 +449,7 @@ private fun FrameNativeApp(
                 Box(
                     Modifier.size(56.dp)
                         .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
-                        .hazeEffect(state = hazeState, style = HazeStyle(tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                        .clip(CircleShape)
+                                                .clip(CircleShape)
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
                         .noRippleClickable { showFab = !showFab },
@@ -715,7 +709,7 @@ private fun FrameNativeApp(
 }
 
 @Composable
-private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onSelect: (MainPage) -> Unit) {
+private fun BottomPillNavigation(current: MainPage, sheetBlur: androidx.compose.ui.unit.Dp, onSelect: (MainPage) -> Unit) {
     val entries = listOf(
         MainPage.HOME to FrameHomeIcon,
         MainPage.LIBRARY to FrameLibraryIcon,
