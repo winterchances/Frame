@@ -116,10 +116,26 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
 
     @Synchronized fun addWatchTime(dayKey: String, durationMs: Long) {
         if (durationMs <= 0L) return
-        writableDatabase.execSQL(
-            "INSERT INTO watch_time_daily(day_key, duration_ms) VALUES(?, ?) ON CONFLICT(day_key) DO UPDATE SET duration_ms = duration_ms + excluded.duration_ms",
-            arrayOf(dayKey, durationMs)
-        )
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val existing = db.rawQuery(
+                "SELECT duration_ms FROM watch_time_daily WHERE day_key = ?",
+                arrayOf(dayKey)
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
+            db.insertWithOnConflict(
+                "watch_time_daily",
+                null,
+                ContentValues().apply {
+                    put("day_key", dayKey)
+                    put("duration_ms", existing + durationMs)
+                },
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
     }
 
     @Synchronized fun watchTimeSince(firstDayKey: String): Long = readableDatabase.rawQuery(
