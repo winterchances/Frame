@@ -78,13 +78,13 @@ import kotlin.math.roundToInt
 
 private val FrameHomeIcon: ImageVector = ImageVector.Builder("FrameHome", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f); lineTo(21f, 20f); quadraticTo(21f, 22f, 19f, 22f); lineTo(5f, 22f); quadraticTo(3f, 22f, 3f, 20f); close()
+        moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f); lineTo(21f, 20f); quadTo(21f, 22f, 19f, 22f); lineTo(5f, 22f); quadTo(3f, 22f, 3f, 20f); close()
         moveTo(9f, 22f); lineTo(9f, 12f); lineTo(15f, 12f); lineTo(15f, 22f)
     }
 }.build()
 private val FrameLibraryIcon: ImageVector = ImageVector.Builder("FrameLibrary", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(4.5f, 2f); lineTo(19.5f, 2f); quadraticTo(22f, 2f, 22f, 4.5f); lineTo(22f, 19.5f); quadraticTo(22f, 22f, 19.5f, 22f); lineTo(4.5f, 22f); quadraticTo(2f, 22f, 2f, 19.5f); lineTo(2f, 4.5f); quadraticTo(2f, 2f, 4.5f, 2f); close()
+        moveTo(4.5f, 2f); lineTo(19.5f, 2f); quadTo(22f, 2f, 22f, 4.5f); lineTo(22f, 19.5f); quadTo(22f, 22f, 19.5f, 22f); lineTo(4.5f, 22f); quadTo(2f, 22f, 2f, 19.5f); lineTo(2f, 4.5f); quadTo(2f, 2f, 4.5f, 2f); close()
         moveTo(7f, 2f); lineTo(7f, 22f); moveTo(17f, 2f); lineTo(17f, 22f); moveTo(2f, 12f); lineTo(22f, 12f)
         moveTo(2f, 7f); lineTo(7f, 7f); moveTo(2f, 17f); lineTo(7f, 17f); moveTo(17f, 7f); lineTo(22f, 7f); moveTo(17f, 17f); lineTo(22f, 17f)
     }
@@ -92,22 +92,22 @@ private val FrameLibraryIcon: ImageVector = ImageVector.Builder("FrameLibrary", 
 private val FrameRecentIcon: ImageVector = ImageVector.Builder("FrameRecent", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(12f, 2f)
-        cubicTo(17.52f, 2f, 22f, 6.48f, 22f, 12f)
-        cubicTo(22f, 17.52f, 17.52f, 22f, 12f, 22f)
-        cubicTo(6.48f, 22f, 2f, 17.52f, 2f, 12f)
-        cubicTo(2f, 6.48f, 6.48f, 2f, 12f, 2f)
+        curveTo(17.52f, 2f, 22f, 6.48f, 22f, 12f)
+        curveTo(22f, 17.52f, 17.52f, 22f, 12f, 22f)
+        curveTo(6.48f, 22f, 2f, 17.52f, 2f, 12f)
+        curveTo(2f, 6.48f, 6.48f, 2f, 12f, 2f)
         close()
         moveTo(12f, 6f); lineTo(12f, 12f); lineTo(16f, 14f)
     }
 }.build()
 private val FrameRecordsIcon: ImageVector = ImageVector.Builder("FrameRecords", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(4f, 19.5f); quadraticTo(4f, 17f, 6.5f, 17f); lineTo(20f, 17f); moveTo(6.5f, 2f); lineTo(20f, 2f); lineTo(20f, 22f); lineTo(6.5f, 22f); quadraticTo(4f, 22f, 4f, 19.5f); lineTo(4f, 4.5f); quadraticTo(4f, 2f, 6.5f, 2f); close()
+        moveTo(4f, 19.5f); quadTo(4f, 17f, 6.5f, 17f); lineTo(20f, 17f); moveTo(6.5f, 2f); lineTo(20f, 2f); lineTo(20f, 22f); lineTo(6.5f, 22f); quadTo(4f, 22f, 4f, 19.5f); lineTo(4f, 4.5f); quadTo(4f, 2f, 6.5f, 2f); close()
     }
 }.build()
 private val FrameTagIcon: ImageVector = ImageVector.Builder("FrameTag", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(20.59f, 13.41f); lineTo(13.42f, 20.58f); quadraticTo(12.25f, 21.75f, 11.01f, 20.58f); lineTo(2f, 12f); lineTo(2f, 2f); lineTo(12f, 2f); lineTo(20.59f, 10.59f); quadraticTo(21.76f, 11.76f, 20.59f, 13.41f); close()
+        moveTo(20.59f, 13.41f); lineTo(13.42f, 20.58f); quadTo(12.25f, 21.75f, 11.01f, 20.58f); lineTo(2f, 12f); lineTo(2f, 2f); lineTo(12f, 2f); lineTo(20.59f, 10.59f); quadTo(21.76f, 11.76f, 20.59f, 13.41f); close()
         moveTo(7f, 7f); lineTo(7.01f, 7f)
     }
 }.build()
@@ -127,14 +127,14 @@ private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp,
 
 private val FrameSearchIcon: ImageVector = ImageVector.Builder("FrameSearch", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(11f, 3f); cubicTo(15.42f, 3f, 19f, 6.58f, 19f, 11f); cubicTo(19f, 15.42f, 15.42f, 19f, 11f, 19f); cubicTo(6.58f, 19f, 3f, 15.42f, 3f, 11f); cubicTo(3f, 6.58f, 6.58f, 3f, 11f, 3f); close()
+        moveTo(11f, 3f); curveTo(15.42f, 3f, 19f, 6.58f, 19f, 11f); curveTo(19f, 15.42f, 15.42f, 19f, 11f, 19f); curveTo(6.58f, 19f, 3f, 15.42f, 3f, 11f); curveTo(3f, 6.58f, 6.58f, 3f, 11f, 3f); close()
         moveTo(21f, 21f); lineTo(16.65f, 16.65f)
     }
 }.build()
 private val FrameTrashIcon: ImageVector = ImageVector.Builder("FrameTrash", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(3f, 6f); lineTo(21f, 6f); moveTo(19f, 6f); lineTo(19f, 20f); quadraticTo(19f, 22f, 17f, 22f); lineTo(7f, 22f); quadraticTo(5f, 22f, 5f, 20f); lineTo(5f, 6f)
-        moveTo(8f, 6f); lineTo(8f, 4f); quadraticTo(8f, 2f, 10f, 2f); lineTo(14f, 2f); quadraticTo(16f, 2f, 16f, 4f); lineTo(16f, 6f)
+        moveTo(3f, 6f); lineTo(21f, 6f); moveTo(19f, 6f); lineTo(19f, 20f); quadTo(19f, 22f, 17f, 22f); lineTo(7f, 22f); quadTo(5f, 22f, 5f, 20f); lineTo(5f, 6f)
+        moveTo(8f, 6f); lineTo(8f, 4f); quadTo(8f, 2f, 10f, 2f); lineTo(14f, 2f); quadTo(16f, 2f, 16f, 4f); lineTo(16f, 6f)
     }
 }.build()
 
