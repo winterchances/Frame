@@ -750,38 +750,38 @@ private fun LibraryPage(
                 ActionIcon(FrameGridIcon, "布局管理", onGrid)
             }
         }
-        stickyHeader {
-            Column(
-                Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(25.dp)
+        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                Column(
+                    Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))
                 ) {
-                    listOf("全部", "在看", "已看").forEach { value ->
-                        Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
-                            if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(25.dp)
+                    ) {
+                        listOf("全部", "在看", "已看").forEach { value ->
+                            Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
+                                if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
+                            }
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        categories.forEach { value ->
+                            Surface(
+                                Modifier.clickable { onCategory(value) },
+                                shape = CircleShape,
+                                color = if (category == value) ThemeTeal else Color.White,
+                                shadowElevation = if (category == value) 3.dp else 1.dp
+                            ) {
+                                Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            }
                         }
                     }
                 }
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    categories.forEach { value ->
-                        Surface(
-                            Modifier.clickable { onCategory(value) },
-                            shape = CircleShape,
-                            color = if (category == value) ThemeTeal else Color.White,
-                            shadowElevation = if (category == value) 3.dp else 1.dp
-                        ) {
-                            Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                        }
-                    }
-                }
-            }
         }
         if (filtered.isEmpty()) {
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
@@ -793,7 +793,8 @@ private fun LibraryPage(
             }
         }
     }
-}@Composable
+}@OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -857,6 +858,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecordsPage(
     videos: List<VideoItem>,
