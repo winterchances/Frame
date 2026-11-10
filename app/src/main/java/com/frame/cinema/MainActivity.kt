@@ -454,7 +454,7 @@ private fun FrameNativeApp(
                 Box(
                     Modifier.size(56.dp)
                         .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
-                        .hazeEffect(state = hazeState, style = HazeStyle(blurRadius = 20.dp, noiseFactor = 0f))
+                        .hazeEffect(state = hazeState, style = HazeStyle(tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
@@ -511,8 +511,8 @@ private fun FrameNativeApp(
 
         AnimatedVisibility(
             visible = sheet != SheetType.NONE,
-            enter = fadeIn(tween(300)),
-            exit = fadeOut(tween(300))
+            enter = fadeIn(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f))),
+            exit = fadeOut(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f)))
         ) {
             Box(
                 Modifier.fillMaxSize()
@@ -622,30 +622,32 @@ private fun FrameNativeApp(
                         SheetAction("按我的评分排序") { recordSortByRating = true; sheet = SheetType.NONE }
                     }
                     SheetType.SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("搜索视频")
-                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().heightIn(min = 50.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText, fontSize = 15.sp); inner() })
+                        SheetHeading("搜索")
+                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().heightIn(min = 50.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("搜索本地视频...", color = MutedText, fontSize = 15.sp); inner() }, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, color = MainText))
                         if (search.isNotBlank()) {
                             videos.filter { displayVideoName(it.name).contains(search.trim(), true) }
                                 .take(30).forEach { v ->
                                     Surface(
-                                        Modifier.fillMaxWidth().padding(top = 12.dp).noRippleClickable {
+                                        Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                            .clip(RoundedCornerShape(16.dp)).noRippleClickable {
                                             sheet = SheetType.NONE
                                             selected = v
                                             playVideo(v)
                                         },
                                         shape = RoundedCornerShape(16.dp),
                                         color = Color.White,
-                                        shadowElevation = 1.dp
+                                        shadowElevation = 0.dp
                                     ) {
                                         Text(
                                             displayVideoName(v.name),
                                             color = MainText,
-                                            fontSize = 15.sp,
+                                            fontSize = 16.sp,
                                             fontWeight = FontWeight.Medium,
-                                            lineHeight = 21.sp,
+                                            lineHeight = 22.sp,
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                            modifier = Modifier.fillMaxWidth().padding(18.dp)
                                         )
                                     }
                                 }
