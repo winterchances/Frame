@@ -122,6 +122,7 @@ class NativeLibraryRepository(context: Context) {
         val item = store.allVideos().firstOrNull { it.id == id }
         ThumbnailStore.delete(app, item?.thumbPath)
         store.delete(id)
+        store.clearWatchTimeForVideo(id)
     }
 
     fun clearRecent() {
