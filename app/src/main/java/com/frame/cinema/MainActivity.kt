@@ -495,7 +495,7 @@ private fun FrameNativeApp(
                         BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
                         videos.filter { (it.status == "watched" || it.progress >= 100f) && (recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true)) }
                             .take(30).forEach { video ->
-                                SheetAction(video.name) {
+                                SheetAction(displayVideoName(video.name)) {
                                     selected = video
                                     editReview = video.review
                                     editRating = video.rating
@@ -623,9 +623,9 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                             Thumbnail(video, Modifier.fillMaxSize())
                             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)))
                             Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
-                                Text(video.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                Spacer(Modifier.height(8.dp))
-                                Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .35f))) {
+                                Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                                Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
                                     Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
                                 }
                             }
@@ -732,7 +732,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
         }
         Box(Modifier.weight(1f).height(84.dp)) {
             Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Text(video.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
+                Text(displayVideoName(video.name), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
                     lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -779,7 +779,7 @@ private fun RecordsPage(
                     Row(Modifier.padding(15.dp), verticalAlignment = Alignment.Top) {
                         Box(Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex))) { Thumbnail(video, Modifier.fillMaxSize()) }
                         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(video.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MainText, maxLines = 2)
+                            Text(displayVideoName(video.name), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MainText, maxLines = 2)
                             Text("★".repeat(video.rating.coerceIn(0, 5)) + "☆".repeat(5 - video.rating.coerceIn(0, 5)), color = Color(0xFFFFB800), modifier = Modifier.padding(top = 5.dp))
                             Text(video.review.ifBlank { "点击添加你的观影感想…" }, color = if (video.review.isBlank()) Color.LightGray else Color(0xFF555555), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp), maxLines = 3)
                         }
@@ -893,7 +893,7 @@ private fun NativePlayerOverlay(
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .22f)))
             Row(Modifier.fillMaxWidth().align(Alignment.TopStart).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("‹", color = Color.White, fontSize = 32.sp, modifier = Modifier.clickable { onClose() }.padding(end = 18.dp))
-                Text(item.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
+                Text(displayVideoName(item.name), color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
                 Text(if (locked) "已锁定" else "锁屏", color = Color.White, modifier = Modifier.clickable { onToggleLock() }.padding(10.dp))
                 Text("⛶", color = Color.White, modifier = Modifier.clickable { onOrientation() }.padding(10.dp))
             }
@@ -921,6 +921,10 @@ private fun formatTime(ms: Long): String {
     val seconds = (ms / 1000).coerceAtLeast(0)
     return String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
 }
+
+private fun displayVideoName(name: String): String = name.replace(
+    Regex("\\\\.(mp4|mkv|avi|mov|wmv|flv|webm)$", RegexOption.IGNORE_CASE), ""
+)
 
 private fun formatClock(ms: Long): String {
     if (ms <= 0L) return "--:--:--"
@@ -985,7 +989,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            Text(video.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(displayVideoName(video.name), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
@@ -1003,7 +1007,7 @@ private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -
             }
             if (video.isFav) Text("♥", color = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(7.dp))
         }
-        Text(video.name, fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        Text(displayVideoName(video.name), fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -1012,7 +1016,7 @@ private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
     val bitmap = remember(video.thumbPath) {
         video.thumbPath?.let { path -> runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull() }
     }
-    if (bitmap != null) Image(bitmap, contentDescription = video.name, modifier = modifier)
+    if (bitmap != null) Image(bitmap, contentDescription = displayVideoName(video.name), modifier = modifier)
     else Box(modifier, contentAlignment = Alignment.Center) { Text("▶", color = Color.White.copy(alpha = .7f), fontSize = 28.sp) }
 }
 
