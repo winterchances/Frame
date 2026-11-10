@@ -138,7 +138,7 @@ private fun CinemaApp(
     Box(Modifier.fillMaxSize().background(PageBg)) {
         Scaffold(
             containerColor = PageBg,
-            contentWindowInsets = WindowInsets(0),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = { BottomPillNavigation(page) { page = it } }
         ) { padding ->
             AnimatedContent(
@@ -279,9 +279,9 @@ private fun HomePage(videos: List<LocalVideo>, onSettings: () -> Unit, onVideo: 
         }
         val continuing = videos.filter { it.progress in 1..99 }.take(5)
         if (continuing.isEmpty()) item { EmptyHint("暂无观看记录") }
-        items(continuing) { VideoRow(it, "已看 \${it.progress}%", onClick = { onVideo(it) }) }
+        items(continuing) { VideoRow(it, "已看 ${it.progress}%", onClick = { onVideo(it) }) }
         item { SectionHeading("最近添加") }
-        items(videos.take(4)) { VideoRow(it, "\${it.addedAt} 添加") { onVideo(it) } }
+        items(videos.take(4)) { VideoRow(it, "${it.addedAt} 添加") { onVideo(it) } }
         if (videos.isEmpty()) item { EmptyHint("暂无视频，点击右下角导入") }
         item { Spacer(Modifier.height(18.dp)) }
     }
@@ -340,7 +340,7 @@ private fun RecentPage(videos: List<LocalVideo>, onClear: () -> Unit) {
         }
         val history = videos.filter { it.progress > 0 || it.watched }
         if (history.isEmpty()) EmptyHint("暂无播放记录")
-        else LazyColumn { items(history) { VideoRow(it, "\${it.progress}% · \${it.addedAt}") {} } }
+        else LazyColumn { items(history) { VideoRow(it, "${it.progress}% · ${it.addedAt}") {} } }
     }
 }
 
