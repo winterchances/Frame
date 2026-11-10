@@ -651,13 +651,13 @@ private fun FrameNativeApp(
                         }
                         Spacer(Modifier.height(28.dp))
                     }
-                    SheetType.VIDEO_ACTIONS -> SheetContent(selected?.name ?: "视频操作") {
+                    SheetType.VIDEO_ACTIONS -> SheetContent(selected?.name?.let(::displayVideoName) ?: "视频操作") {
                         SheetAction("立即播放") { selected?.let { playVideo(it) }; sheet = SheetType.NONE }
                         SheetAction(if (selected?.isFav == true) "取消收藏" else "加入收藏") {
                             selected?.let { repository.favorite(it.id) }; refresh(); sheet = SheetType.NONE
                         }
                         SheetAction("移动到分类") { sheet = SheetType.MOVE }
-                        SheetAction("重命名") { editName = selected?.name.orEmpty(); sheet = SheetType.RENAME }
+                        SheetAction("重命名") { editName = selected?.name?.let(::displayVideoName).orEmpty(); sheet = SheetType.RENAME }
                         SheetAction("更换封面") { coverPicker.launch("image/*") }
                         SheetAction("移出片库", danger = true) { selected?.let { repository.delete(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
@@ -764,11 +764,11 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Stat("视频总数", videos.size.toString(), "个")
+                Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
                 Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个")
+                Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
                 Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h")
+                Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
             }
             Spacer(Modifier.height(25.dp))
         }
@@ -1423,7 +1423,7 @@ private fun formatTime(ms: Long): String {
 }
 
 private fun displayVideoName(name: String): String = name.replace(
-    Regex("\\.(mp4|mkv|avi|mov|wmv|flv|webm)$", RegexOption.IGNORE_CASE), ""
+    Regex("\\.(mp4|m4v|mkv|avi|mov|wmv|flv|webm|3gp|3g2|ts|mts|m2ts|mpg|mpeg|mpe|mpv|ogv|ogg|asf|rm|rmvb|vob|divx|f4v|mxf|nsv|wtv|dvr-ms|amv|hevc|h264|h265)$", RegexOption.IGNORE_CASE), ""
 )
 
 @Composable
@@ -1485,8 +1485,8 @@ private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: ((
 }
 
 @Composable
-private fun Stat(label: String, value: String, unit: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun Stat(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, fontSize = 12.sp, color = MutedText)
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
