@@ -632,7 +632,7 @@ private fun LibraryPage(
             ActionIcon(FrameSortIcon, "排序", onSort)
             ActionIcon(FrameGridIcon, "布局管理", onGrid)
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 15.dp, bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(25.dp)) {
             listOf("全部", "在看", "已看").forEach { value ->
                 Column(Modifier.clickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
@@ -640,17 +640,17 @@ private fun LibraryPage(
                 }
             }
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 2.dp, bottom = 25.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             categories.forEach { value ->
-                Surface(Modifier.clickable { onCategory(value) }, shape = CircleShape, color = if (category == value) ThemeTeal else Color.White) {
-                    Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                Surface(Modifier.clickable { onCategory(value) }, shape = CircleShape, color = if (category == value) ThemeTeal else Color.White, shadowElevation = if (category == value) 3.dp else 1.dp) {
+                    Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 }
             }
         }
         if (filtered.isEmpty()) EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
         else LazyVerticalGrid(
-            columns = GridCells.Fixed(if (compact) 3 else 2), modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp), verticalArrangement = Arrangement.spacedBy(14.dp)
+            columns = GridCells.Fixed(if (compact) 3 else 2), modifier = Modifier.fillMaxSize().padding(top = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 15.dp)
         ) {
             items(filtered, key = { it.id }) { video ->
                 PosterCard(video, compact, onPlay) { onLongVideo(video) }
