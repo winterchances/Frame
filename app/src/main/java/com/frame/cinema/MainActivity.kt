@@ -885,7 +885,8 @@ private fun RecordsPage(
                     Row(
                         Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (hasReview) Color(0xFFF9F9FB) else Color(0xFFF9F9FB))
+                            .height(androidx.compose.foundation.layout.IntrinsicSize.Min)
+                            .background(Color(0xFFF9F9FB))
                     ) {
                         Box(
                             Modifier.width(3.dp).fillMaxHeight()
