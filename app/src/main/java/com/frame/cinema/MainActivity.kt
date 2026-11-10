@@ -50,6 +50,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -446,7 +447,7 @@ private fun FrameNativeApp(
                 )
                 Surface(
                     modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
-                    shape = CircleShape, color = Glass, border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
+                    shape = CircleShape, color = Glass, shadowElevation = 2.dp, border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(FrameHamburgerIcon, null, tint = Color.Unspecified, modifier = Modifier.size(20.dp).rotate(fabRotation))
@@ -515,6 +516,7 @@ private fun FrameNativeApp(
                     Modifier.align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                        .shadow(4.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
                         .verticalScroll(rememberScrollState())
@@ -674,6 +676,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
     )
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
+            .shadow(2.dp, RoundedCornerShape(28.dp))
             .height(56.dp)
             
             .clip(RoundedCornerShape(28.dp))
@@ -735,7 +738,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                     continuing.forEach { video ->
                         Box(
                             Modifier.width(280.dp).height(160.dp)
-                                
+                                .shadow(3.dp, RoundedCornerShape(20.dp))
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(PosterBrush(video.bgIndex))
                                 .clickable { onVideo(video) }
@@ -1386,6 +1389,7 @@ private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Un
         modifier = Modifier.size(36.dp).clickable(onClick = onClick),
         shape = CircleShape,
         color = Color.White,
+        shadowElevation = 1.dp,
         
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -1443,7 +1447,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 @Composable
 private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.combinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(1.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
@@ -1489,7 +1493,7 @@ private fun EmptyHint(text: String) {
 
 @Composable
 private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Surface(shape = CircleShape, color = ThemeTeal, modifier = Modifier.size(48.dp).clickable(onClick = onClick)) {
+    Surface(shape = CircleShape, color = ThemeTeal, shadowElevation = 2.dp, modifier = Modifier.size(48.dp).clickable(onClick = onClick)) {
         Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = Color.White) }
     }
 }
@@ -1519,6 +1523,7 @@ private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Un
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
+        shadowElevation = 1.dp,
         ) {
         Text(
             text,
