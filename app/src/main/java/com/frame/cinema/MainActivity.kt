@@ -75,7 +75,7 @@ private val MutedText = Color(0xFF888888)
 private val Glass = Color.White.copy(alpha = .88f)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, VIDEO_ACTIONS, RENAME, MOVE, NOTE, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, VIDEO_ACTIONS, RENAME, MOVE, NOTE, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME, RATING, WATCHED }
 
 class MainActivity : ComponentActivity() {
@@ -159,6 +159,8 @@ private fun FrameNativeApp(
     var compact by remember { mutableStateOf(true) }
     var showFab by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
+    var recordSearch by remember { mutableStateOf("") }
+    var recordSortByRating by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var editReview by remember { mutableStateOf("") }
     var editRating by remember { mutableIntStateOf(0) }
@@ -246,7 +248,11 @@ private fun FrameNativeApp(
                                 onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
                             )
                             MainPage.RECORDS -> RecordsPage(
-                                videos.filter { it.status == "watched" || it.progress >= 100f },
+                                videos = videos.filter { it.status == "watched" || it.progress >= 100f }
+                                    .let { list -> if (recordSortByRating) list.sortedByDescending { it.rating } else list.sortedByDescending { it.lastPlayedAt } }
+                                    .filter { recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true) },
+                                onSearch = { sheet = SheetType.RECORD_SEARCH },
+                                onSort = { sheet = SheetType.RECORD_SORT },
                                 onEdit = {
                                     selected = it; editReview = it.review; editRating = it.rating
                                     sheet = SheetType.NOTE
@@ -362,6 +368,24 @@ private fun FrameNativeApp(
                             }) { Text("添加") }
                         }
                         Spacer(Modifier.height(28.dp))
+                    }
+                    SheetType.RECORD_SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("搜索观影记录")
+                        BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
+                        videos.filter { (it.status == "watched" || it.progress >= 100f) && (recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true)) }
+                            .take(30).forEach { video ->
+                                SheetAction(video.name) {
+                                    selected = video
+                                    editReview = video.review
+                                    editRating = video.rating
+                                    sheet = SheetType.NOTE
+                                }
+                            }
+                        Spacer(Modifier.height(24.dp))
+                    }
+                    SheetType.RECORD_SORT -> SheetContent("记录排序") {
+                        SheetAction("按看完时间排序") { recordSortByRating = false; sheet = SheetType.NONE }
+                        SheetAction("按我的评分排序") { recordSortByRating = true; sheet = SheetType.NONE }
                     }
                     SheetType.SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索视频")
@@ -576,17 +600,26 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
 }
 
 @Composable
-private fun RecordsPage(videos: List<VideoItem>, onEdit: (VideoItem) -> Unit) {
+private fun RecordsPage(
+    videos: List<VideoItem>,
+    onSearch: () -> Unit,
+    onSort: () -> Unit,
+    onEdit: (VideoItem) -> Unit
+) {
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Text("记录", Modifier.padding(top = 24.dp), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+        Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+            IconButton(onClick = onSearch) { Icon(Icons.Outlined.Search, "搜索观影感想") }
+            IconButton(onClick = onSort) { Icon(Icons.Outlined.Sort, "记录排序") }
+        }
         Row(Modifier.fillMaxWidth().padding(vertical = 14.dp).clip(RoundedCornerShape(20.dp)).background(Glass).padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Stat("已看完", videos.size.toString(), "部")
             Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
             Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
         }
-        if (videos.isEmpty()) EmptyHint("暂无已看完的视频")
+        if (videos.isEmpty()) EmptyHint("暂无符合条件的观影记录")
         else LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            items(videos.sortedByDescending { it.lastPlayedAt }, key = { it.id }) { video ->
+            items(videos, key = { it.id }) { video ->
                 Card(Modifier.fillMaxWidth().clickable { onEdit(video) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
                     Row(Modifier.padding(15.dp), verticalAlignment = Alignment.Top) {
                         Box(Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex))) { Thumbnail(video, Modifier.fillMaxSize()) }
