@@ -776,7 +776,6 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                         }
                     }
                 }
-                Spacer(Modifier.height(20.dp))
             }
         }
         stickyHeader {
