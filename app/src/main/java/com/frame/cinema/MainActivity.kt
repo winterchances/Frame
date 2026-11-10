@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -229,6 +230,7 @@ private fun FrameNativeApp(
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var videos by remember { mutableStateOf(repository.videos()) }
+    var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories()) }
     var status by remember { mutableStateOf("全部") }
     var category by remember { mutableStateOf("全部分类") }
@@ -258,7 +260,7 @@ private fun FrameNativeApp(
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
 
-    fun refresh() { videos = repository.videos(); categories = repository.categories() }
+    fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
     fun notify(message: String) { toast = message }
     fun playVideo(item: VideoItem) {
         speedIndex = 0
@@ -336,6 +338,7 @@ private fun FrameNativeApp(
                         when (target) {
                             MainPage.HOME -> HomePage(
                                 videos = videos,
+                                weeklyWatchTimeMs = weeklyWatchTimeMs,
                                 onSettings = { sheet = SheetType.SETTINGS },
                                 onVideo = { selected = it; playVideo(it) }
                             )
@@ -427,6 +430,10 @@ private fun FrameNativeApp(
                 },
                 onProgress = { pos, duration ->
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
+                },
+                onWatchTime = { deltaMs ->
+                    repository.recordWatchTime(deltaMs)
+                    weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
                 }
             )
         }
@@ -594,7 +601,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
 }
 
 @Composable
-private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (VideoItem) -> Unit) {
+private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSettings: () -> Unit, onVideo: (VideoItem) -> Unit) {
     val continuing = videos.filter { it.progress > 0f && it.progress < 100f }.take(5)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
@@ -604,8 +611,7 @@ private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Glass).padding(horizontal = 15.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Stat("视频总数", videos.size.toString(), "个")
                 Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个")
-                val hours = videos.sumOf { it.durationMs * it.progress / 100.0 }.toLong() / 3600000
-                Stat("累计时长", hours.toString(), "h")
+                Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h")
             }
             SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded }
         }
@@ -690,14 +696,13 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
         }
-        val history = videos.filter { it.progress > 0f || it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
-        if (history.isEmpty()) EmptyHint("暂无播放记录")
+        val recentItems = videos.sortedByDescending { it.addedAt }
+        if (recentItems.isEmpty()) EmptyHint("暂无播放记录")
         else LazyColumn {
-            val groups = history.groupBy { item ->
-                val today = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date())
-                val yesterday = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000))
-                val playedDate = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date(item.lastPlayedAt))
-                when (playedDate) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
+            val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
+            val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
+            val groups = recentItems.groupBy { item ->
+                when (item.date) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
             }
             groups.forEach { (label, list) ->
                 stickyHeader {
@@ -785,7 +790,8 @@ private fun NativePlayerOverlay(
     item: VideoItem, player: Player, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
     onClose: () -> Unit, onToggleControls: () -> Unit, onAutoHideControls: () -> Unit, onToggleLock: () -> Unit,
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
-    onProgress: (Long, Long) -> Unit
+    onProgress: (Long, Long) -> Unit,
+    onWatchTime: (Long) -> Unit
 ) {
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
@@ -805,15 +811,20 @@ private fun NativePlayerOverlay(
     }
     LaunchedEffect(player) {
         var lastPersistedAt = 0L
+        var previousTick = SystemClock.elapsedRealtime()
         while (true) {
             current = player.currentPosition
             if (player.duration > 0) duration = player.duration
             val now = System.currentTimeMillis()
+            val elapsedNow = SystemClock.elapsedRealtime()
+            val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
+            if (player.isPlaying) onWatchTime(elapsed)
+            previousTick = elapsedNow
             if (now - lastPersistedAt >= 5000L) {
                 onProgress(current, duration)
                 lastPersistedAt = now
             }
-            delay(500)
+            delay(1000)
         }
     }
     LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
