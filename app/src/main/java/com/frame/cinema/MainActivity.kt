@@ -26,6 +26,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -444,13 +446,16 @@ private fun FrameNativeApp(
                     tween(300, easing = fabEasing),
                     label = "fab-rotation"
                 )
-                Surface(
-                    modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
-                    shape = CircleShape, color = Glass, shadowElevation = 2.dp, border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
+                Box(
+                    Modifier.size(56.dp)
+                        .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
+                        .clip(CircleShape)
+                        .background(Glass)
+                        .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
+                        .noRippleClickable { showFab = !showFab },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(FrameHamburgerIcon, null, tint = Color.Unspecified, modifier = Modifier.size(20.dp).rotate(fabRotation))
-                    }
+                    Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
             }
         } else {
@@ -540,10 +545,23 @@ private fun FrameNativeApp(
                     }
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
                         SheetHeading("设置")
-                        Text("播放偏好", color = MutedText, fontSize = 13.sp)
-                        SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
-                        SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
-                        SheetAction("清空全部本地数据", danger = true) { sheet = SheetType.CLEAR_DATA }
+                        Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))) {
+                            SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
+                            Box(Modifier.fillMaxWidth().padding(start = 20.dp).height(1.dp).background(Color(0xFFF0F0F0)))
+                            SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
+                        }
+                        Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))) {
+                            Row(Modifier.fillMaxWidth().height(56.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
+                                Text(">", color = MutedText)
+                            }
+                            Box(Modifier.fillMaxWidth().padding(start = 20.dp).height(1.dp).background(Color(0xFFF0F0F0)))
+                            Row(Modifier.fillMaxWidth().height(56.dp).noRippleClickable { sheet = SheetType.CLEAR_DATA }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
+                            }
+                        }
                         Spacer(Modifier.height(26.dp))
                     }
                     SheetType.SORT -> SheetContent("视频排序") {
@@ -675,7 +693,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
     )
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
-            .shadow(2.dp, RoundedCornerShape(28.dp))
+            .shadow(4.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
             
             .clip(RoundedCornerShape(28.dp))
@@ -689,8 +707,9 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
         Row(Modifier.fillMaxSize()) {
             entries.forEach { (item, icon) ->
-                Column(Modifier.weight(1f).fillMaxHeight().clickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(icon, item.label, Modifier.size(19.dp), tint = MainText)
+                    Spacer(Modifier.height(2.dp))
                     Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
             }
@@ -709,7 +728,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
             Header("首页", onSettings)
             Row(
                 Modifier.fillMaxWidth()
-                    .shadow(1.dp, RoundedCornerShape(20.dp))
+                    .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Glass)
                     .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -737,7 +756,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                     continuing.forEach { video ->
                         Box(
                             Modifier.width(280.dp).height(160.dp)
-                                .shadow(4.dp, RoundedCornerShape(20.dp))
+                                .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(PosterBrush(video.bgIndex))
                                 .clickable { onVideo(video) }
@@ -1373,6 +1392,12 @@ private fun displayVideoName(name: String): String = name.replace(
     Regex("\\.(mp4|mkv|avi|mov|wmv|flv|webm)$", RegexOption.IGNORE_CASE), ""
 )
 
+@Composable
+private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
+    val interactionSource = remember { MutableInteractionSource() }
+    return this.clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+}
+
 private fun formatClock(ms: Long): String {
     if (ms <= 0L) return "--:--:--"
     val seconds = ms / 1000
@@ -1402,8 +1427,8 @@ private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Un
 private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
-        Surface(Modifier.size(36.dp).clickable { onSettings() }, shape = CircleShape, color = Glass) {
-            Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText) }
+        Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText)
         }
     }
 }
@@ -1422,6 +1447,7 @@ private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: ((
 private fun Stat(label: String, value: String, unit: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, fontSize = 12.sp, color = MutedText)
+        Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111))
             Text(unit, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(start = 2.dp, bottom = 3.dp))
@@ -1493,7 +1519,7 @@ private fun EmptyHint(text: String) {
 
 @Composable
 private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Surface(shape = CircleShape, color = ThemeTeal, shadowElevation = 2.dp, modifier = Modifier.size(48.dp).clickable(onClick = onClick)) {
+    Surface(shape = CircleShape, color = ThemeTeal, shadowElevation = 4.dp, modifier = Modifier.size(48.dp).noRippleClickable(onClick)) {
         Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = Color.White) }
     }
 }
@@ -1520,7 +1546,7 @@ private fun SheetHeading(title: String) {
 @Composable
 private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
     Surface(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable(onClick = onClick),
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).noRippleClickable(onClick),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         shadowElevation = 1.dp,
@@ -1538,8 +1564,11 @@ private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Un
 
 @Composable
 private fun SettingRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = MainText, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onChecked)
+    Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = MainText, fontSize = 16.sp, modifier = Modifier.weight(1f))
+        Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ThemeTeal else Color(0xFFE0E0E0)).noRippleClickable { onChecked(!checked) }) {
+            val knobOffset by animateDpAsState(if (checked) 20.dp else 2.dp, tween(300), label = "setting-switch")
+            Box(Modifier.align(Alignment.CenterStart).offset(x = knobOffset).size(20.dp).clip(CircleShape).background(Color.White))
+        }
     }
 }
