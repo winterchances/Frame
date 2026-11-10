@@ -17,11 +17,19 @@ jobs:
       with:
         node-version: 20
 
+    # 1. 明确安装 JDK 21
     - name: Setup Java JDK
       uses: actions/setup-java@v4
       with:
-        distribution: 'zulu'
-        java-version: '17'
+        distribution: 'temurin'
+        java-version: '21'
+
+    # 2. 强制指定 Gradle 使用 JDK 21
+    - name: Setup Gradle JDK
+      run: |
+        echo "JAVA_HOME=$JAVA_HOME"
+        # 将 JAVA_HOME 写入 gradle.properties，确保 Gradle 使用 JDK 21
+        echo "org.gradle.java.home=$JAVA_HOME" >> $GITHUB_WORKSPACE/gradle.properties
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4.0.4
@@ -36,7 +44,7 @@ jobs:
     - name: Install Capacitor & Assets
       run: |
         npm init -y
-        npm install @capacitor/core @capacitor/cli @capacitor/android
+        npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
         npm install @capacitor/assets
         npx cap init "影匣" "com.mycine.app" --web-dir=www
         npx cap add android
@@ -54,10 +62,8 @@ jobs:
       run: |
         npx cap sync
         cd android
-        # 极客清理大法：清理可能损坏的缓存
         rm -rf ~/.gradle/caches/
         chmod +x gradlew
-        # 加上 --no-daemon 和 --stacktrace 防止后台进程冲突
         ./gradlew clean assembleDebug --no-daemon --stacktrace
 
     - name: Upload APK Artifact
