@@ -59,6 +59,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.zIndex
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -244,6 +249,7 @@ private fun FrameNativeApp(
     onKeepAwake: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val hazeState = remember { HazeState() }
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
@@ -279,7 +285,7 @@ private fun FrameNativeApp(
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
-    val sheetBlur by animateDpAsState(if (sheet == SheetType.NONE) 0.dp else 5.dp, tween(300), label = "sheet-backdrop-blur")
+    val sheetBlur = if (sheet == SheetType.NONE) 0.dp else 5.dp
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
     fun notify(message: String) { toast = message }
@@ -341,8 +347,9 @@ private fun FrameNativeApp(
             }
     ) {
         if (playing == null) {
-            Box(Modifier.fillMaxSize().blur(sheetBlur)) {
+            Box(Modifier.fillMaxSize()) {
                 androidx.compose.animation.AnimatedContent(
+                    modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 0f).blur(sheetBlur),
                     targetState = page,
                     transitionSpec = {
                         val forward = targetState.ordinal > initialState.ordinal
@@ -389,9 +396,9 @@ private fun FrameNativeApp(
                             )
                         }
                     }
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth()) {
-                    BottomPillNavigation(page) { page = it; showFab = false }
-                }
+            }
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
+                BottomPillNavigation(page, hazeState) { page = it; showFab = false }
             }
             Column(
                 Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
@@ -705,7 +712,7 @@ private fun FrameNativeApp(
 }
 
 @Composable
-private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit) {
+private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, onSelect: (MainPage) -> Unit) {
     val entries = listOf(
         MainPage.HOME to FrameHomeIcon,
         MainPage.LIBRARY to FrameLibraryIcon,
@@ -716,7 +723,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
             .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
-            
+            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Glass, blurRadius = 20.dp, noiseFactor = 0f))
             .clip(RoundedCornerShape(28.dp))
             .background(Glass)
             .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(28.dp))
