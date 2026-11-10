@@ -840,6 +840,12 @@ private fun NativePlayerOverlay(
             delay(500)
         }
     }
+    LaunchedEffect(centerMessage) {
+        if (centerMessage.isNotEmpty()) {
+            delay(800)
+            centerMessage = ""
+        }
+    }
     LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
     LaunchedEffect(controlsVisible, isPlaying, locked) {
         if (controlsVisible && isPlaying && !locked) {
@@ -1035,12 +1041,10 @@ private fun PlayerIconButton(icon: ImageVector, description: String, onClick: ()
 
 @Composable
 private fun PlayerProgressBar(progress: Float, modifier: Modifier = Modifier, onSeek: (Float) -> Unit) {
-    var widthPx by remember { mutableFloatStateOf(1f) }
-    Box(
-        modifier.height(30.dp).pointerInput(progress) {
-            widthPx = size.width.toFloat().coerceAtLeast(1f)
-            detectTapGestures { offset -> onSeek((offset.x / widthPx).coerceIn(0f, 1f)) }
-        }.pointerInput(progress) {
+    BoxWithConstraints(
+        modifier.height(30.dp).pointerInput(Unit) {
+            detectTapGestures { offset -> onSeek((offset.x / size.width).coerceIn(0f, 1f)) }
+        }.pointerInput(Unit) {
             detectDragGestures(
                 onDragStart = { onSeek((it.x / size.width).coerceIn(0f, 1f)) },
                 onDrag = { change, _ -> change.consume(); onSeek((change.position.x / size.width).coerceIn(0f, 1f)) }
@@ -1048,14 +1052,11 @@ private fun PlayerProgressBar(progress: Float, modifier: Modifier = Modifier, on
         },
         contentAlignment = Alignment.CenterStart
     ) {
+        val fraction = progress.coerceIn(0f, 1f)
         Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = .3f)))
-        Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(2.dp)).background(ThemeTeal))
+        Box(Modifier.fillMaxWidth(fraction).height(4.dp).clip(RoundedCornerShape(2.dp)).background(ThemeTeal))
         Box(
-            Modifier.offset(x = (widthPx.dp / 1.0f) * 0f).size(0.dp)
-        )
-        Box(
-            Modifier.align(Alignment.CenterStart)
-                .offset(x = (widthPx * progress.coerceIn(0f, 1f)).dp - 6.dp)
+            Modifier.align(Alignment.CenterStart).offset(x = maxWidth * fraction - 6.dp)
                 .size(12.dp).clip(CircleShape).background(Color.White)
         )
     }
