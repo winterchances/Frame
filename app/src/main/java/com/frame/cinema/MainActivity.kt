@@ -516,7 +516,7 @@ private fun FrameNativeApp(
                     Modifier.align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
-                        .shadow(4.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .shadow(5.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
                         .verticalScroll(rememberScrollState())
@@ -738,7 +738,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                     continuing.forEach { video ->
                         Box(
                             Modifier.width(280.dp).height(160.dp)
-                                .shadow(3.dp, RoundedCornerShape(20.dp))
+                                .shadow(4.dp, RoundedCornerShape(20.dp))
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(PosterBrush(video.bgIndex))
                                 .clickable { onVideo(video) }
