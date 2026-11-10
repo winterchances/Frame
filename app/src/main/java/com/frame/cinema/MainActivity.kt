@@ -707,7 +707,7 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
                 stickyHeader {
                     Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF666666),
                         modifier = Modifier.fillMaxWidth().background(Color(0xF2F5F5F7))
-                            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp))
+                            .padding(top = 15.dp, bottom = 5.dp))
                 }
                 items(list, key = { it.id }) { video ->
                     RecentHistoryCard(video, onClick = { onVideo(video) }, onMore = { onMore(video) })
@@ -735,8 +735,14 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 Text(video.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
                     lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("总时长  ${formatClock(video.durationMs)}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
-                    Text("已播放  ${formatClock(playedMs)}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Icon(FrameRecentIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Text(formatClock(video.durationMs), fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Icon(Icons.Outlined.PlayArrow, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Text("${formatClock(playedMs)} · ${video.date}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    }
                 }
             }
             Box(Modifier.align(Alignment.BottomEnd).size(24.dp).clickable(onClick = onMore), contentAlignment = Alignment.Center) {
