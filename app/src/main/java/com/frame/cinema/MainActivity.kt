@@ -35,6 +35,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -538,10 +542,10 @@ private fun FrameNativeApp(
                     }
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
-                        Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
+                        Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
                             SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
-                            Box(Modifier.fillMaxWidth().padding(start = 20.dp).height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
                             SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
                         }
                         Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
@@ -611,8 +615,31 @@ private fun FrameNativeApp(
                     SheetType.SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索视频")
                         BasicTextField(search, { search = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
-                        videos.filter { it.name.contains(search, true) }.take(30).forEach { v ->
-                            SheetAction(v.name) { sheet = SheetType.NONE; selected = v; playVideo(v) }
+                        if (search.isNotBlank()) {
+                            videos.filter { displayVideoName(it.name).contains(search.trim(), true) }
+                                .take(30).forEach { v ->
+                                    Surface(
+                                        Modifier.fillMaxWidth().padding(top = 12.dp).noRippleClickable {
+                                            sheet = SheetType.NONE
+                                            selected = v
+                                            playVideo(v)
+                                        },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color.White,
+                                        shadowElevation = 1.dp
+                                    ) {
+                                        Text(
+                                            displayVideoName(v.name),
+                                            color = MainText,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            lineHeight = 21.sp,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                        )
+                                    }
+                                }
                         }
                         Spacer(Modifier.height(28.dp))
                     }
@@ -686,7 +713,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
     )
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
-            .shadow(4.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
+            .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
             
             .clip(RoundedCornerShape(28.dp))
@@ -745,8 +772,14 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
         if (continueExpanded) {
             if (continuing.isEmpty()) item { EmptyHint("暂无观看记录") }
             else item {
-                Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 2.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-                    continuing.forEach { video ->
+                val heroListState = rememberLazyListState()
+                LazyRow(
+                    state = heroListState,
+                    flingBehavior = rememberSnapFlingBehavior(heroListState, SnapPosition.Start),
+                    modifier = Modifier.padding(top = 2.dp, bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+                    items(continuing, key = { it.id }) { video ->
                         Box(
                             Modifier.width(280.dp).height(160.dp)
                                 .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
@@ -1450,7 +1483,7 @@ private fun Stat(label: String, value: String, unit: String) {
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111))
-            Text(unit, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(start = 2.dp, bottom = 3.dp))
+            Text(unit, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(start = 2.dp))
         }
     }
 }
