@@ -989,7 +989,11 @@ private fun NativePlayerOverlay(
         if (brightnessMask > 0f) {
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = brightnessMask)))
         }
-        if (controlsVisible && !locked) {
+        AnimatedVisibility(
+            visible = controlsVisible && !locked,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
                 Row(
                     Modifier.fillMaxWidth()
@@ -1045,7 +1049,11 @@ private fun NativePlayerOverlay(
                 }
             }
         }
-        if (locked && unlockVisible) {
+        AnimatedVisibility(
+            visible = locked && unlockVisible,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
             Box(
                 Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape)
                     .background(Color.Black.copy(alpha = .5f))
@@ -1056,7 +1064,11 @@ private fun NativePlayerOverlay(
                 Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
             }
         }
-        if (centerMessage.isNotEmpty() && !locked) {
+        AnimatedVisibility(
+            visible = centerMessage.isNotEmpty() && !locked,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200))
+        ) {
             Box(
                 Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp))
                     .background(Color.Black.copy(alpha = .6f)).padding(horizontal = 25.dp, vertical = 15.dp)
