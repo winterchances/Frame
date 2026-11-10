@@ -433,7 +433,6 @@ private fun FrameNativeApp(
                 },
                 onWatchTime = { deltaMs ->
                     repository.recordWatchTime(deltaMs)
-                    weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
                 }
             )
         }
