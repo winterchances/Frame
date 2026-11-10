@@ -20,6 +20,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -45,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -411,7 +413,7 @@ private fun FrameNativeApp(
                 },
                 onToggleControls = { controlsVisible = !controlsVisible },
                 onAutoHideControls = { controlsVisible = false },
-                onToggleLock = { locked = !locked },
+                onToggleLock = { locked = !locked; controlsVisible = !locked },
                 onSpeed = {
                     speedIndex = (speedIndex + 1) % speeds.size
                 },
@@ -798,13 +800,19 @@ private fun NativePlayerOverlay(
     onProgress: (Long, Long) -> Unit,
     onWatchTime: (Long) -> Unit
 ) {
-    val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
-    var brightness by remember { mutableFloatStateOf(.5f) }
-    var volume by remember { mutableFloatStateOf(.5f) }
-    var seekDelta by remember { mutableFloatStateOf(0f) }
+    var brightnessMask by remember { mutableFloatStateOf(0f) }
+    var volume by remember { mutableFloatStateOf(player.volume) }
+    var unlockVisible by remember { mutableStateOf(false) }
+    var centerMessage by remember { mutableStateOf("") }
+    var dragMode by remember { mutableStateOf("none") }
+    var dragStartX by remember { mutableFloatStateOf(0f) }
+    var dragStartY by remember { mutableFloatStateOf(0f) }
+    var dragStartPosition by remember { mutableLongStateOf(0L) }
+    var dragStartVolume by remember { mutableFloatStateOf(player.volume) }
+    var dragStartBrightness by remember { mutableFloatStateOf(0f) }
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -818,8 +826,8 @@ private fun NativePlayerOverlay(
         var lastPersistedAt = 0L
         var previousTick = SystemClock.elapsedRealtime()
         while (true) {
-            current = player.currentPosition
-            if (player.duration > 0) duration = player.duration
+            current = player.currentPosition.coerceAtLeast(0L)
+            if (player.duration > 0L) duration = player.duration
             val now = System.currentTimeMillis()
             val elapsedNow = SystemClock.elapsedRealtime()
             val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
@@ -829,7 +837,7 @@ private fun NativePlayerOverlay(
                 onProgress(current, duration)
                 lastPersistedAt = now
             }
-            delay(1000)
+            delay(500)
         }
     }
     LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
@@ -842,42 +850,81 @@ private fun NativePlayerOverlay(
 
     Box(
         Modifier.fillMaxSize().background(Color.Black)
-            .pointerInput(locked, speedIndex) {
+            .pointerInput(locked, controlsVisible, speedIndex, duration) {
                 detectTapGestures(
+                    onTap = {
+                        if (locked) {
+                            unlockVisible = !unlockVisible
+                        } else if (!controlsVisible) {
+                            onToggleControls()
+                        } else {
+                            if (player.isPlaying) player.pause() else player.play()
+                        }
+                    },
+                    onDoubleTap = { offset ->
+                        if (!locked) {
+                            val forward = offset.x > size.width / 2f
+                            val target = (player.currentPosition + if (forward) 10_000L else -10_000L)
+                                .coerceIn(0L, duration.coerceAtLeast(0L))
+                            player.seekTo(target)
+                            current = target
+                            centerMessage = if (forward) "快进 10s" else "快退 10s"
+                        }
+                    },
+                    onLongPress = {
+                        if (!locked) {
+                            player.setPlaybackParameters(PlaybackParameters(2f))
+                            centerMessage = "2.0x 播放中"
+                        }
+                    },
                     onPress = {
                         tryAwaitRelease()
                         if (!locked) player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex]))
-                    },
-                    onTap = { if (!locked) { if (player.isPlaying) player.pause() else player.play(); onToggleControls() } },
-                    onDoubleTap = { offset ->
-                        if (!locked) {
-                            val forward = offset.x > size.width / 2
-                            player.seekTo((player.currentPosition + if (forward) 10000 else -10000).coerceAtLeast(0))
-                        }
-                    },
-                    onLongPress = { if (!locked) player.setPlaybackParameters(PlaybackParameters(2f)) }
+                    }
                 )
             }
-            .pointerInput(locked) {
+            .pointerInput(locked, duration) {
                 detectDragGestures(
-                    onDragEnd = { seekDelta = 0f },
-                    onDrag = { change, drag ->
+                    onDragStart = { start ->
                         if (!locked) {
+                            dragStartX = start.x
+                            dragStartY = start.y
+                            dragStartPosition = player.currentPosition.coerceAtLeast(0L)
+                            dragStartVolume = player.volume
+                            dragStartBrightness = brightnessMask
+                            dragMode = when {
+                                start.x < size.width / 3f -> "brightness"
+                                start.x > size.width * 2f / 3f -> "volume"
+                                else -> "progress"
+                            }
+                            if (dragMode == "progress") player.pause()
+                        }
+                    },
+                    onDragEnd = {
+                        if (dragMode == "progress") player.seekTo(current)
+                        dragMode = "none"
+                    },
+                    onDragCancel = { dragMode = "none" },
+                    onDrag = { change, _ ->
+                        if (!locked && dragMode != "none") {
                             change.consume()
-                            if (abs(drag.x) > abs(drag.y)) {
-                                seekDelta += drag.x / size.width * (duration.coerceAtLeast(60000))
-                                player.seekTo((player.currentPosition + seekDelta.toLong()).coerceIn(0, duration.coerceAtLeast(0)))
-                                seekDelta = 0f
-                            } else if (change.position.x < size.width * .33f) {
-                                brightness = (brightness - drag.y / size.height).coerceIn(.02f, 1f)
-                                (context as? Activity)?.window?.let { window ->
-                                    val params = window.attributes
-                                    params.screenBrightness = brightness
-                                    window.attributes = params
+                            val dx = change.position.x - dragStartX
+                            val dy = change.position.y - dragStartY
+                            when {
+                                dragMode == "brightness" && abs(dy) > abs(dx) -> {
+                                    brightnessMask = (dragStartBrightness - dy / 200f).coerceIn(0f, .8f)
+                                    centerMessage = "亮度 ${((1f - brightnessMask) * 100).toInt()}%"
                                 }
-                            } else if (change.position.x > size.width * .67f) {
-                                volume = (volume - drag.y / size.height).coerceIn(0f, 1f)
-                                player.volume = volume
+                                dragMode == "volume" && abs(dy) > abs(dx) -> {
+                                    volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
+                                    player.volume = volume
+                                    centerMessage = "音量 ${(volume * 100).toInt()}%"
+                                }
+                                dragMode == "progress" && abs(dx) > abs(dy) -> {
+                                    val changeMs = (dx / (size.width * .8f) * duration.coerceAtLeast(0L)).toLong()
+                                    current = (dragStartPosition + changeMs).coerceIn(0L, duration.coerceAtLeast(0L))
+                                    centerMessage = "${formatTime(current)} / ${formatTime(duration)}"
+                                }
                             }
                         }
                     }
@@ -885,35 +932,132 @@ private fun NativePlayerOverlay(
             }
     ) {
         AndroidView(
-            factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; layoutParams = ViewGroup.LayoutParams(-1, -1) } },
+            factory = { ctx -> PlayerView(ctx).apply {
+                this.player = player
+                useController = false
+                layoutParams = ViewGroup.LayoutParams(-1, -1)
+            } },
             modifier = Modifier.fillMaxSize(),
             update = { it.player = player }
         )
-        if (controlsVisible) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .22f)))
-            Row(Modifier.fillMaxWidth().align(Alignment.TopStart).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("‹", color = Color.White, fontSize = 32.sp, modifier = Modifier.clickable { onClose() }.padding(end = 18.dp))
-                Text(displayVideoName(item.name), color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
-                Text(if (locked) "已锁定" else "锁屏", color = Color.White, modifier = Modifier.clickable { onToggleLock() }.padding(10.dp))
-                Text("⛶", color = Color.White, modifier = Modifier.clickable { onOrientation() }.padding(10.dp))
-            }
-            Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(46.dp)) {
-                Text("↶10", color = Color.White, fontSize = 18.sp, modifier = Modifier.clickable { player.seekTo((player.currentPosition - 10000).coerceAtLeast(0)) })
-                Text(if (isPlaying) "Ⅱ" else "▶", color = Color.White, fontSize = 36.sp, modifier = Modifier.clickable { if (player.isPlaying) player.pause() else player.play() })
-                Text("10↷", color = Color.White, fontSize = 18.sp, modifier = Modifier.clickable { player.seekTo(player.currentPosition + 10000) })
-            }
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 18.dp, vertical = 20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(formatTime(current), color = Color.White, fontSize = 12.sp)
-                    Slider(value = if (duration > 0) current.toFloat().coerceIn(0f, duration.toFloat()) else 0f, onValueChange = { player.seekTo(it.toLong()) }, valueRange = 0f..duration.coerceAtLeast(1).toFloat(), modifier = Modifier.weight(1f))
-                    Text(formatTime(duration), color = Color.White, fontSize = 12.sp)
+        if (brightnessMask > 0f) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = brightnessMask)))
+        }
+        if (controlsVisible && !locked) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .8f), Color.Transparent)))
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+                    PlayerIconButton(Icons.Outlined.ArrowBack, "返回", onClose)
+                    Text(displayVideoName(item.name), color = Color.White, fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1,
+                        overflow = TextOverflow.Ellipsis)
+                    PlayerIconButton(Icons.Outlined.ScreenRotation, "旋转屏幕", onOrientation)
+                    PlayerIconButton(Icons.Outlined.Lock, "锁定屏幕", onToggleLock)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Text("${speeds[speedIndex]}×", color = Color.White, modifier = Modifier.clickable { onSpeed() }.padding(10.dp))
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .8f))))
+                        .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 30.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                        Text(formatTime(current), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        PlayerProgressBar(
+                            progress = if (duration > 0L) (current.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
+                            modifier = Modifier.weight(1f),
+                            onSeek = { fraction ->
+                                current = (duration * fraction).toLong().coerceIn(0L, duration.coerceAtLeast(0L))
+                                player.seekTo(current)
+                            }
+                        )
+                        Text(formatTime(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { if (player.isPlaying) player.pause() else player.play() }, modifier = Modifier.size(48.dp)) {
+                            Icon(
+                                if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                contentDescription = if (isPlaying) "暂停" else "播放",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Box(
+                            Modifier.clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = .2f))
+                                .clickable { onSpeed() }
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
         }
-        if (locked) Text("点击此处解锁", color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).clip(CircleShape).background(Color.Black.copy(alpha = .55f)).clickable { onToggleLock() }.padding(horizontal = 20.dp, vertical = 12.dp))
+        if (locked && unlockVisible) {
+            Box(
+                Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape)
+                    .background(Color.Black.copy(alpha = .5f))
+                    .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
+                    .clickable { unlockVisible = false; onToggleLock() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+        }
+        if (centerMessage.isNotEmpty() && !locked) {
+            Box(
+                Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(alpha = .6f)).padding(horizontal = 25.dp, vertical = 15.dp)
+            ) {
+                Text(centerMessage, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(40.dp).clip(CircleShape)
+            .background(Color.White.copy(alpha = .2f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun PlayerProgressBar(progress: Float, modifier: Modifier = Modifier, onSeek: (Float) -> Unit) {
+    var widthPx by remember { mutableFloatStateOf(1f) }
+    Box(
+        modifier.height(30.dp).pointerInput(progress) {
+            widthPx = size.width.toFloat().coerceAtLeast(1f)
+            detectTapGestures { offset -> onSeek((offset.x / widthPx).coerceIn(0f, 1f)) }
+        }.pointerInput(progress) {
+            detectDragGestures(
+                onDragStart = { onSeek((it.x / size.width).coerceIn(0f, 1f)) },
+                onDrag = { change, _ -> change.consume(); onSeek((change.position.x / size.width).coerceIn(0f, 1f)) }
+            )
+        },
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = .3f)))
+        Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(2.dp)).background(ThemeTeal))
+        Box(
+            Modifier.offset(x = (widthPx.dp / 1.0f) * 0f).size(0.dp)
+        )
+        Box(
+            Modifier.align(Alignment.CenterStart)
+                .offset(x = (widthPx * progress.coerceIn(0f, 1f)).dp - 6.dp)
+                .size(12.dp).clip(CircleShape).background(Color.White)
+        )
     }
 }
 
