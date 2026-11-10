@@ -383,7 +383,9 @@ private fun FrameNativeApp(
                         }
                     }
                 }
-                BottomPillNavigation(page) { page = it; showFab = false }
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth()) {
+                    BottomPillNavigation(page) { page = it; showFab = false }
+                }
             }
             Column(
                 Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
