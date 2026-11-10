@@ -161,7 +161,7 @@ private val PageBg = Color(0xFFF5F5F7)
 private val MainText = Color(0xFF1A1A1A)
 private val ThemeTeal = Color(0xFF7FB5B1)
 private val MutedText = Color(0xFF888888)
-private val Glass = Color.White.copy(alpha = .88f)
+private val Glass = Color.White.copy(alpha = .85f)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, VIDEO_ACTIONS, RENAME, MOVE, NOTE, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
@@ -627,15 +627,23 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         MainPage.RECENT to FrameRecentIcon,
         MainPage.RECORDS to FrameRecordsIcon
     )
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp).height(56.dp).clip(RoundedCornerShape(28.dp)).background(Glass).padding(4.dp)) {
+    BoxWithConstraints(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
+            .height(56.dp)
+            .shadow(4.dp, RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(28.dp))
+            .background(Glass)
+            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(28.dp))
+            .padding(4.dp)
+    ) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "nav-indicator")
-        Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color(0xFFE9E9EB)))
+        Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
         Row(Modifier.fillMaxSize()) {
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().clickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
+                    Icon(icon, item.label, Modifier.size(19.dp), tint = MainText)
                     Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
             }
@@ -653,8 +661,12 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
         item {
             Header("首页", onSettings)
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
-                    .background(Glass).padding(horizontal = 10.dp, vertical = 15.dp),
+                Modifier.fillMaxWidth()
+                    .shadow(3.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Glass)
+                    .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 10.dp, vertical = 15.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -664,7 +676,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                 Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
                 Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h")
             }
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(25.dp))
         }
         stickyHeader {
             Box(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
@@ -930,8 +942,10 @@ private fun RecordsPage(
                 Modifier.fillMaxWidth()
                     .background(PageBg.copy(alpha = .95f))
                     .padding(bottom = 10.dp)
+                    .shadow(3.dp, RoundedCornerShape(20.dp))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Glass)
+                    .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
                     .padding(horizontal = 10.dp, vertical = 15.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
