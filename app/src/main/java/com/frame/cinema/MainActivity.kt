@@ -14,6 +14,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -33,6 +37,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -44,6 +49,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -56,6 +62,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -261,6 +268,7 @@ private fun FrameNativeApp(
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
+    val sheetBlur by animateDpAsState(if (sheet == SheetType.NONE) 0.dp else 5.dp, tween(300), label = "sheet-backdrop-blur")
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
     fun notify(message: String) { toast = message }
@@ -322,6 +330,7 @@ private fun FrameNativeApp(
     ) {
         if (playing == null) {
             Scaffold(
+                modifier = Modifier.blur(sheetBlur),
                 containerColor = PageBg,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 bottomBar = { BottomPillNavigation(page) { page = it; showFab = false } }
@@ -374,7 +383,7 @@ private fun FrameNativeApp(
                 }
             }
             Column(
-                Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -439,13 +448,40 @@ private fun FrameNativeApp(
             )
         }
 
-        if (sheet != SheetType.NONE) {
-            ModalBottomSheet(
-                onDismissRequest = { sheet = SheetType.NONE },
-                containerColor = PageBg,
-                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                scrimColor = Color.Black.copy(alpha = .4f)
+        AnimatedVisibility(
+            visible = sheet != SheetType.NONE,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Box(
+                Modifier.fillMaxSize()
+                    .background(Color.Black.copy(alpha = .4f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                    ) { sheet = SheetType.NONE }
             ) {
+                Column(
+                    Modifier.align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .background(PageBg)
+                        .verticalScroll(rememberScrollState())
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) { }
+                        .animateEnterExit(
+                            enter = slideInVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                            ) { it },
+                            exit = slideOutVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                            ) { it }
+                        )
+                        .padding(top = 25.dp, bottom = 40.dp)
+                ) {
                 when (sheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
                         SheetAction("从文件中选择视频") { importPicker.launch(arrayOf("video/*")) }
@@ -566,6 +602,7 @@ private fun FrameNativeApp(
                         SheetAction("删除播放记录", danger = true) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
                     SheetType.NONE -> Unit
+                }
                 }
             }
         }
@@ -1188,13 +1225,32 @@ private fun SheetContent(title: String, content: @Composable ColumnScope.() -> U
 
 @Composable
 private fun SheetHeading(title: String) {
-    Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp))
+    Text(
+        title,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        color = MainText,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 25.dp)
+    )
 }
 
 @Composable
 private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
-    Surface(Modifier.fillMaxWidth().padding(bottom = 10.dp).clickable(onClick = onClick), shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 1.dp) {
-        Text(text, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, modifier = Modifier.padding(17.dp))
+    Surface(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        Text(
+            text,
+            color = if (danger) Color(0xFFFF3B30) else MainText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(18.dp)
+        )
     }
 }
 
