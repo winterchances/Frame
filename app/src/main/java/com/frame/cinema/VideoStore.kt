@@ -31,7 +31,7 @@ data class VideoItem(
     val contentUri: Uri get() = Uri.parse(uri)
 }
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 1) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 2) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -54,13 +54,18 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             )""".trimIndent()
         )
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE watch_time_daily (day_key TEXT PRIMARY KEY NOT NULL, duration_ms INTEGER NOT NULL DEFAULT 0)")
         listOf("全部分类", "我的最爱").forEachIndexed { index, name ->
             val values = ContentValues().apply { put("name", name); put("position", index) }
             db.insert("categories", null, values)
         }
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS watch_time_daily (day_key TEXT PRIMARY KEY NOT NULL, duration_ms INTEGER NOT NULL DEFAULT 0)")
+        }
+    }
 
     @Synchronized fun allVideos(): List<VideoItem> = readableDatabase.rawQuery(
         "SELECT * FROM videos ORDER BY added_at DESC", null
@@ -108,6 +113,19 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             writableDatabase.setTransactionSuccessful()
         } finally { writableDatabase.endTransaction() }
     }
+
+    @Synchronized fun addWatchTime(dayKey: String, durationMs: Long) {
+        if (durationMs <= 0L) return
+        writableDatabase.execSQL(
+            "INSERT INTO watch_time_daily(day_key, duration_ms) VALUES(?, ?) ON CONFLICT(day_key) DO UPDATE SET duration_ms = duration_ms + excluded.duration_ms",
+            arrayOf(dayKey, durationMs)
+        )
+    }
+
+    @Synchronized fun watchTimeSince(firstDayKey: String): Long = readableDatabase.rawQuery(
+        "SELECT COALESCE(SUM(duration_ms), 0) FROM watch_time_daily WHERE day_key >= ?",
+        arrayOf(firstDayKey)
+    ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
 
     @Synchronized fun delete(id: Long) { writableDatabase.delete("videos", "id=?", arrayOf(id.toString())) }
     @Synchronized fun clear() { writableDatabase.delete("videos", null, null) }
