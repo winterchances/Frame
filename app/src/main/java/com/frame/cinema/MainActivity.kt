@@ -965,7 +965,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     }
                 }
             }
-            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).clickable(onClick = onMore), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFD0D0D0), modifier = Modifier.size(16.dp))
             }
         }
@@ -1345,7 +1345,7 @@ private fun PlayerIconButton(icon: ImageVector, description: String, onClick: ()
     Box(
         Modifier.size(40.dp).clip(CircleShape)
             .background(Color.White.copy(alpha = .2f))
-            .clickable(onClick = onClick),
+            .noRippleClickable(onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier.size(20.dp))
