@@ -1409,7 +1409,7 @@ private fun formatClock(ms: Long): String {
 @Composable
 private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.size(36.dp).clickable(onClick = onClick),
+        modifier = Modifier.size(36.dp).noRippleClickable(onClick),
         shape = CircleShape,
         color = Color.White,
         shadowElevation = 1.dp,
@@ -1455,7 +1455,7 @@ private fun Stat(label: String, value: String, unit: String) {
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
