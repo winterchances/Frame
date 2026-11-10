@@ -1,6 +1,8 @@
 name: Build Native Android APK
 
 on:
+  push:
+    branches: [ "parity-fixes" ]
   workflow_dispatch:
 
 permissions:
