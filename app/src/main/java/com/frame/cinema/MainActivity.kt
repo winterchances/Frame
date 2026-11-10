@@ -552,7 +552,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索视频")
-                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
+                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
                         videos.filter { it.name.contains(search, true) }.take(30).forEach { v ->
                             SheetAction(v.name) { sheet = SheetType.NONE; selected = v; playVideo(v) }
                         }
