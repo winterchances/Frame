@@ -710,7 +710,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
             Header("首页", onSettings)
             Row(
                 Modifier.fillMaxWidth()
-                    
+                    .shadow(1.dp, RoundedCornerShape(20.dp))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Glass)
                     .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -834,7 +834,7 @@ private fun LibraryPage(
                             Modifier.clickable { onCategory(value) },
                             shape = CircleShape,
                             color = if (category == value) ThemeTeal else Color.White,
-                            
+                            shadowElevation = if (category == value) 2.dp else 1.dp,
                         ) {
                             Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
@@ -926,7 +926,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     Row(
         modifier.fillMaxWidth().padding(bottom = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .shadow(1.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).clickable(onClick = onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
@@ -988,7 +988,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        
+                        .shadow(1.dp, RoundedCornerShape(20.dp))
                         .clip(RoundedCornerShape(20.dp))
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -1016,7 +1016,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
-                        
+                        .shadow(1.dp, RoundedCornerShape(20.dp))
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
                         .clickable { onEdit(video) }
