@@ -142,6 +142,12 @@ private fun FrameNativeApp(
     var sort by remember { mutableStateOf(SortMode.ADDED) }
     var allowBackground by remember { mutableStateOf(true) }
     var keepAwake by remember { mutableStateOf(true) }
+    val preferences = remember { context.getSharedPreferences("frame_preferences", android.content.Context.MODE_PRIVATE) }
+    LaunchedEffect(Unit) {
+        allowBackground = preferences.getBoolean("allow_background", true)
+        keepAwake = preferences.getBoolean("keep_awake", true)
+        onKeepAwake(keepAwake)
+    }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
     var isLandscape by remember { mutableStateOf(false) }
     var speedIndex by remember { mutableIntStateOf(0) }
@@ -202,7 +208,7 @@ private fun FrameNativeApp(
                                 onVideo = { selected = it; playing = it; onPlay(it) }
                             )
                             MainPage.LIBRARY -> LibraryPage(
-                                videos, categories, status, category, compact,
+                                when (sort) { SortMode.NAME -> videos.sortedBy { it.name.lowercase(Locale.getDefault()) }; else -> videos.sortedByDescending { it.addedAt } }, categories, status, category, compact,
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
@@ -289,8 +295,8 @@ private fun FrameNativeApp(
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
                         SheetHeading("设置")
                         Text("播放偏好", color = MutedText, fontSize = 13.sp)
-                        SettingRow("允许后台播放", allowBackground) { allowBackground = it }
-                        SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; onKeepAwake(it) }
+                        SettingRow("允许后台播放", allowBackground) { allowBackground = it; preferences.edit().putBoolean("allow_background", it).apply() }
+                        SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
                         SheetAction("清空全部本地数据", danger = true) { sheet = SheetType.CLEAR_DATA }
                         Spacer(Modifier.height(26.dp))
                     }
