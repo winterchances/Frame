@@ -1233,7 +1233,7 @@ private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 
 @Composable
 private fun SheetContent(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         SheetHeading(title); content()
     }
 }
