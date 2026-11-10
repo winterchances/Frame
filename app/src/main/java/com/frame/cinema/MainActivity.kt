@@ -268,25 +268,26 @@ private fun FrameNativeApp(
                             )
                         }
                     }
-                    Column(
-                        Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 18.dp),
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        AnimatedVisibility(showFab) {
-                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                FabAction(Icons.Outlined.Search, "搜索") { sheet = SheetType.SEARCH; showFab = false }
-                                FabAction(Icons.Outlined.VideoLibrary, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
-                            }
-                        }
-                        Surface(
-                            modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
-                            shape = CircleShape, color = Glass, shadowElevation = 8.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.Add, null, tint = MainText, modifier = Modifier.size(25.dp))
-                            }
-                        }
+                }
+            }
+            Column(
+                Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AnimatedVisibility(showFab) {
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        FabAction(Icons.Outlined.Search, "搜索") { sheet = SheetType.SEARCH; showFab = false }
+                        FabAction(Icons.Outlined.VideoLibrary, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
+                    }
+                }
+                val fabRotation by animateFloatAsState(if (showFab) 45f else 0f, tween(300), label = "fab-rotation")
+                Surface(
+                    modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
+                    shape = CircleShape, color = Glass, shadowElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Add, null, tint = MainText, modifier = Modifier.size(25.dp).rotate(fabRotation))
                     }
                 }
             }
@@ -478,7 +479,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         MainPage.RECENT to Icons.Outlined.History,
         MainPage.RECORDS to Icons.Outlined.Bookmarks
     )
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp).height(56.dp).clip(CircleShape).background(Glass).padding(4.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 62.dp, bottom = 16.dp).height(56.dp).clip(CircleShape).background(Glass).padding(4.dp)) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "nav-indicator")
@@ -550,7 +551,7 @@ private fun LibraryPage(
             (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             IconButton(onClick = onCategories) { Icon(Icons.Outlined.MoreHoriz, "分类管理") }
             IconButton(onClick = onSort) { Icon(Icons.Outlined.Sort, "排序") }
@@ -586,7 +587,7 @@ private fun LibraryPage(
 @Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             IconButton(onClick = onClear) { Icon(Icons.Outlined.DeleteOutline, "清空播放记录") }
         }
@@ -627,7 +628,7 @@ private fun RecordsPage(
     onEdit: (VideoItem) -> Unit
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             IconButton(onClick = onSearch) { Icon(Icons.Outlined.Search, "搜索观影感想") }
             IconButton(onClick = onSort) { Icon(Icons.Outlined.Sort, "记录排序") }
