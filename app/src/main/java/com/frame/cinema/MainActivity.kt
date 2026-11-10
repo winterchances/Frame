@@ -398,7 +398,7 @@ private fun FrameNativeApp(
                     }
             }
             Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
-                BottomPillNavigation(page, hazeState) { page = it; showFab = false }
+                BottomPillNavigation(page, hazeState, sheetBlur) { page = it; showFab = false }
             }
             Column(
                 Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
@@ -454,6 +454,7 @@ private fun FrameNativeApp(
                 Box(
                     Modifier.size(56.dp)
                         .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
+                        .hazeEffect(state = hazeState, style = HazeStyle(blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
@@ -712,7 +713,7 @@ private fun FrameNativeApp(
 }
 
 @Composable
-private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, onSelect: (MainPage) -> Unit) {
+private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onSelect: (MainPage) -> Unit) {
     val entries = listOf(
         MainPage.HOME to FrameHomeIcon,
         MainPage.LIBRARY to FrameLibraryIcon,
@@ -721,6 +722,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, onSele
     )
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
+            .blur(sheetBlur)
             .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
             .hazeEffect(state = hazeState, style = HazeStyle(blurRadius = 20.dp, noiseFactor = 0f))
