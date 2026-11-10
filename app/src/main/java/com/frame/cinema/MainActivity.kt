@@ -863,13 +863,16 @@ private fun NativePlayerOverlay(
     LaunchedEffect(player) {
         var lastPersistedAt = 0L
         var previousTick = SystemClock.elapsedRealtime()
+        var wasPlaying = player.isPlaying
         while (true) {
             current = player.currentPosition.coerceAtLeast(0L)
             if (player.duration > 0L) duration = player.duration
             val now = System.currentTimeMillis()
             val elapsedNow = SystemClock.elapsedRealtime()
             val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
-            if (player.isPlaying) onWatchTime(elapsed)
+            val playingNow = player.isPlaying
+            if (playingNow && wasPlaying) onWatchTime(elapsed)
+            wasPlaying = playingNow
             previousTick = elapsedNow
             if (now - lastPersistedAt >= 5000L) {
                 onProgress(current, duration)
