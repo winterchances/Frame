@@ -76,7 +76,8 @@ This document is derived from the immutable `main/index.html` source (83,881 cha
 
 - Persist video metadata, categories, status, progress, favorite, review, rating and custom cover.
 - Keep persistable Storage Access Framework URI permissions so imported files remain playable after restart.
-- Generate and persist real video thumbnails; use the same thumbnail in all relevant cards and player backdrop.
+- Generate and persist real video thumbnails; use the same thumbnail in all relevant cards and player backdrop. Read the actual media duration from the selected local URI during import, persist it, and refresh the UI when asynchronous thumbnail/metadata extraction finishes.
+- Do not seed demo videos or sample viewing records. The original starts with an empty database (`myCinemaDB || []`); its fixed Recent-page values `02:15:00` and `00:45:10` are display placeholders, not real records. Native UI must derive total duration and watched position from the imported file's actual duration and saved progress.
 - Keep playback position and duration accurate; do not use decorative placeholder thumbnails or fake play actions.
 - Use native Kotlin/Compose UI and Media3 playback. Do not wrap the old HTML in WebView.
 
