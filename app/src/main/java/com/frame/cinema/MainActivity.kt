@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,15 +14,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -31,6 +38,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -42,8 +50,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -52,7 +62,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -227,8 +239,10 @@ private fun FrameNativeApp(
     val context = LocalContext.current
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
+    var sheetKeyboardUp by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var videos by remember { mutableStateOf(repository.videos()) }
+    var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories()) }
     var status by remember { mutableStateOf("全部") }
     var category by remember { mutableStateOf("全部分类") }
@@ -257,8 +271,9 @@ private fun FrameNativeApp(
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
+    val sheetBlur by animateDpAsState(if (sheet == SheetType.NONE) 0.dp else 5.dp, tween(300), label = "sheet-backdrop-blur")
 
-    fun refresh() { videos = repository.videos(); categories = repository.categories() }
+    fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
     fun notify(message: String) { toast = message }
     fun playVideo(item: VideoItem) {
         speedIndex = 0
@@ -291,10 +306,35 @@ private fun FrameNativeApp(
     }
 
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
+    LaunchedEffect(sheet) { if (sheet == SheetType.NONE) sheetKeyboardUp = false }
 
-    Box(Modifier.fillMaxSize().background(PageBg)) {
+    Box(
+        Modifier.fillMaxSize().background(PageBg)
+            .pointerInput(page, sheet, playing) {
+                var horizontalDistance = 0f
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        if (sheet == SheetType.NONE && playing == null) {
+                            horizontalDistance += dragAmount
+                        }
+                    },
+                    onDragEnd = {
+                        if (sheet == SheetType.NONE && playing == null && kotlin.math.abs(horizontalDistance) > 50f) {
+                            val next = when {
+                                horizontalDistance < 0f -> MainPage.values().getOrNull(MainPage.values().indexOf(page) + 1)
+                                else -> MainPage.values().getOrNull(MainPage.values().indexOf(page) - 1)
+                            }
+                            if (next != null) { page = next; showFab = false }
+                        }
+                        horizontalDistance = 0f
+                    },
+                    onDragCancel = { horizontalDistance = 0f }
+                )
+            }
+    ) {
         if (playing == null) {
             Scaffold(
+                modifier = Modifier.blur(sheetBlur),
                 containerColor = PageBg,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 bottomBar = { BottomPillNavigation(page) { page = it; showFab = false } }
@@ -313,6 +353,7 @@ private fun FrameNativeApp(
                         when (target) {
                             MainPage.HOME -> HomePage(
                                 videos = videos,
+                                weeklyWatchTimeMs = weeklyWatchTimeMs,
                                 onSettings = { sheet = SheetType.SETTINGS },
                                 onVideo = { selected = it; playVideo(it) }
                             )
@@ -346,7 +387,7 @@ private fun FrameNativeApp(
                 }
             }
             Column(
-                Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -385,7 +426,7 @@ private fun FrameNativeApp(
                 },
                 onToggleControls = { controlsVisible = !controlsVisible },
                 onAutoHideControls = { controlsVisible = false },
-                onToggleLock = { locked = !locked },
+                onToggleLock = { locked = !locked; controlsVisible = !locked },
                 onSpeed = {
                     speedIndex = (speedIndex + 1) % speeds.size
                 },
@@ -404,17 +445,47 @@ private fun FrameNativeApp(
                 },
                 onProgress = { pos, duration ->
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
+                },
+                onWatchTime = { deltaMs ->
+                    playing?.let { repository.recordWatchTime(it.id, deltaMs) }
                 }
             )
         }
 
-        if (sheet != SheetType.NONE) {
-            ModalBottomSheet(
-                onDismissRequest = { sheet = SheetType.NONE },
-                containerColor = PageBg,
-                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                scrimColor = Color.Black.copy(alpha = .4f)
+        AnimatedVisibility(
+            visible = sheet != SheetType.NONE,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Box(
+                Modifier.fillMaxSize()
+                    .background(Color.Black.copy(alpha = .4f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                    ) { sheet = SheetType.NONE }
             ) {
+                Column(
+                    Modifier.align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .background(PageBg)
+                        .verticalScroll(rememberScrollState())
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) { }
+                        .animateEnterExit(
+                            enter = slideInVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                            ) { it },
+                            exit = slideOutVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                            ) { it }
+                        )
+                        .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
+                ) {
                 when (sheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
                         SheetAction("从文件中选择视频") { importPicker.launch(arrayOf("video/*")) }
@@ -451,7 +522,7 @@ private fun FrameNativeApp(
                             }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f).background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true, decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() })
+                            BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true, decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() })
                             TextButton(onClick = {
                                 val name = newCategory.trim()
                                 if (name.isNotEmpty() && name !in categories) {
@@ -463,10 +534,10 @@ private fun FrameNativeApp(
                     }
                     SheetType.RECORD_SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索观影记录")
-                        BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
+                        BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
                         videos.filter { (it.status == "watched" || it.progress >= 100f) && (recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true)) }
                             .take(30).forEach { video ->
-                                SheetAction(video.name) {
+                                SheetAction(displayVideoName(video.name)) {
                                     selected = video
                                     editReview = video.review
                                     editRating = video.rating
@@ -481,7 +552,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索视频")
-                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
+                        BasicTextField(search, { search = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (search.isEmpty()) Text("输入视频名称", color = MutedText); inner() })
                         videos.filter { it.name.contains(search, true) }.take(30).forEach { v ->
                             SheetAction(v.name) { sheet = SheetType.NONE; selected = v; playVideo(v) }
                         }
@@ -499,7 +570,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
-                        BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
+                        BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
                         SheetAction("保存") {
                             val newName = editName.trim()
                             if (newName.isEmpty()) notify("视频名称不能为空")
@@ -519,7 +590,7 @@ private fun FrameNativeApp(
                                 Text(if (n <= editRating) "★" else "☆", color = Color(0xFFFFB800), fontSize = 28.sp, modifier = Modifier.clickable { editRating = n })
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().heightIn(min = 110.dp).background(Color.White, RoundedCornerShape(14.dp)).padding(14.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的观影感想…", color = MutedText); inner() })
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.heightIn(min = 110.dp).background(Color.White, RoundedCornerShape(14.dp)).padding(14.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的观影感想…", color = MutedText); inner() })
                         SheetAction("保存记录") { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }
                         Spacer(Modifier.height(24.dp))
                     }
@@ -535,6 +606,7 @@ private fun FrameNativeApp(
                         SheetAction("删除播放记录", danger = true) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
                     SheetType.NONE -> Unit
+                }
                 }
             }
         }
@@ -554,7 +626,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         MainPage.RECENT to FrameRecentIcon,
         MainPage.RECORDS to FrameRecordsIcon
     )
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 62.dp, bottom = 16.dp).height(56.dp).clip(RoundedCornerShape(28.dp)).background(Glass).padding(4.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp).height(56.dp).clip(RoundedCornerShape(28.dp)).background(Glass).padding(4.dp)) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "nav-indicator")
@@ -571,7 +643,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
 }
 
 @Composable
-private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (VideoItem) -> Unit) {
+private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSettings: () -> Unit, onVideo: (VideoItem) -> Unit) {
     val continuing = videos.filter { it.progress > 0f && it.progress < 100f }.take(5)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
@@ -581,8 +653,7 @@ private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Glass).padding(horizontal = 15.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Stat("视频总数", videos.size.toString(), "个")
                 Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个")
-                val hours = videos.sumOf { it.durationMs * it.progress / 100.0 }.toLong() / 3600000
-                Stat("累计时长", hours.toString(), "h")
+                Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h")
             }
             SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded }
         }
@@ -595,9 +666,9 @@ private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (
                             Thumbnail(video, Modifier.fillMaxSize())
                             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)))
                             Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
-                                Text(video.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                Spacer(Modifier.height(8.dp))
-                                Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .35f))) {
+                                Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                                Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
                                     Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
                                 }
                             }
@@ -667,20 +738,19 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
             ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
         }
-        val history = videos.filter { it.progress > 0f || it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
-        if (history.isEmpty()) EmptyHint("暂无播放记录")
+        val recentItems = videos.sortedByDescending { it.addedAt }
+        if (recentItems.isEmpty()) EmptyHint("暂无播放记录")
         else LazyColumn {
-            val groups = history.groupBy { item ->
-                val today = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date())
-                val yesterday = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000))
-                val playedDate = SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(Date(item.lastPlayedAt))
-                when (playedDate) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
+            val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
+            val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
+            val groups = recentItems.groupBy { item ->
+                when (item.date) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
             }
             groups.forEach { (label, list) ->
                 stickyHeader {
                     Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF666666),
                         modifier = Modifier.fillMaxWidth().background(Color(0xF2F5F5F7))
-                            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp))
+                            .padding(top = 15.dp, bottom = 5.dp))
                 }
                 items(list, key = { it.id }) { video ->
                     RecentHistoryCard(video, onClick = { onVideo(video) }, onMore = { onMore(video) })
@@ -705,11 +775,17 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
         }
         Box(Modifier.weight(1f).height(84.dp)) {
             Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Text(video.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
+                Text(displayVideoName(video.name), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
                     lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("总时长  ${formatClock(video.durationMs)}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
-                    Text("已播放  ${formatClock(playedMs)}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Icon(FrameRecentIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Text(formatClock(video.durationMs), fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Icon(Icons.Outlined.PlayArrow, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Text("${formatClock(playedMs)} · ${video.date}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    }
                 }
             }
             Box(Modifier.align(Alignment.BottomEnd).size(24.dp).clickable(onClick = onMore), contentAlignment = Alignment.Center) {
@@ -746,7 +822,7 @@ private fun RecordsPage(
                     Row(Modifier.padding(15.dp), verticalAlignment = Alignment.Top) {
                         Box(Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex))) { Thumbnail(video, Modifier.fillMaxSize()) }
                         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(video.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MainText, maxLines = 2)
+                            Text(displayVideoName(video.name), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MainText, maxLines = 2)
                             Text("★".repeat(video.rating.coerceIn(0, 5)) + "☆".repeat(5 - video.rating.coerceIn(0, 5)), color = Color(0xFFFFB800), modifier = Modifier.padding(top = 5.dp))
                             Text(video.review.ifBlank { "点击添加你的观影感想…" }, color = if (video.review.isBlank()) Color.LightGray else Color(0xFF555555), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp), maxLines = 3)
                         }
@@ -762,15 +838,22 @@ private fun NativePlayerOverlay(
     item: VideoItem, player: Player, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
     onClose: () -> Unit, onToggleControls: () -> Unit, onAutoHideControls: () -> Unit, onToggleLock: () -> Unit,
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
-    onProgress: (Long, Long) -> Unit
+    onProgress: (Long, Long) -> Unit,
+    onWatchTime: (Long) -> Unit
 ) {
-    val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
-    var brightness by remember { mutableFloatStateOf(.5f) }
-    var volume by remember { mutableFloatStateOf(.5f) }
-    var seekDelta by remember { mutableFloatStateOf(0f) }
+    var brightnessMask by remember { mutableFloatStateOf(0f) }
+    var volume by remember { mutableFloatStateOf(player.volume) }
+    var unlockVisible by remember { mutableStateOf(false) }
+    var centerMessage by remember { mutableStateOf("") }
+    var dragMode by remember { mutableStateOf("none") }
+    var dragStartX by remember { mutableFloatStateOf(0f) }
+    var dragStartY by remember { mutableFloatStateOf(0f) }
+    var dragStartPosition by remember { mutableLongStateOf(0L) }
+    var dragStartVolume by remember { mutableFloatStateOf(player.volume) }
+    var dragStartBrightness by remember { mutableFloatStateOf(0f) }
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -782,15 +865,29 @@ private fun NativePlayerOverlay(
     }
     LaunchedEffect(player) {
         var lastPersistedAt = 0L
+        var previousTick = SystemClock.elapsedRealtime()
+        var wasPlaying = player.isPlaying
         while (true) {
-            current = player.currentPosition
-            if (player.duration > 0) duration = player.duration
+            current = player.currentPosition.coerceAtLeast(0L)
+            if (player.duration > 0L) duration = player.duration
             val now = System.currentTimeMillis()
+            val elapsedNow = SystemClock.elapsedRealtime()
+            val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
+            val playingNow = player.isPlaying
+            if (playingNow && wasPlaying) onWatchTime(elapsed)
+            wasPlaying = playingNow
+            previousTick = elapsedNow
             if (now - lastPersistedAt >= 5000L) {
                 onProgress(current, duration)
                 lastPersistedAt = now
             }
             delay(500)
+        }
+    }
+    LaunchedEffect(centerMessage) {
+        if (centerMessage.isNotEmpty()) {
+            delay(800)
+            centerMessage = ""
         }
     }
     LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
@@ -803,42 +900,80 @@ private fun NativePlayerOverlay(
 
     Box(
         Modifier.fillMaxSize().background(Color.Black)
-            .pointerInput(locked, speedIndex) {
+            .pointerInput(locked, controlsVisible, speedIndex, duration) {
                 detectTapGestures(
+                    onTap = {
+                        if (locked) {
+                            unlockVisible = !unlockVisible
+                        } else if (!controlsVisible) {
+                            onToggleControls()
+                        } else {
+                            if (player.isPlaying) player.pause() else player.play()
+                        }
+                    },
+                    onDoubleTap = { offset ->
+                        if (!locked) {
+                            val forward = offset.x > size.width / 2f
+                            val target = (player.currentPosition + if (forward) 10_000L else -10_000L)
+                                .coerceIn(0L, duration.coerceAtLeast(0L))
+                            player.seekTo(target)
+                            current = target
+                            centerMessage = if (forward) "快进 10s" else "快退 10s"
+                        }
+                    },
+                    onLongPress = {
+                        if (!locked) {
+                            player.setPlaybackParameters(PlaybackParameters(2f))
+                            centerMessage = "2.0x 播放中"
+                        }
+                    },
                     onPress = {
                         tryAwaitRelease()
                         if (!locked) player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex]))
-                    },
-                    onTap = { if (!locked) { if (player.isPlaying) player.pause() else player.play(); onToggleControls() } },
-                    onDoubleTap = { offset ->
-                        if (!locked) {
-                            val forward = offset.x > size.width / 2
-                            player.seekTo((player.currentPosition + if (forward) 10000 else -10000).coerceAtLeast(0))
-                        }
-                    },
-                    onLongPress = { if (!locked) player.setPlaybackParameters(PlaybackParameters(2f)) }
+                    }
                 )
             }
-            .pointerInput(locked) {
+            .pointerInput(locked, duration) {
                 detectDragGestures(
-                    onDragEnd = { seekDelta = 0f },
-                    onDrag = { change, drag ->
+                    onDragStart = { start ->
                         if (!locked) {
+                            dragStartX = start.x
+                            dragStartY = start.y
+                            dragStartPosition = player.currentPosition.coerceAtLeast(0L)
+                            dragStartVolume = player.volume
+                            dragStartBrightness = brightnessMask
+                            dragMode = when {
+                                start.x < size.width / 3f -> "brightness"
+                                start.x > size.width * 2f / 3f -> "volume"
+                                else -> "progress"
+                            }
+                        }
+                    },
+                    onDragEnd = {
+                        if (dragMode == "progress") player.seekTo(current)
+                        dragMode = "none"
+                    },
+                    onDragCancel = { dragMode = "none" },
+                    onDrag = { change, _ ->
+                        if (!locked && dragMode != "none") {
                             change.consume()
-                            if (abs(drag.x) > abs(drag.y)) {
-                                seekDelta += drag.x / size.width * (duration.coerceAtLeast(60000))
-                                player.seekTo((player.currentPosition + seekDelta.toLong()).coerceIn(0, duration.coerceAtLeast(0)))
-                                seekDelta = 0f
-                            } else if (change.position.x < size.width * .33f) {
-                                brightness = (brightness - drag.y / size.height).coerceIn(.02f, 1f)
-                                (context as? Activity)?.window?.let { window ->
-                                    val params = window.attributes
-                                    params.screenBrightness = brightness
-                                    window.attributes = params
+                            val dx = change.position.x - dragStartX
+                            val dy = change.position.y - dragStartY
+                            when {
+                                dragMode == "brightness" && abs(dy) > abs(dx) -> {
+                                    brightnessMask = (dragStartBrightness - dy / 200f).coerceIn(0f, .8f)
+                                    centerMessage = "亮度 ${((1f - brightnessMask) * 100).toInt()}%"
                                 }
-                            } else if (change.position.x > size.width * .67f) {
-                                volume = (volume - drag.y / size.height).coerceIn(0f, 1f)
-                                player.volume = volume
+                                dragMode == "volume" && abs(dy) > abs(dx) -> {
+                                    volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
+                                    player.volume = volume
+                                    centerMessage = "音量 ${(volume * 100).toInt()}%"
+                                }
+                                dragMode == "progress" && abs(dx) > abs(dy) -> {
+                                    val changeMs = (dx / (size.width * .8f) * duration.coerceAtLeast(0L)).toLong()
+                                    current = (dragStartPosition + changeMs).coerceIn(0L, duration.coerceAtLeast(0L))
+                                    centerMessage = "${formatTime(current)} / ${formatTime(duration)}"
+                                }
                             }
                         }
                     }
@@ -846,35 +981,139 @@ private fun NativePlayerOverlay(
             }
     ) {
         AndroidView(
-            factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; layoutParams = ViewGroup.LayoutParams(-1, -1) } },
+            factory = { ctx -> PlayerView(ctx).apply {
+                this.player = player
+                useController = false
+                layoutParams = ViewGroup.LayoutParams(-1, -1)
+            } },
             modifier = Modifier.fillMaxSize(),
             update = { it.player = player }
         )
-        if (controlsVisible) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .22f)))
-            Row(Modifier.fillMaxWidth().align(Alignment.TopStart).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("‹", color = Color.White, fontSize = 32.sp, modifier = Modifier.clickable { onClose() }.padding(end = 18.dp))
-                Text(item.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
-                Text(if (locked) "已锁定" else "锁屏", color = Color.White, modifier = Modifier.clickable { onToggleLock() }.padding(10.dp))
-                Text("⛶", color = Color.White, modifier = Modifier.clickable { onOrientation() }.padding(10.dp))
-            }
-            Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(46.dp)) {
-                Text("↶10", color = Color.White, fontSize = 18.sp, modifier = Modifier.clickable { player.seekTo((player.currentPosition - 10000).coerceAtLeast(0)) })
-                Text(if (isPlaying) "Ⅱ" else "▶", color = Color.White, fontSize = 36.sp, modifier = Modifier.clickable { if (player.isPlaying) player.pause() else player.play() })
-                Text("10↷", color = Color.White, fontSize = 18.sp, modifier = Modifier.clickable { player.seekTo(player.currentPosition + 10000) })
-            }
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 18.dp, vertical = 20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(formatTime(current), color = Color.White, fontSize = 12.sp)
-                    Slider(value = if (duration > 0) current.toFloat().coerceIn(0f, duration.toFloat()) else 0f, onValueChange = { player.seekTo(it.toLong()) }, valueRange = 0f..duration.coerceAtLeast(1).toFloat(), modifier = Modifier.weight(1f))
-                    Text(formatTime(duration), color = Color.White, fontSize = 12.sp)
+        if (brightnessMask > 0f) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = brightnessMask)))
+        }
+        AnimatedVisibility(
+            visible = controlsVisible && !locked,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .8f), Color.Transparent)))
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+                    PlayerIconButton(Icons.Outlined.ArrowBack, "返回", onClose)
+                    Text(displayVideoName(item.name), color = Color.White, fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1,
+                        overflow = TextOverflow.Ellipsis)
+                    PlayerIconButton(Icons.Outlined.ScreenRotation, "旋转屏幕", onOrientation)
+                    PlayerIconButton(Icons.Outlined.Lock, "锁定屏幕", onToggleLock)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Text("${speeds[speedIndex]}×", color = Color.White, modifier = Modifier.clickable { onSpeed() }.padding(10.dp))
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .8f))))
+                        .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 30.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                        Text(formatTime(current), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        PlayerProgressBar(
+                            progress = if (duration > 0L) (current.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
+                            modifier = Modifier.weight(1f),
+                            onSeek = { fraction ->
+                                current = (duration * fraction).toLong().coerceIn(0L, duration.coerceAtLeast(0L))
+                                player.seekTo(current)
+                            }
+                        )
+                        Text(formatTime(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { if (player.isPlaying) player.pause() else player.play() }, modifier = Modifier.size(48.dp)) {
+                            Icon(
+                                if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                contentDescription = if (isPlaying) "暂停" else "播放",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Box(
+                            Modifier.clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = .2f))
+                                .clickable { onSpeed() }
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
         }
-        if (locked) Text("点击锁图标解锁", color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).padding(20.dp))
+        AnimatedVisibility(
+            visible = locked && unlockVisible,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Box(
+                Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape)
+                    .background(Color.Black.copy(alpha = .5f))
+                    .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
+                    .clickable { unlockVisible = false; onToggleLock() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+        }
+        AnimatedVisibility(
+            visible = centerMessage.isNotEmpty() && !locked,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200))
+        ) {
+            Box(
+                Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(alpha = .6f)).padding(horizontal = 25.dp, vertical = 15.dp)
+            ) {
+                Text(centerMessage, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(40.dp).clip(CircleShape)
+            .background(Color.White.copy(alpha = .2f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun PlayerProgressBar(progress: Float, modifier: Modifier = Modifier, onSeek: (Float) -> Unit) {
+    BoxWithConstraints(
+        modifier.height(30.dp).pointerInput(Unit) {
+            detectTapGestures { offset -> onSeek((offset.x / size.width).coerceIn(0f, 1f)) }
+        }.pointerInput(Unit) {
+            detectDragGestures(
+                onDragStart = { onSeek((it.x / size.width).coerceIn(0f, 1f)) },
+                onDrag = { change, _ -> change.consume(); onSeek((change.position.x / size.width).coerceIn(0f, 1f)) }
+            )
+        },
+        contentAlignment = Alignment.CenterStart
+    ) {
+        val fraction = progress.coerceIn(0f, 1f)
+        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = .3f)))
+        Box(Modifier.fillMaxWidth(fraction).height(4.dp).clip(RoundedCornerShape(2.dp)).background(ThemeTeal))
+        Box(
+            Modifier.align(Alignment.CenterStart).offset(x = maxWidth * fraction - 6.dp)
+                .size(12.dp).clip(CircleShape).background(Color.White)
+        )
     }
 }
 
@@ -882,6 +1121,10 @@ private fun formatTime(ms: Long): String {
     val seconds = (ms / 1000).coerceAtLeast(0)
     return String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
 }
+
+private fun displayVideoName(name: String): String = name.replace(
+    Regex("\\.(mp4|mkv|avi|mov|wmv|flv|webm)$", RegexOption.IGNORE_CASE), ""
+)
 
 private fun formatClock(ms: Long): String {
     if (ms <= 0L) return "--:--:--"
@@ -946,7 +1189,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            Text(video.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(displayVideoName(video.name), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
@@ -964,7 +1207,7 @@ private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -
             }
             if (video.isFav) Text("♥", color = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(7.dp))
         }
-        Text(video.name, fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        Text(displayVideoName(video.name), fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -973,7 +1216,7 @@ private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
     val bitmap = remember(video.thumbPath) {
         video.thumbPath?.let { path -> runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull() }
     }
-    if (bitmap != null) Image(bitmap, contentDescription = video.name, modifier = modifier)
+    if (bitmap != null) Image(bitmap, contentDescription = displayVideoName(video.name), modifier = modifier)
     else Box(modifier, contentAlignment = Alignment.Center) { Text("▶", color = Color.White.copy(alpha = .7f), fontSize = 28.sp) }
 }
 
@@ -993,20 +1236,39 @@ private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 
 @Composable
 private fun SheetContent(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         SheetHeading(title); content()
     }
 }
 
 @Composable
 private fun SheetHeading(title: String) {
-    Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp))
+    Text(
+        title,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        color = MainText,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 25.dp)
+    )
 }
 
 @Composable
 private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
-    Surface(Modifier.fillMaxWidth().padding(bottom = 10.dp).clickable(onClick = onClick), shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 1.dp) {
-        Text(text, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, modifier = Modifier.padding(17.dp))
+    Surface(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        Text(
+            text,
+            color = if (danger) Color(0xFFFF3B30) else MainText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(18.dp)
+        )
     }
 }
 

@@ -122,28 +122,52 @@ class NativeLibraryRepository(context: Context) {
         val item = store.allVideos().firstOrNull { it.id == id }
         ThumbnailStore.delete(app, item?.thumbPath)
         store.delete(id)
+        store.clearWatchTimeForVideo(id)
     }
 
     fun clearRecent() {
         store.updateAll(store.allVideos().map {
             it.copy(progress = 0f, status = "all", lastPlayedAt = 0L)
         })
+        store.clearWatchTime()
     }
 
     fun deleteRecent(id: Long) {
         store.allVideos().firstOrNull { it.id == id }?.let {
             store.upsert(it.copy(progress = 0f, status = "all", lastPlayedAt = 0L))
         }
+        store.clearWatchTimeForVideo(id)
     }
 
     fun clearAll() {
         store.allVideos().forEach { ThumbnailStore.delete(app, it.thumbPath) }
         store.clear()
+        store.clearWatchTime()
         ThumbnailStore.clear(app)
         store.saveCategories(listOf("全部分类", "我的最爱"))
     }
 
     fun saveCategories(names: List<String>) = store.saveCategories(names)
+
+    fun recordWatchTime(videoId: Long, durationMs: Long, timestamp: Long = System.currentTimeMillis()) {
+        if (durationMs <= 0L) return
+        val dayKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(timestamp))
+        store.addWatchTime(videoId, dayKey, durationMs)
+    }
+
+    fun weeklyWatchTimeMs(now: Long = System.currentTimeMillis()): Long {
+        val calendar = java.util.Calendar.getInstance().apply {
+            timeInMillis = now
+            firstDayOfWeek = java.util.Calendar.MONDAY
+            set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val firstDay = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+        return store.watchTimeSince(firstDay)
+    }
 
     fun updatePlayback(id: Long, positionMs: Long, durationMs: Long, ended: Boolean = false) {
         val item = store.allVideos().firstOrNull { it.id == id } ?: return
