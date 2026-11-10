@@ -309,7 +309,7 @@ private fun FrameNativeApp(
         Modifier.fillMaxSize().background(PageBg)
             .pointerInput(page, sheet, playing) {
                 var horizontalDistance = 0f
-                androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
                         if (sheet == SheetType.NONE && playing == null) {
                             horizontalDistance += dragAmount
