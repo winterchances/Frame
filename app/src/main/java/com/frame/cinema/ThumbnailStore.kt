@@ -8,7 +8,30 @@ import java.io.File
 import java.io.FileOutputStream
 
 /** Persistent thumbnail/cover files; the database stores only their private file paths. */
+data class VideoMediaDetails(val thumbnailPath: String?, val durationMs: Long)
+
 object ThumbnailStore {
+    fun createVideoMetadata(context: Context, uri: Uri, videoId: Long): VideoMediaDetails {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(context, uri)
+            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L
+            val frame = retriever.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                ?: retriever.getFrameAtTime(0)
+            val path = if (frame != null) {
+                val target = File(directory(context), "$videoId.jpg")
+                FileOutputStream(target).use { frame.compress(Bitmap.CompressFormat.JPEG, 78, it) }
+                frame.recycle()
+                target.absolutePath
+            } else null
+            VideoMediaDetails(path, duration)
+        } catch (_: Exception) {
+            VideoMediaDetails(null, 0L)
+        } finally {
+            runCatching { retriever.release() }
+        }
+    }
     private fun directory(context: Context): File =
         File(context.filesDir, "video-thumbnails").apply { mkdirs() }
 
