@@ -539,7 +539,7 @@ private fun FrameNativeApp(
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
                         Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
-                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))) {
+                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
                             SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
                             Box(Modifier.fillMaxWidth().padding(start = 20.dp).height(1.dp).background(Color(0xFFF0F0F0)))
                             SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
@@ -1026,7 +1026,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
-                        .shadow(1.dp, RoundedCornerShape(20.dp))
+                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
                         .noRippleClickable { onEdit(video) }
