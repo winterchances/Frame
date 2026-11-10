@@ -170,14 +170,14 @@ private fun FrameNativeApp(
     fun notify(message: String) { toast = message }
 
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        val count = repository.importUris(uris)
+        val count = repository.importUris(uris) { refresh() }
         refresh()
         notify("已导入 $count 个视频")
         sheet = SheetType.NONE
     }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            val count = repository.importFolder(uri)
+            val count = repository.importFolder(uri) { refresh() }
             refresh()
             notify("已扫描并导入 $count 个视频")
         }
@@ -539,7 +539,14 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
                 item { Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(vertical = 10.dp)) }
                 items(list, key = { it.id }) { video ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f)) { VideoRow(video, "${video.progress.roundToInt()}% · ${video.size}", { onVideo(video) }) }
+                        Box(Modifier.weight(1f)) {
+                            val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
+                            VideoRow(
+                                video,
+                                "时长 ${formatClock(video.durationMs)} · 已播放 ${formatClock(playedMs)}",
+                                { onVideo(video) }
+                            )
+                        }
                         IconButton(onClick = { onMore(video) }) { Icon(Icons.Outlined.MoreVert, "更多") }
                     }
                 }
@@ -689,6 +696,15 @@ private fun NativePlayerOverlay(
 private fun formatTime(ms: Long): String {
     val seconds = (ms / 1000).coerceAtLeast(0)
     return String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+}
+
+private fun formatClock(ms: Long): String {
+    if (ms <= 0L) return "--:--:--"
+    val seconds = ms / 1000
+    return String.format(
+        Locale.getDefault(), "%02d:%02d:%02d",
+        seconds / 3600, (seconds % 3600) / 60, seconds % 60
+    )
 }
 
 @Composable
