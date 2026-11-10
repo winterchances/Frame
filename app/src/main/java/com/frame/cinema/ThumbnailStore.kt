@@ -30,14 +30,15 @@ object ThumbnailStore {
         }
     }
 
-    fun saveCustomCover(context: Context, source: Uri, videoId: Long): String? = try {
-        val target = File(directory(context), "$videoId.jpg")
-        context.contentResolver.openInputStream(source)?.use { input ->
-            target.outputStream().use { output -> input.copyTo(output) }
-        } ?: return null
-        target.absolutePath
-    } catch (_: Exception) {
-        null
+    fun saveCustomCover(context: Context, source: Uri, videoId: Long): String? {
+        return try {
+            val target = File(directory(context), "$videoId.jpg")
+            val input = context.contentResolver.openInputStream(source) ?: return null
+            input.use { stream -> target.outputStream().use { output -> stream.copyTo(output) } }
+            target.absolutePath
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun delete(context: Context, path: String?) {
