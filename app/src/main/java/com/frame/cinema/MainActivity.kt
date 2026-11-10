@@ -697,11 +697,11 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
-        Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
+        Box(Modifier.offset(x = offset).width(slot - 2.dp).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
         Row(Modifier.fillMaxSize()) {
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(icon, item.label, Modifier.size(19.dp), tint = MainText)
+                    Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
                     Spacer(Modifier.height(2.dp))
                     Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
