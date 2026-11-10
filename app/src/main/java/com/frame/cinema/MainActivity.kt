@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -238,6 +239,7 @@ private fun FrameNativeApp(
     val context = LocalContext.current
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
+    var sheetKeyboardUp by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
@@ -304,6 +306,7 @@ private fun FrameNativeApp(
     }
 
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
+    LaunchedEffect(sheet) { if (sheet == SheetType.NONE) sheetKeyboardUp = false }
 
     Box(
         Modifier.fillMaxSize().background(PageBg)
@@ -481,7 +484,7 @@ private fun FrameNativeApp(
                                 animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
                             ) { it }
                         )
-                        .padding(top = 25.dp, bottom = 40.dp)
+                        .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
                 ) {
                 when (sheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
@@ -519,7 +522,7 @@ private fun FrameNativeApp(
                             }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f).background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true, decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() })
+                            BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true, decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() })
                             TextButton(onClick = {
                                 val name = newCategory.trim()
                                 if (name.isNotEmpty() && name !in categories) {
@@ -531,7 +534,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.RECORD_SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索观影记录")
-                        BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
+                        BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
                         videos.filter { (it.status == "watched" || it.progress >= 100f) && (recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true)) }
                             .take(30).forEach { video ->
                                 SheetAction(displayVideoName(video.name)) {
@@ -567,7 +570,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
-                        BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
+                        BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
                         SheetAction("保存") {
                             val newName = editName.trim()
                             if (newName.isEmpty()) notify("视频名称不能为空")
@@ -587,7 +590,7 @@ private fun FrameNativeApp(
                                 Text(if (n <= editRating) "★" else "☆", color = Color(0xFFFFB800), fontSize = 28.sp, modifier = Modifier.clickable { editRating = n })
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().heightIn(min = 110.dp).background(Color.White, RoundedCornerShape(14.dp)).padding(14.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的观影感想…", color = MutedText); inner() })
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.heightIn(min = 110.dp).background(Color.White, RoundedCornerShape(14.dp)).padding(14.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的观影感想…", color = MutedText); inner() })
                         SheetAction("保存记录") { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }
                         Spacer(Modifier.height(24.dp))
                     }
