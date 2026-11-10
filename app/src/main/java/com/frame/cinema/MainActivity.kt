@@ -921,13 +921,10 @@ private fun RecordsPage(
     onSort: () -> Unit,
     onEdit: (VideoItem) -> Unit
 ) {
-    LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
+    LazyColumn(Modifier.fillMaxSize()) {
         item {
             Row(
-                Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp),
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -938,31 +935,38 @@ private fun RecordsPage(
             }
         }
         stickyHeader {
-            Row(
-                Modifier.fillMaxWidth()
-                    .background(PageBg.copy(alpha = .95f))
-                    .padding(bottom = 10.dp)
-                    .shadow(3.dp, RoundedCornerShape(20.dp))
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Glass)
-                    .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 10.dp, vertical = 15.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Stat("已看完", videos.size.toString(), "部")
-                Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
-                Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
+            Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 10.dp)
+                        .shadow(3.dp, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Glass)
+                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Stat("已看完", videos.size.toString(), "部")
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
+                }
             }
         }
+        item { Spacer(Modifier.height(10.dp)) }
         if (videos.isEmpty()) {
-            item { EmptyHint("暂无已看完的视频") }
+            item {
+                EmptyHint("暂无已看完的视频")
+                Spacer(Modifier.height(20.dp))
+            }
         } else {
             items(videos, key = { it.id }) { video ->
                 Column(
                     Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
                         .shadow(3.dp, RoundedCornerShape(20.dp))
                         .clip(RoundedCornerShape(20.dp))
@@ -1005,8 +1009,8 @@ private fun RecordsPage(
                     val hasReview = video.review.isNotBlank()
                     Row(
                         Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
                             .height(androidx.compose.foundation.layout.IntrinsicSize.Min)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(Color(0xFFF9F9FB))
                     ) {
                         Box(
