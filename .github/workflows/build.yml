@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Prepare Web Directory
+      run: |
+        mkdir www
+        mv index.html www/
+
+    - name: Install Capacitor & Assets
+      run: |
+        npm init -y
+        npm install @capacitor/core @capacitor/cli @capacitor/android
+        npm install @capacitor/assets
+        # 下面这行就是修改App名字的地方！把"私人影院"换成你喜欢的名字
+        npx cap init "影匣" "com.mycine.app" --web-dir=www
+        npx cap add android
+
+    - name: Generate App Icons
+      run: |
+        npx capacitor-assets generate --android
+
+    - name: Build APK with Gradle
+      run: |
+        npx cap sync
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: MyCinema-App
+        path: android/app/build/outputs/apk/debug/app-debug.apk
