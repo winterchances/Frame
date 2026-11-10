@@ -52,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -447,7 +446,6 @@ private fun FrameNativeApp(
                 )
                 Surface(
                     modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
-                    shape = CircleShape, color = Glass, shadowElevation = 4.dp,
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -526,7 +524,7 @@ private fun FrameNativeApp(
                         ) { }
                         .animateEnterExit(
                             enter = slideInVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, 1f, 1f))
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
                             ) { it },
                             exit = slideOutVertically(
                                 animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, 1f, 1f))
@@ -677,7 +675,6 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
             .height(56.dp)
-            .shadow(4.dp, RoundedCornerShape(28.dp))
             .clip(RoundedCornerShape(28.dp))
             .background(Glass)
             .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(28.dp))
@@ -709,7 +706,6 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
             Header("首页", onSettings)
             Row(
                 Modifier.fillMaxWidth()
-                    .shadow(3.dp, RoundedCornerShape(20.dp))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Glass)
                     .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -737,7 +733,6 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                     continuing.forEach { video ->
                         Box(
                             Modifier.width(280.dp).height(160.dp)
-                                .shadow(8.dp, RoundedCornerShape(20.dp))
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(PosterBrush(video.bgIndex))
                                 .clickable { onVideo(video) }
@@ -833,7 +828,6 @@ private fun LibraryPage(
                             Modifier.clickable { onCategory(value) },
                             shape = CircleShape,
                             color = if (category == value) ThemeTeal else Color.White,
-                            shadowElevation = if (category == value) 3.dp else 1.dp
                         ) {
                             Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
@@ -925,7 +919,6 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     Row(
         modifier.fillMaxWidth().padding(bottom = 12.dp)
-            .shadow(3.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).clickable(onClick = onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
@@ -987,8 +980,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        .shadow(3.dp, RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp))
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
                         .padding(horizontal = 10.dp, vertical = 15.dp),
@@ -1015,8 +1007,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
-                        .shadow(3.dp, RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
                         .clickable { onEdit(video) }
                         .padding(15.dp)
@@ -1388,7 +1379,6 @@ private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Un
         modifier = Modifier.size(36.dp).clickable(onClick = onClick),
         shape = CircleShape,
         color = Color.White,
-        shadowElevation = 1.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, description, Modifier.size(20.dp), tint = Color(0xFF333333))
@@ -1429,7 +1419,6 @@ private fun Stat(label: String, value: String, unit: String) {
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(Color.White).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
@@ -1491,7 +1480,6 @@ private fun EmptyHint(text: String) {
 
 @Composable
 private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Surface(shape = CircleShape, color = ThemeTeal, shadowElevation = 5.dp, modifier = Modifier.size(48.dp).clickable(onClick = onClick)) {
         Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = Color.White) }
     }
 }
@@ -1521,7 +1509,6 @@ private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Un
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        shadowElevation = 1.dp
     ) {
         Text(
             text,
