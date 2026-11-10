@@ -1,5 +1,6 @@
 package com.frame.cinema
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -592,6 +593,12 @@ private fun NativePlayerOverlay(
         }
     }
     LaunchedEffect(speedIndex) { player.setPlaybackSpeed(speeds[speedIndex]) }
+    LaunchedEffect(controlsVisible, isPlaying) {
+        if (controlsVisible && isPlaying && !locked) {
+            delay(3000)
+            controlsVisible = false
+        }
+    }
 
     Box(
         Modifier.fillMaxSize().background(Color.Black)
@@ -619,6 +626,11 @@ private fun NativePlayerOverlay(
                                 seekDelta = 0f
                             } else if (change.position.x < size.width * .33f) {
                                 brightness = (brightness - drag.y / size.height).coerceIn(.02f, 1f)
+                                (context as? Activity)?.window?.let { window ->
+                                    val params = window.attributes
+                                    params.screenBrightness = brightness
+                                    window.attributes = params
+                                }
                             } else if (change.position.x > size.width * .67f) {
                                 volume = (volume - drag.y / size.height).coerceIn(0f, 1f)
                                 player.volume = volume
