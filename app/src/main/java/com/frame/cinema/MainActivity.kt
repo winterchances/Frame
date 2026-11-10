@@ -90,7 +90,12 @@ private val FrameLibraryIcon: ImageVector = ImageVector.Builder("FrameLibrary", 
 }.build()
 private val FrameRecentIcon: ImageVector = ImageVector.Builder("FrameRecent", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(12f, 2f); arcTo(10f, 10f, 0f, true, true, 12f, 22f); arcTo(10f, 10f, 0f, true, true, 12f, 2f); close()
+        moveTo(12f, 2f)
+        cubicTo(17.52f, 2f, 22f, 6.48f, 22f, 12f)
+        cubicTo(22f, 17.52f, 17.52f, 22f, 12f, 22f)
+        cubicTo(6.48f, 22f, 2f, 17.52f, 2f, 12f)
+        cubicTo(2f, 6.48f, 6.48f, 2f, 12f, 2f)
+        close()
         moveTo(12f, 6f); lineTo(12f, 12f); lineTo(16f, 14f)
     }
 }.build()
