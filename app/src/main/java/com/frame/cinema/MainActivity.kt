@@ -513,7 +513,7 @@ private fun FrameNativeApp(
                     Modifier.align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
-                        .shadow(5.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
                         .verticalScroll(rememberScrollState())
@@ -536,7 +536,7 @@ private fun FrameNativeApp(
                         SheetAction("从文件中选择视频") { importPicker.launch(arrayOf("video/*")) }
                         SheetAction("扫描整个文件夹") { folderPicker.launch(null) }
                     }
-                    SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
+                    SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
                         Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))) {
@@ -546,12 +546,12 @@ private fun FrameNativeApp(
                         }
                         Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))) {
-                            Row(Modifier.fillMaxWidth().height(56.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                                 Text(">", color = MutedText)
                             }
                             Box(Modifier.fillMaxWidth().padding(start = 20.dp).height(1.dp).background(Color(0xFFF0F0F0)))
-                            Row(Modifier.fillMaxWidth().height(56.dp).noRippleClickable { sheet = SheetType.CLEAR_DATA }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { sheet = SheetType.CLEAR_DATA }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
                         }
@@ -745,7 +745,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
         if (continueExpanded) {
             if (continuing.isEmpty()) item { EmptyHint("暂无观看记录") }
             else item {
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 2.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                     continuing.forEach { video ->
                         Box(
                             Modifier.width(280.dp).height(160.dp)
@@ -1563,7 +1563,7 @@ private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Un
 
 @Composable
 private fun SettingRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(51.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = MainText, fontSize = 16.sp, modifier = Modifier.weight(1f))
         Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ThemeTeal else Color(0xFFE0E0E0)).noRippleClickable { onChecked(!checked) }) {
             val knobOffset by animateDpAsState(if (checked) 20.dp else 2.dp, tween(300), label = "setting-switch")
