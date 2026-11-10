@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -676,11 +677,24 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                     continuing.forEach { video ->
                         Box(
-                            Modifier.width(280.dp).height(160.dp).clip(RoundedCornerShape(20.dp))
-                                .background(PosterColor(video.bgIndex)).clickable { onVideo(video) }
+                            Modifier.width(280.dp).height(160.dp)
+                                .shadow(8.dp, RoundedCornerShape(20.dp))
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(PosterBrush(video.bgIndex))
+                                .clickable { onVideo(video) }
                         ) {
                             Thumbnail(video, Modifier.fillMaxSize())
-                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)))
+                            Box(
+                                Modifier.fillMaxSize().background(
+                                    Brush.verticalGradient(
+                                        colorStops = arrayOf(
+                                            0f to Color.Transparent,
+                                            .4f to Color.Black.copy(alpha = .2f),
+                                            1f to Color.Black.copy(alpha = .8f)
+                                        )
+                                    )
+                                )
+                            )
                             Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
                                 Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                                 Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
@@ -818,7 +832,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             .background(Color.White).clickable(onClick = onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
-        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex))) {
+        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
         }
         Box(Modifier.weight(1f).height(84.dp)) {
@@ -905,7 +919,7 @@ private fun RecordsPage(
                         Box(
                             Modifier.size(75.dp, 100.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(PosterColor(video.bgIndex))
+                                .background(PosterBrush(video.bgIndex))
                         ) { Thumbnail(video, Modifier.fillMaxSize()) }
                         Column(
                             Modifier.weight(1f),
@@ -1306,7 +1320,7 @@ private fun Stat(label: String, value: String, unit: String) {
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(Color.White).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
@@ -1321,7 +1335,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 @Composable
 private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit) {
     Column(Modifier.combinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterColor(video.bgIndex))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
@@ -1338,11 +1352,27 @@ private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
     val bitmap = remember(video.thumbPath) {
         video.thumbPath?.let { path -> runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull() }
     }
-    if (bitmap != null) Image(bitmap, contentDescription = displayVideoName(video.name), modifier = modifier)
-    else Box(modifier, contentAlignment = Alignment.Center) { Text("▶", color = Color.White.copy(alpha = .7f), fontSize = 28.sp) }
+    if (bitmap != null) {
+        Image(
+            bitmap,
+            contentDescription = displayVideoName(video.name),
+            modifier = modifier,
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Box(modifier)
+    }
 }
 
-private fun PosterColor(index: Int): Color = listOf(Color(0xFF667EEA), Color(0xFF6D9C9A), Color(0xFF4FACFE), Color(0xFF8E7CC3))[((index - 1).coerceAtLeast(0)) % 4]
+private fun PosterBrush(index: Int): Brush {
+    val colors = when (((index - 1).coerceAtLeast(0)) % 4) {
+        0 -> listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+        1 -> listOf(Color(0xFFF093FB), Color(0xFFF5576C))
+        2 -> listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))
+        else -> listOf(Color(0xFF43E97B), Color(0xFF38F9D7))
+    }
+    return Brush.linearGradient(colors)
+}
 
 @Composable
 private fun EmptyHint(text: String) {
