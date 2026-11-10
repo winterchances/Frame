@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>私人影院 App (完全体)</title>
+    <style>
+        /* ========================================= */
+        /* 🌟 全局变量与基础设置 🌟 */
+        /* ========================================= */
+        :root {
+            --bg-color: #F5F5F7; 
+            --text-main: #1A1A1A;      
+            --theme-color: #7FB5B1; 
+            
+            --glass-bg: rgba(255, 255, 255, 0.85); 
+            --glass-border: rgba(0, 0, 0, 0.05); 
+            --nav-active-bg: rgba(0, 0, 0, 0.06); 
+            --nav-shadow: 0 4px 16px rgba(0, 0, 0, 0.06); 
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        * { 
+            margin: 0; padding: 0; 
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        body { background-color: #E0E0E0; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--text-main); overflow: hidden; }
+        
+        ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; background: transparent !important; }
+
+        .phone-frame {
+            width: 375px; height: 812px; 
+            background-color: var(--bg-color);
+            border-radius: 40px; overflow: hidden; position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            overscroll-behavior-x: none; touch-action: pan-y;
+        }
+        /* 手机端全屏自适应 */
+        @media (max-width: 500px) {
+            body { background-color: var(--bg-color); }
+            .phone-frame {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0; 
+                box-shadow: none;
+            }
+        }
+
+        /* 页面滑动容器核心逻辑 */
+        .pages-wrapper { display: flex; width: 100%; height: 100%; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
+        .page-view { width: 100%; flex-shrink: 0; position: relative; height: 100%; overflow-y: auto; overflow-x: hidden; padding-bottom: 100px; }
+        .padding-wrapper { padding: 0 20px; }
+        
+        /* 顶部大标题通用 */
+        .header { padding: 60px 0 15px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 30px; font-weight: 800; letter-spacing: 0.5px; }
+        .header-actions { display: flex; gap: 10px; }
+        
+        /* 核心修复：全局右上角图标加粗、尺寸统一 */
+        .action-icon { width: 36px; height: 36px; background: #FFF; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: var(--card-shadow); cursor: pointer; color: #333; transition: transform 0.2s; }
+        .action-icon:active { transform: scale(0.9); }
+        .action-icon svg { width: 20px; height: 20px; stroke-width: 2.2; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ========================================= */
+        /* 🌟 吸顶效果核心代码 🌟 */
+        /* ========================================= */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(245, 245, 247, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+            margin: 0 -20px;
+            padding: 0 20px;
+        }
+        .sticky-header .tabs-primary { padding-top: 10px; }
+
+        /* 通用数据面板 */
+        .stats-dashboard { margin-bottom: 25px; padding: 15px 10px; background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; box-shadow: var(--card-shadow); display: flex; justify-content: space-between; align-items: center; }
+        .stat-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .stat-title { font-size: 12px; color: #888; margin-bottom: 4px; font-weight: 500;}
+        .stat-value { font-size: 22px; font-weight: 800; color: #111; }
+        .stat-value span { font-size: 12px; font-weight: 500; color: #888; margin-left: 2px;}
+        .stat-divider { width: 1px; height: 30px; background: rgba(0,0,0,0.05); }
+
+        /* 通用折叠标题 */
+        .section-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 12px; cursor: pointer; }
+        .section-title-text { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+        .section-title-text::before { content: ''; width: 4px; height: 16px; background: var(--theme-color); border-radius: 2px;}
+        .toggle-icon { width: 20px; height: 20px; color: #888; transition: transform 0.3s ease; }
+        .list-wrapper { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.3s ease-out; }
+        .list-wrapper.collapsed { grid-template-rows: 0fr; }
+        .list-inner { overflow: hidden; } 
+
+        /* 渐变背景通用类 */
+        .poster-bg-1 { width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .poster-bg-2 { width: 100%; height: 100%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .poster-bg-3 { width: 100%; height: 100%; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .poster-bg-4 { width: 100%; height: 100%; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        
+        /* 强制图片绝对定位铺满 */
+        .real-thumb { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;}
+
+        /* ========================================= */
+        /* 🌟 1. 首页样式 🌟 */
+        /* ========================================= */
+        .hero-box { width: 100%; overflow: hidden; padding: 2px 0 20px 0; }
+        .hero-slider { display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; }
+        .hero-card { position: relative; width: 280px; flex-shrink: 0; height: 160px; border-radius: 20px; overflow: hidden; scroll-snap-align: start; box-shadow: 0 8px 20px rgba(0,0,0,0.1); cursor: pointer; background: #eee;}
+        .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; z-index: 1;}
+        .hero-title { color: #FFF; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+        .hero-sub { color: rgba(255,255,255,0.8); font-size: 12px; margin-bottom: 8px;}
+        .hero-progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;}
+        .hero-progress-bar { height: 100%; background: var(--theme-color); border-radius: 2px;}
+
+        .recent-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px;}
+        .video-card { background: #FFFFFF; border-radius: 16px; padding: 12px; display: flex; gap: 15px; align-items: center; box-shadow: var(--card-shadow); cursor: pointer; transition: transform 0.2s; position: relative; }
+        .video-card:active { transform: scale(0.98); }
+        .thumb-box { width: 100px; height: 65px; border-radius: 10px; position: relative; flex-shrink: 0; overflow: hidden; background: #eee;}
+        .card-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 6px;}
+        .card-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #222;}
+        .card-sub { font-size: 12px; color: #888; }
+
+        /* ========================================= */
+        /* 🌟 2. 片库样式 🌟 */
+        /* ========================================= */
+        .tabs-primary { display: flex; gap: 25px; padding: 15px 0 10px; }
+        .tab-primary { font-size: 16px; font-weight: 500; color: #888; padding-bottom: 6px; cursor: pointer; position: relative; transition: color 0.3s; }
+        .tab-primary.active { color: var(--text-main); font-weight: 700; }
+        .tab-primary.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: var(--theme-color); border-radius: 2px; }
+
+        .category-box { width: 100%; overflow: hidden; margin-bottom: 15px; padding: 2px 0 10px 0; }
+        .h-scroll-categories { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; }
+        .category-pill { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; scroll-snap-align: start; cursor: pointer; background: #FFFFFF; color: #666; box-shadow: var(--card-shadow); transition: all 0.2s; flex-shrink: 0; }
+        .category-pill.active { background: var(--theme-color); color: #FFF; box-shadow: 0 4px 12px rgba(127, 181, 177, 0.3); }
+
+        /* 默认3列网格，通过 class 控制 */
+        .grid-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-top: 5px; transition: all 0.3s ease; }
+        .grid-layout.normal { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+        
+        .video-poster-card { display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: transform 0.2s; position: relative;}
+        .video-poster-card:active { transform: scale(0.96); }
+        .poster-img-box { position: relative; width: 100%; padding-bottom: 140%; border-radius: 12px; overflow: hidden; box-shadow: var(--card-shadow); background: #eee;}
+        .grid-layout.normal .poster-img-box { border-radius: 16px; }
+        
+        .poster-progress-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.2); z-index: 1;}
+        .poster-progress-bar { height: 100%; background: var(--theme-color); }
+        .video-title { font-size: 12px; font-weight: 600; color: #222; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+        .grid-layout.normal .video-title { font-size: 13px; -webkit-line-clamp: 2; }
+
+        /* 核心修复：彻底删除片库的三个点，保持极致纯净 */
+
+        /* ========================================= */
+        /* 🌟 3. 最近样式 🌟 */
+        /* ========================================= */
+        .sticky-time-group {
+            position: sticky;
+            top: 0;
+            background-color: rgba(245, 245, 247, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+            margin: 0 -20px;
+            padding: 15px 20px 5px;
+            font-size: 15px; font-weight: 700; color: #666;
+        }
+        .recent-time-list { display: flex; flex-direction: column; gap: 12px; padding-top: 10px; padding-bottom: 15px;}
+        .time-video-card { background: #FFFFFF; border-radius: 16px; padding: 12px; display: flex; gap: 15px; align-items: flex-start; box-shadow: var(--card-shadow); cursor: pointer; transition: transform 0.2s; position: relative;}
+        .time-video-card:active { transform: scale(0.98); }
+        .time-thumb-box { width: 120px; height: 84px; border-radius: 10px; flex-shrink: 0; overflow: hidden; position: relative; background: #eee;}
+        .time-card-info { flex: 1; overflow: hidden; height: 84px; display: flex; flex-direction: column; padding-right: 24px; /* 为右下角留出空间 */ }
+        .time-card-title { font-size: 15px; font-weight: 500; color: #222; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+        
+        .time-card-meta { display: flex; flex-direction: column; gap: 4px; margin-top: auto; }
+        .meta-row { font-size: 11px; color: #999; display: flex; align-items: center; gap: 5px; }
+        /* 重绘极小、极浅的图标 */
+        .meta-row svg { width: 12px; height: 12px; stroke: #B0B0B0; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* 核心修复：最近卡片的右下角三点图标 */
+        .time-more-btn { 
+            position: absolute; right: 8px; bottom: 8px; 
+            width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer;
+        }
+        .time-more-btn svg { width: 16px; height: 16px; fill: #D0D0D0; }
+
+
+        /* ========================================= */
+        /* 🌟 4. 记录样式 🌟 */
+        /* ========================================= */
+        .record-list { display: flex; flex-direction: column; gap: 16px; padding-top: 10px;}
+        .record-card { background: #FFFFFF; border-radius: 20px; padding: 15px; box-shadow: var(--card-shadow); cursor: pointer; transition: transform 0.2s; }
+        .record-card:active { transform: scale(0.98); }
+        .record-header { display: flex; gap: 15px; margin-bottom: 12px; align-items: center;}
+        .record-thumb-box { width: 75px; height: 100px; border-radius: 12px; flex-shrink: 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; background: #eee;}
+        .record-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px;}
+        .record-title { font-size: 16px; font-weight: 700; color: #222; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+        .record-date { font-size: 12px; color: #999; }
+        .record-stars { color: #FFB800; font-size: 14px; letter-spacing: 2px; }
+        .record-note { background: #F9F9FB; border-radius: 12px; padding: 12px; font-size: 13px; color: #555; line-height: 1.6; border-left: 3px solid var(--theme-color); position: relative; }
+        .record-note.empty { color: #B0B0B0; font-style: italic; border-left-color: #E0E0E0; }
+
+        /* ========================================= */
+        /* 🌟 全局固定层 🌟 */
+        /* ========================================= */
+        .bottom-container { position: absolute; bottom: 16px; left: 0; width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; pointer-events: none; z-index: 10; }
+        .pill-nav { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 28px; padding: 4px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--nav-shadow); width: calc(100% - 62px); height: 56px; pointer-events: auto; position: relative; }
+        .nav-indicator { position: absolute; top: 4px; left: 4px; height: calc(100% - 8px); width: calc(25% - 2px); background: var(--nav-active-bg); border-radius: 24px; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); z-index: 0; }
+        .nav-item { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; color: #111111; position: relative; z-index: 1; transition: color 0.2s ease; }
+        .nav-item svg { width: 20px; height: 20px; stroke-width: 1.8; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round;}
+        .nav-text { font-size: 10px; font-weight: 500; }
+
+        .fab-wrapper { position: absolute; right: 16px; bottom: 16px; z-index: 20; display: flex; flex-direction: column-reverse; align-items: center; gap: 12px; }
+        .fab-main { width: 56px; height: 56px; border-radius: 50%; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: var(--nav-shadow); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fab-main.active { transform: rotate(45deg); }
+        .fab-main svg { width: 20px; height: 20px; stroke: #333; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none;}
+        .fab-sub-container { display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+        .fab-sub { width: 48px; height: 48px; border-radius: 50%; background: var(--theme-color); box-shadow: 0 4px 12px rgba(127, 181, 177, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; opacity: 0; transform: translateY(20px) scale(0.5); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fab-sub svg { width: 20px; height: 20px; stroke: #FFF; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none;}
+        .fab-wrapper.open .fab-sub-container { pointer-events: auto; }
+        .fab-wrapper.open .fab-sub { opacity: 1; transform: translateY(0) scale(1); }
+        .fab-wrapper.open .fab-sub:nth-child(1) { transition-delay: 0.05s; } 
+        .fab-wrapper.open .fab-sub:nth-child(2) { transition-delay: 0.1s; }
+
+        /* ========================================= */
+        /* 🌟 二级菜单面板 & 三级菜单 & Toast 🌟 */
+        /* ========================================= */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 100; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .overlay.show { opacity: 1; visibility: visible; pointer-events: auto; }
+
+        .bottom-sheet {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: var(--bg-color); border-radius: 30px 30px 0 0;
+            z-index: 101; padding: 25px 20px 40px;
+            transform: translateY(100%); visibility: hidden;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.3s;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+            max-height: 85vh; overflow-y: auto; 
+        }
+        .bottom-sheet.show { transform: translateY(0); visibility: visible;}
+        .bottom-sheet.keyboard-up { padding-bottom: 400px; } 
+        
+        .sheet-title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 25px; }
+        
+        .action-list { display: flex; flex-direction: column; gap: 12px; }
+        .action-item { background: #FFFFFF; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 500; text-align: center; box-shadow: var(--card-shadow); cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; }
+        .action-item:active { background: #F0F0F0; }
+        .action-item.delete { color: #FF3B30; }
+        .import-item { background: #FFFFFF; border-radius: 16px; padding: 18px; box-shadow: var(--card-shadow); cursor: pointer; font-size: 16px; font-weight: 500; margin-bottom: 12px;}
+
+        .btn-confirm { width: 100%; background: var(--theme-color); color: #FFF; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;}
+
+        .star-rating { display: flex; justify-content: center; gap: 15px; font-size: 32px; color: #E0E0E0; margin-bottom: 20px; cursor: pointer; user-select: none;}
+        .star-rating .star { transition: transform 0.2s, color 0.2s; }
+        .star-rating .star:active { transform: scale(1.2); }
+        .star-rating .star.active { color: #FFB800; }
+
+        .write-note-input, .rename-input {
+            width: 100%; height: 120px; background: #FFFFFF; border: 1px solid rgba(0,0,0,0.05); 
+            border-radius: 16px; padding: 15px; font-size: 15px; outline: none; box-shadow: var(--card-shadow);
+            resize: none; margin-bottom: 20px; font-family: inherit; line-height: 1.5;
+        }
+        .rename-input { height: auto; }
+        .write-note-input:focus, .rename-input:focus { border-color: var(--theme-color); }
+
+        .category-manager-input { display: flex; gap: 12px; margin-bottom: 12px; align-items: stretch;}
+        .category-manager-input input { flex: 1; height: 48px; background: #FFF; border: none; border-radius: 12px; padding: 0 15px; font-size: 15px; outline: none; box-shadow: var(--card-shadow); margin-bottom: 0;}
+        .category-manager-input button { background: var(--theme-color); color: #FFF; border: none; padding: 0 20px; height: 48px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px;}
+        
+        .existing-categories { display: flex; flex-direction: column; gap: 12px; }
+        .cat-row { background: #FFF; height: 48px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: var(--card-shadow); font-size: 15px; font-weight: 500; box-sizing: border-box;}
+        .cat-del { color: #FF3B30; font-size: 13px; cursor: pointer; }
+
+        .move-cat-list { display: flex; flex-direction: column; gap: 12px; }
+        .move-cat-item { background: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--card-shadow); cursor: pointer; font-size: 16px; font-weight: 500; }
+        .move-cat-item:active { background: #F0F0F0; }
+
+        .toast { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); color: #FFF; padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 200; pointer-events: none; backdrop-filter: blur(10px); }
+        .toast.show { opacity: 1; visibility: visible; }
+
+        /* 核心修复：设置菜单标题外置与圆角 */
+        .settings-group-title { font-size: 13px; color: #888; margin: 20px 0 8px 10px; font-weight: 600;}
+        .settings-group { border-radius: 16px; overflow: hidden; margin-bottom: 10px; background: #FFF; box-shadow: var(--card-shadow); }
+        .settings-item { background: #FFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; font-size: 16px; }
+        .settings-item:last-of-type { border-bottom: none; }
+        .switch { width: 44px; height: 24px; background: #E0E0E0; border-radius: 12px; position: relative; cursor: pointer; transition: 0.3s; }
+        .switch.on { background: var(--theme-color); }
+        .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #FFF; border-radius: 50%; transition: 0.3s; }
+        .switch.on::after { transform: translateX(20px); }
+
+        /* ========================================= */
+        /* 🌟 专属：全屏视频播放器 🌟 */
+        /* ========================================= */
+        .player-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; display: none; flex-direction: column; background: #000; overflow: hidden; user-select: none; }
+        .player-overlay.show { display: flex; }
+        
+        .bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(50px) brightness(0.4); transform: scale(1.2); z-index: 0; }
+        .video-element { width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 1;}
+
+        .gesture-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex;}
+        .gesture-left, .gesture-right { flex: 1; height: 100%; }
+
+        .player-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; opacity: 1; transition: opacity 0.3s;}
+        .player-ui.hide { opacity: 0; }
+        .player-ui * { pointer-events: auto; }
+
+        .player-top { position: absolute; top: 0; left: 0; width: 100%; padding: 40px 20px 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); display: flex; align-items: center; gap: 15px; color: #FFF; }
+        .player-top .title { flex: 1; font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .player-icon-btn { width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);}
+        .player-icon-btn svg { width: 20px; height: 20px; stroke: #FFF; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round;}
+
+        .player-bottom { position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 20px 30px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: #FFF; display: flex; flex-direction: column; gap: 10px; }
+        
+        .progress-container { display: flex; align-items: center; gap: 15px; font-size: 12px; font-weight: 500;}
+        .progress-bar-wrap { flex: 1; height: 30px; display: flex; align-items: center; cursor: pointer; touch-action: none;}
+        .progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; position: relative; }
+        .progress-current { position: absolute; top: 0; left: 0; height: 100%; background: var(--theme-color); border-radius: 2px; width: 0%; }
+        .progress-thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #FFF; border-radius: 50%; display: block;}
+
+        .bottom-controls { display: flex; justify-content: space-between; align-items: center;}
+        .play-btn { width: 48px; height: 48px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
+        .play-btn svg { width: 32px; height: 32px; fill: #FFF; }
+        .speed-btn { font-size: 14px; font-weight: 600; padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer;}
+
+        .center-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); color: #FFF; padding: 15px 25px; border-radius: 12px; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 10; }
+        .brightness-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; pointer-events: none; z-index: 2;}
+        .player-overlay.landscape { width: 100vh; height: 100vw; transform: rotate(90deg) translateY(-100vw); transform-origin: top left; position: fixed; top: 0; left: 0;}
+
+        /* 锁屏按钮 */
+        .unlock-btn {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 60px; height: 60px; background: rgba(0,0,0,0.5); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; color: #FFF; z-index: 10; cursor: pointer;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .unlock-btn.show { opacity: 1; visibility: visible; }
+        .unlock-btn svg { width: 24px; height: 24px; fill: #FFF;}
+    </style>
+</head>
+<body>
+
+<input type="file" id="albumSelector" accept="video/*" multiple style="display: none;" onchange="handleFileSelect(event)">
+<input type="file" id="folderSelector" accept="video/*" webkitdirectory directory multiple style="display: none;" onchange="handleFileSelect(event)">
+<input type="file" id="coverSelector" accept="image/*" style="display: none;" onchange="handleCoverSelect(event)">
+
+<div class="phone-frame" id="appFrame">
+
+    <div class="pages-wrapper" id="pagesWrapper">
+        
+        <!-- 1. 首页 -->
+        <div class="page-view" id="view-home">
+            <div class="padding-wrapper">
+                <div class="header">
+                    <h1>首页</h1>
+                    <div class="header-actions">
+                        <div class="action-icon" onclick="openSettings()">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-dashboard">
+                    <div class="stat-box"><div class="stat-title">视频总数</div><div class="stat-value" id="uiTotal">0 <span>个</span></div></div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-box"><div class="stat-title">已看完</div><div class="stat-value" id="uiWatched">0 <span>个</span></div></div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-box"><div class="stat-title">本周时长</div><div class="stat-value" id="uiTime">0 <span>h</span></div></div>
+                </div>
+                
+                <div class="section" id="section-hero">
+                    <div class="sticky-header">
+                        <div class="section-header" onclick="toggleSection('hero')">
+                            <div class="section-title-text">继续观看</div>
+                            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="list-wrapper" id="wrapper-hero">
+                        <div class="list-inner">
+                            <div class="hero-box">
+                                <div class="hero-slider" id="uiHeroList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section" id="section-recent">
+                    <div class="sticky-header">
+                        <div class="section-header" onclick="toggleSection('recent')">
+                            <div class="section-title-text">最近添加</div>
+                            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="list-wrapper" id="wrapper-recent">
+                        <div class="list-inner">
+                            <div class="recent-list" id="uiRecentList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 片库 -->
+        <div class="page-view" id="view-library">
+            <div class="padding-wrapper">
+                <div class="header">
+                    <h1>片库</h1>
+                    <div class="header-actions">
+                        <div class="action-icon" onclick="openCategorySheet()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        </div>
+                        <div class="action-icon" onclick="openSortSheet()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="20" x2="12" y2="4"></line><polyline points="6 10 12 4 18 10"></polyline></svg>
+                        </div>
+                        <div class="action-icon" onclick="openGridSheet()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sticky-header">
+                    <div class="tabs-primary" id="statusTabs">
+                        <div class="tab-primary active" onclick="switchTab('all', this)">全部</div>
+                        <div class="tab-primary" onclick="switchTab('playing', this)">在看</div>
+                        <div class="tab-primary" onclick="switchTab('watched', this)">已看</div>
+                    </div>
+                    <div class="category-box">
+                        <div class="h-scroll-categories" id="uiCategoryBar"></div>
+                    </div>
+                </div>
+
+                <div class="grid-layout" id="videoGrid"></div>
+            </div>
+        </div>
+
+        <!-- 3. 最近 -->
+        <div class="page-view" id="view-time">
+            <div class="padding-wrapper">
+                <div class="header">
+                    <h1>最近</h1>
+                    <div class="header-actions">
+                        <div class="action-icon" onclick="openClearRecentSheet()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="uiRecentTimeline"></div>
+            </div>
+        </div>
+
+        <!-- 4. 记录 -->
+        <div class="page-view" id="view-record">
+            <div class="padding-wrapper">
+                <div class="header">
+                    <h1>记录</h1>
+                    <div class="header-actions">
+                        <div class="action-icon" onclick="openSearchPage('搜索你的观影感想...')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </div>
+                        <div class="action-icon" onclick="openRecordSortSheet()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="20" x2="12" y2="4"></line><polyline points="6 10 12 4 18 10"></polyline></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sticky-header">
+                    <div class="stats-dashboard" style="margin-bottom: 10px;">
+                        <div class="stat-box"><div class="stat-title">已看完</div><div class="stat-value" id="uiRecWatched">0 <span>部</span></div></div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-box"><div class="stat-title">累计时长</div><div class="stat-value" id="uiRecTime">0 <span>h</span></div></div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-box"><div class="stat-title">写下感想</div><div class="stat-value" id="uiRecNote">0 <span>篇</span></div></div>
+                    </div>
+                </div>
+                
+                <div class="record-list" id="uiRecordList"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-container">
+        <div class="pill-nav" id="navBar">
+            <div class="nav-indicator" id="navIndicator"></div>
+            <div class="nav-item active" data-index="0" onclick="goToPage(0)">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <div class="nav-text">首页</div>
+            </div>
+            <div class="nav-item" data-index="1" onclick="goToPage(1)">
+                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.5"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>
+                <div class="nav-text">片库</div>
+            </div>
+            <div class="nav-item" data-index="2" onclick="goToPage(2)">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <div class="nav-text">最近</div>
+            </div>
+            <div class="nav-item" data-index="3" onclick="goToPage(3)">
+                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <div class="nav-text">记录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮菜单 -->
+    <div class="fab-wrapper" id="fabMenu">
+        <div class="fab-main" onclick="toggleFab(event)">
+            <svg viewBox="0 0 24 24"><line x1="5" y1="8" x2="19" y2="8"></line><line x1="5" y1="16" x2="19" y2="16"></line></svg>
+        </div>
+        <div class="fab-sub-container">
+            <div class="fab-sub" onclick="openSearchPage('搜索本地视频...')"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+            <div class="fab-sub" onclick="openImportSheet()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+        </div>
+    </div>
+
+    <!-- ================= 二级/三级菜单与全局提示 ================= -->
+    <div class="overlay" id="globalOverlay" onclick="closeAllSecondary()"></div>
+    <div class="toast" id="globalToast">操作成功</div>
+
+    <!-- 搜索页 -->
+    <div class="bottom-sheet" id="searchPage">
+        <div class="sheet-title">搜索</div>
+        <input type="text" class="rename-input" id="searchInput" placeholder="输入关键字..." style="height:50px; margin-bottom:10px;">
+        <div class="action-list">
+            <div class="action-item" onclick="closeAllSecondary()">完成搜索</div>
+        </div>
+    </div>
+
+    <!-- 导入菜单 -->
+    <div class="bottom-sheet" id="importSheet">
+        <div class="sheet-title">导入本地视频</div>
+        <div class="import-item" onclick="document.getElementById('albumSelector').click()">从相册选择视频</div>
+        <div class="import-item" onclick="document.getElementById('folderSelector').click()">从文件夹导入</div>
+        <button class="btn-confirm" onclick="closeAllSecondary()">取消</button>
+    </div>
+
+    <!-- 视频操作面板 -->
+    <div class="bottom-sheet" id="actionSheet">
+        <div class="sheet-title" id="actionSheetTitle">操作</div>
+        <div class="action-list" id="actionSheetList"></div>
+    </div>
+
+    <!-- 排序 & 网格 -->
+    <div class="bottom-sheet" id="sortSheet">
+        <div class="sheet-title">视频排序</div>
+        <div class="action-list">
+            <div class="action-item" onclick="sortVideos('time'); closeAllSecondary(); showToast('已按时间排序')">按添加时间排序</div>
+            <div class="action-item" onclick="sortVideos('name'); closeAllSecondary(); showToast('已按名称排序')">按文件名排序</div>
+        </div>
+    </div>
+    <div class="bottom-sheet" id="recordSortSheet">
+        <div class="sheet-title">记录排序</div>
+        <div class="action-list">
+            <div class="action-item" onclick="sortRecords('time'); closeAllSecondary(); showToast('已按时间排序')">按看完时间排序</div>
+            <div class="action-item" onclick="sortRecords('score'); closeAllSecondary(); showToast('已按评分排序')">按我的评分排序</div>
+        </div>
+    </div>
+    <div class="bottom-sheet" id="gridSheet">
+        <div class="sheet-title">视图模式</div>
+        <div class="action-list">
+            <div class="action-item" onclick="applyGrid('normal'); closeAllSecondary();">2列大图 (舒适)</div>
+            <div class="action-item" onclick="applyGrid('compact'); closeAllSecondary();">3列小图 (紧凑)</div>
+        </div>
+    </div>
+
+    <!-- 分类管理与重命名 -->
+    <div class="bottom-sheet" id="categorySheet">
+        <div class="sheet-title">管理我的分类</div>
+        <div class="category-manager-input">
+            <input type="text" id="newCatName" placeholder="输入新分类名称...">
+            <button onclick="createCategory()">创建</button>
+        </div>
+        <div class="existing-categories" id="existingCategories"></div>
+    </div>
+
+    <div class="bottom-sheet" id="renameSheet">
+        <div class="sheet-title">重命名视频</div>
+        <input type="text" class="rename-input" id="renameInput" placeholder="请输入新名称">
+        <button class="btn-confirm" onclick="saveRename()">确认修改</button>
+    </div>
+
+    <!-- 移动分类 -->
+    <div class="bottom-sheet" id="moveCategorySheet">
+        <div class="sheet-title">移动至分类</div>
+        <div class="move-cat-list" id="moveCatList"></div>
+    </div>
+
+    <!-- 写影评 -->
+    <div class="bottom-sheet" id="writeNoteSheet">
+        <div class="sheet-title">编辑观影记录</div>
+        <div class="star-rating" id="starSelector">
+            <span class="star" onclick="setRating(1)">★</span>
+            <span class="star" onclick="setRating(2)">★</span>
+            <span class="star" onclick="setRating(3)">★</span>
+            <span class="star" onclick="setRating(4)">★</span>
+            <span class="star" onclick="setRating(5)">★</span>
+        </div>
+        <textarea class="write-note-input" id="noteInput" placeholder="写下你此刻的观影感受..."></textarea>
+        <button class="btn-confirm" onclick="saveNote()">保存记录</button>
+    </div>
+
+    <!-- 单条记录删除确认 -->
+    <div class="bottom-sheet" id="deleteRecentRecordSheet">
+        <div class="sheet-title">删除记录</div>
+        <div class="action-list">
+            <div class="action-item" onclick="closeAllSecondary()">取消</div>
+            <div class="action-item delete" onclick="confirmDeleteRecentRecord()">确定删除此条播放记录？</div>
+        </div>
+    </div>
+
+    <!-- 清空最近记录确认 -->
+    <div class="bottom-sheet" id="clearRecentSheet">
+        <div class="sheet-title">清空播放记录</div>
+        <div class="action-list">
+            <div class="action-item" onclick="closeAllSecondary()">取消</div>
+            <div class="action-item delete" onclick="confirmClearRecent()">清空所有播放进度（保留视频）</div>
+        </div>
+    </div>
+
+    <!-- 清空所有数据确认 -->
+    <div class="bottom-sheet" id="clearDataSheet">
+        <div class="sheet-title">清空所有数据</div>
+        <div class="action-list">
+            <div class="action-item" onclick="closeAllSecondary()">取消</div>
+            <div class="action-item delete" onclick="confirmClearData()">确认清空全部视频和记录</div>
+        </div>
+    </div>
+
+    <!-- 设置菜单 -->
+    <div class="bottom-sheet" id="settingsSheet">
+        <div class="sheet-title">设置</div>
+        
+        <div class="settings-group-title">播放偏好</div>
+        <div class="settings-group">
+            <div class="settings-item">
+                <span>允许后台播放</span>
+                <div class="switch on" id="switchBg" onclick="toggleSetting('bg')"></div>
+            </div>
+            <div class="settings-item">
+                <span>保持屏幕常亮</span>
+                <div class="switch on" id="switchWake" onclick="toggleSetting('wake')"></div>
+            </div>
+        </div>
+        
+        <div class="settings-group-title">数据与隐私</div>
+        <div class="settings-group">
+            <div class="settings-item" onclick="showToast('数据仅保存在本地')">
+                <span>关于与隐私</span>
+                <span style="color:#888;">></span>
+            </div>
+            <div class="settings-item" style="color: #FF3B30;" onclick="openClearDataSheet()">
+                <span>清空所有数据</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 全屏播放器 ================= -->
+    <div class="player-overlay" id="playerOverlay">
+        <div class="bg-blur" id="playerBg"></div>
+        <video class="video-element" id="videoElement" playsinline></video>
+        <div class="brightness-mask" id="brightnessMask"></div>
+        
+        <div class="gesture-layer">
+            <div class="gesture-left" id="gestureLeft"></div>
+            <div class="gesture-right" id="gestureRight"></div>
+        </div>
+
+        <div class="center-toast" id="centerToast">2.0x 播放中</div>
+
+        <div class="unlock-btn" id="unlockBtn" onclick="toggleLock()">
+            <svg viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2h1m-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3z"/></svg>
+        </div>
+
+        <div class="player-ui" id="playerUI">
+            <div class="player-top">
+                <div class="player-icon-btn" onclick="closePlayer()">
+                    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </div>
+                <div class="title" id="playerTitle">视频名称</div>
+                <div class="player-icon-btn" onclick="toggleOrientation()">
+                    <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                </div>
+                <div class="player-icon-btn" onclick="toggleLock()">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+            </div>
+
+            <div class="player-bottom">
+                <div class="progress-container">
+                    <span id="currentTime">00:00</span>
+                    <div class="progress-bar-wrap" id="progressBarWrap">
+                        <div class="progress-bg">
+                            <div class="progress-current" id="progressCurrent"></div>
+                            <div class="progress-thumb" id="progressThumb"></div>
+                        </div>
+                    </div>
+                    <span id="totalTime">00:00</span>
+                </div>
+                <div class="bottom-controls">
+                    <div class="play-btn" id="playBtn" onclick="togglePlay()">
+                        <svg id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    </div>
+                    <div class="speed-btn" onclick="cycleSpeed()" id="speedBtn">1.0x</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /* ========================================= */
+    /* 🌟 数据与状态管理 🌟 */
+    /* ========================================= */
+    let db = JSON.parse(localStorage.getItem('myCinemaDB')) || [];
+    let currentCategories = JSON.parse(localStorage.getItem('myCinemaCats')) || ['全部分类', '我的最爱'];
+    let settings = JSON.parse(localStorage.getItem('myCinemaSettings')) || { bgPlay: true, wakeLock: true };
+    
+    let currentPlayId = null;
+    let currentStatusFilter = 'all';
+    let currentCatFilter = '全部分类';
+    let fileCache = {}; 
+    let thumbCache = {}; 
+    let isDraggingProgress = false;
+    let selectedRecentIdToDelete = null;
+
+    const videoEl = document.getElementById('videoElement');
+    const playerUI = document.getElementById('playerUI');
+    const overlay = document.getElementById('globalOverlay');
+
+    // 绑定输入框焦点事件防遮挡
+    const inputs = document.querySelectorAll('input[type="text"], textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            const sheet = input.closest('.bottom-sheet');
+            if (sheet) sheet.classList.add('keyboard-up');
+        });
+        input.addEventListener('blur', () => {
+            const sheet = input.closest('.bottom-sheet');
+            if (sheet) sheet.classList.remove('keyboard-up');
+        });
+    });
+
+    function saveData() {
+        localStorage.setItem('myCinemaDB', JSON.stringify(db));
+        localStorage.setItem('myCinemaCats', JSON.stringify(currentCategories));
+    }
+
+    /* ========================================= */
+    /* 🌟 页面导航与手势 🌟 */
+    /* ========================================= */
+    const pagesWrapper = document.getElementById('pagesWrapper');
+    const navItems = document.querySelectorAll('.nav-item');
+    const navIndicator = document.getElementById('navIndicator');
+    let currentIndex = 0;
+    
+    function goToPage(index) {
+        if (index < 0 || index > 3) return; 
+        currentIndex = index;
+        pagesWrapper.style.transform = `translateX(-${index * 100}%)`;
+        navItems.forEach((item, i) => {
+            if (i === index) item.classList.add('active');
+            else item.classList.remove('active');
+        });
+        navIndicator.style.transform = `translateX(${index * 100}%)`;
+        renderUI(); 
+    }
+
+    let startX = 0, startY = 0, isSwiping = false, isScrolling = false, isInnerScrolling = false;
+    const appFrame = document.getElementById('appFrame');
+
+    appFrame.addEventListener('touchstart', (e) => {
+        if(e.target.closest('.bottom-sheet') || e.target.closest('.progress-bar-wrap')) return; 
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        isSwiping = false; isScrolling = false; isInnerScrolling = false;
+
+        let target = e.target;
+        const innerScrollableSelectors = ['.hero-slider', '.h-scroll-categories', '.move-cat-list'];
+        while (target && target !== appFrame) {
+            if (innerScrollableSelectors.some(selector => target.matches(selector))) {
+                if (target.scrollWidth > target.clientWidth || target.scrollHeight > target.clientHeight) {
+                    isInnerScrolling = true;
+                }
+                break;
+            }
+            target = target.parentElement;
+        }
+    }, { passive: true });
+
+    appFrame.addEventListener('touchmove', (e) => {
+        if (startX === 0 || startY === 0) return;
+        let diffX = e.touches[0].clientX - startX;
+        let diffY = e.touches[0].clientY - startY;
+        if (!isScrolling && !isSwiping) {
+            if (Math.abs(diffX) > Math.abs(diffY)) isSwiping = true; 
+            else if (Math.abs(diffY) > Math.abs(diffX)) isScrolling = true; 
+        }
+    }, { passive: false });
+
+    appFrame.addEventListener('touchend', (e) => {
+        if (document.getElementById('playerOverlay').classList.contains('show')) return; 
+        if (isSwiping && !isInnerScrolling) {
+            let diffX = e.changedTouches[0].clientX - startX;
+            if (diffX > 50) goToPage(currentIndex - 1); 
+            else if (diffX < -50) goToPage(currentIndex + 1); 
+        }
+        startX = 0; startY = 0; isSwiping = false; isScrolling = false; isInnerScrolling = false;
+    });
+
+    /* ========================================= */
+    /* 🌟 交互动效与菜单逻辑 🌟 */
+    /* ========================================= */
+    function toggleSection(type) {
+        const wrapper = document.getElementById('wrapper-' + type);
+        const icon = document.querySelector(`#section-${type} .toggle-icon`);
+        wrapper.classList.toggle('collapsed');
+        icon.style.transform = wrapper.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+    }
+
+    function toggleFab(event) {
+        if(event) event.stopPropagation(); 
+        const fabWrapper = document.getElementById('fabMenu');
+        const fabMain = fabWrapper.querySelector('.fab-main');
+        fabWrapper.classList.toggle('open');
+        fabMain.classList.toggle('active');
+    }
+
+    function showSheet(id) { overlay.classList.add('show'); document.getElementById(id).classList.add('show'); }
+    function openSearchPage(placeholder) { toggleFab(); document.getElementById('searchInput').placeholder = placeholder; showSheet('searchPage'); }
+    function openImportSheet() { toggleFab(); showSheet('importSheet'); }
+    function openSettings() { showSheet('settingsSheet'); }
+    
+    function closeAllSecondary() {
+        overlay.classList.remove('show');
+        document.querySelectorAll('.bottom-sheet').forEach(el => {
+            el.classList.remove('show');
+            el.classList.remove('keyboard-up'); 
+        });
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('globalToast');
+        toast.innerText = msg; toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function toggleSetting(type) {
+        if(type === 'bg') { settings.bgPlay = !settings.bgPlay; document.getElementById('switchBg').classList.toggle('on', settings.bgPlay); } 
+        else { settings.wakeLock = !settings.wakeLock; document.getElementById('switchWake').classList.toggle('on', settings.wakeLock); }
+        localStorage.setItem('myCinemaSettings', JSON.stringify(settings));
+    }
+
+    function openClearDataSheet() { 
+        closeAllSecondary(); 
+        setTimeout(() => {
+            showSheet('clearDataSheet'); 
+        }, 250);
+    }
+    function confirmClearData() {
+        db = []; fileCache = {}; thumbCache = {};
+        saveData(); renderUI(); closeAllSecondary(); showToast('数据已清空');
+    }
+
+    function openClearRecentSheet() { showSheet('clearRecentSheet'); }
+    function confirmClearRecent() {
+        db.forEach(v => {
+            v.progress = 0;
+            v.status = 'all';
+        });
+        saveData(); renderUI(); closeAllSecondary(); showToast('播放记录已清空');
+    }
+
+    function openDeleteRecentRecordSheet(id) {
+        selectedRecentIdToDelete = id;
+        showSheet('deleteRecentRecordSheet');
+    }
+    function confirmDeleteRecentRecord() {
+        const v = db.find(x => x.id === selectedRecentIdToDelete);
+        if(v) {
+            v.progress = 0;
+            v.status = 'all';
+            saveData(); renderUI();
+        }
+        closeAllSecondary(); showToast('已删除该记录');
+    }
+
+    /* ========================================= */
+    /* 🌟 文件导入与缩略图生成 🌟 */
+    /* ========================================= */
+    function handleFileSelect(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        let newCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (!file.type.startsWith('video/')) continue;
+
+            const id = Date.now() + i;
+            fileCache[id] = file; 
+            
+            db.unshift({
+                id: id,
+                name: file.name,
+                size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+                date: new Date().toLocaleDateString(),
+                progress: 0,
+                status: 'all',
+                isFav: false,
+                category: '全部分类',
+                bgIndex: (Math.floor(Math.random() * 4) + 1),
+                review: '',
+                rating: 0,
+                hasThumb: false
+            });
+            newCount++;
+            generateThumbnail(file, id);
+        }
+        
+        if (newCount > 0) {
+            saveData();
+            renderUI();
+            showToast(`成功导入 ${newCount} 个视频`);
+        }
+        closeAllSecondary();
+        event.target.value = '';
+    }
+
+    function generateThumbnail(file, id) {
+        const video = document.createElement('video');
+        video.src = URL.createObjectURL(file);
+        video.muted = true;
+        
+        video.onloadedmetadata = () => {
+            video.currentTime = video.duration * 0.2;
+        };
+
+        video.onseeked = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            
+            thumbCache[id] = dataUrl;
+            const v = db.find(x => x.id === id);
+            if(v) { v.hasThumb = true; }
+            renderUI();
+            URL.revokeObjectURL(video.src);
+        };
+    }
+
+    function openCoverSelect() {
+        document.getElementById('coverSelector').click();
+    }
+
+    function handleCoverSelect(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64 = e.target.result;
+            thumbCache[selectedVideoId] = base64;
+            renderUI();
+            closeAllSecondary();
+            showToast('封面已更新');
+        };
+        reader.readAsDataURL(file);
+        event.target.value = ''; 
+    }
+
+    /* ========================================= */
+    /* 🌟 渲染核心 🌟 */
+    /* ========================================= */
+    function getThumbHtml(v) {
+        if (thumbCache[v.id]) return `<img src="${thumbCache[v.id]}" class="real-thumb">`;
+        return `<div class="poster-bg-${v.bgIndex}"></div>`; 
+    }
+
+    function formatName(name) {
+        return name.replace(/\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i, '');
+    }
+
+    function renderUI() {
+        document.getElementById('uiTotal').innerHTML = `${db.length} <span>个</span>`;
+        document.getElementById('uiWatched').innerHTML = `${db.filter(v => v.status === 'watched').length} <span>个</span>`;
+
+        const playingList = db.filter(v => v.progress >= 1 && v.progress < 100).slice(0, 5);
+        const heroHtml = playingList.map(v => `
+            <div class="hero-card" onclick="preparePlay(${v.id})">
+                ${getThumbHtml(v)}
+                <div class="hero-overlay">
+                    <div class="hero-title">${formatName(v.name)}</div>
+                    <div class="hero-sub">已看 ${Math.floor(v.progress)}%</div>
+                    <div class="hero-progress-bg"><div class="hero-progress-bar" style="width: ${v.progress}%;"></div></div>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('uiHeroList').innerHTML = heroHtml || '<div style="color:#999;font-size:14px;padding:10px;">暂无观看记录</div>';
+
+        const recentHtml = db.slice(0, 4).map(v => `
+            <div class="video-card" onclick="preparePlay(${v.id})">
+                <div class="thumb-box">${getThumbHtml(v)}</div>
+                <div class="card-info">
+                    <div class="card-title">${formatName(v.name)}</div>
+                    <div class="card-sub">${v.date} 添加</div>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('uiRecentList').innerHTML = recentHtml || '<div style="color:#999;font-size:14px;padding:10px;">暂无视频，点击右下角导入</div>';
+
+        const catHtml = currentCategories.map(cat => `
+            <div class="category-pill ${cat === currentCatFilter ? 'active' : ''}" onclick="currentCatFilter='${cat}'; renderUI();">${cat}</div>
+        `).join('');
+        document.getElementById('uiCategoryBar').innerHTML = catHtml;
+
+        let filtered = db;
+        if (currentStatusFilter !== 'all') filtered = filtered.filter(v => v.status === currentStatusFilter);
+        if (currentCatFilter === '我的最爱') filtered = filtered.filter(v => v.isFav);
+        else if (currentCatFilter !== '全部分类') filtered = filtered.filter(v => v.category === currentCatFilter);
+        
+        // 核心修复：彻底移除了片库卡片上的三个点。仅保留长按呼出菜单。
+        const gridHtml = filtered.map(v => `
+            <div class="video-poster-card" onclick="preparePlay(${v.id})" oncontextmenu="openActionSheet('视频操作', null, false, ${v.id}); event.preventDefault();">
+                <div class="poster-img-box">
+                    ${getThumbHtml(v)}
+                    <div class="poster-progress-bg"><div class="poster-progress-bar" style="width: ${v.progress}%;"></div></div>
+                </div>
+                <div class="video-title">${formatName(v.name)}</div>
+            </div>
+        `).join('');
+        document.getElementById('videoGrid').innerHTML = gridHtml;
+
+        const now = new Date();
+        const todayStr = now.toLocaleDateString();
+        const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString();
+        
+        let todayList = [], yesterdayList = [], earlierList = [];
+        db.forEach(v => {
+            if (v.date === todayStr) todayList.push(v);
+            else if (v.date === yesterdayStr) yesterdayList.push(v);
+            else earlierList.push(v);
+        });
+
+        function renderTimelineGroup(title, list) {
+            if(list.length === 0) return '';
+            return `
+                <div class="sticky-time-group">${title}</div>
+                <div class="recent-time-list">
+                    ${list.map(v => `
+                        <div class="time-video-card" onclick="preparePlay(${v.id})">
+                            <div class="time-thumb-box">${getThumbHtml(v)}</div>
+                            <div class="time-card-info">
+                                <div class="time-card-title">${formatName(v.name)}</div>
+                                <div class="time-card-meta">
+                                    <div class="meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 15"></polyline></svg>02:15:00</div>
+                                    <div class="meta-row"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>00:45:10 · ${v.date}</div>
+                                </div>
+                            </div>
+                            <div class="time-more-btn" onclick="event.stopPropagation(); openDeleteRecentRecordSheet(${v.id})">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        const timelineHtml = renderTimelineGroup('今天', todayList) + 
+                             renderTimelineGroup('昨天', yesterdayList) + 
+                             renderTimelineGroup('更早', earlierList);
+                             
+        document.getElementById('uiRecentTimeline').innerHTML = timelineHtml || '<div style="color:#999; padding:20px; text-align:center;">暂无播放记录</div>';
+
+        const watchedList = db.filter(v => v.status === 'watched');
+        document.getElementById('uiRecWatched').innerHTML = `${watchedList.length} <span>部</span>`;
+        document.getElementById('uiRecNote').innerHTML = `${db.filter(v => v.review && v.review.trim() !== '').length} <span>篇</span>`;
+        
+        document.getElementById('uiRecordList').innerHTML = watchedList.map(v => {
+            const ratingVal = v.rating || 0;
+            const stars = '★'.repeat(ratingVal) + '☆'.repeat(5 - ratingVal);
+            const starColor = (ratingVal > 0) ? '#FFB800' : '#E0E0E0';
+            const noteClass = (v.review && v.review.trim() !== '') ? '' : 'empty';
+            const noteText = (v.review && v.review.trim() !== '') ? v.review : '点击添加你的观影感想...';
+            
+            return `
+            <div class="record-card" onclick="openWriteNoteSheet(${v.id})">
+                <div class="record-header">
+                    <div class="record-thumb-box">${getThumbHtml(v)}</div>
+                    <div class="record-info">
+                        <div class="record-title">${formatName(v.name)}</div>
+                        <div class="record-date">${v.date} 看完</div>
+                        <div class="record-stars" style="color:${starColor};">${stars}</div>
+                    </div>
+                </div>
+                <div class="record-note ${noteClass}">${noteText}</div>
+            </div>
+            `;
+        }).join('') || '<div style="color:#999; padding:20px; text-align:center;">暂无已看完的视频</div>';
+    }
+
+    /* ========================================= */
+    /* 🌟 片库交互逻辑 🌟 */
+    /* ========================================= */
+    function switchTab(status, el) {
+        document.querySelectorAll('.tab-primary').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        currentStatusFilter = status;
+        renderUI();
+    }
+
+    function applyGrid(type) {
+        if (type === 'normal') document.getElementById('videoGrid').classList.add('normal');
+        else document.getElementById('videoGrid').classList.remove('normal');
+    }
+
+    function sortVideos(type) {
+        if(type === 'time') db.sort((a,b) => b.id - a.id);
+        if(type === 'name') db.sort((a,b) => a.name.localeCompare(b.name));
+        saveData(); renderUI();
+    }
+
+    function sortRecords(type) {
+        const watchedList = db.filter(v => v.status === 'watched');
+        if(type === 'time') watchedList.sort((a,b) => b.id - a.id);
+        if(type === 'score') watchedList.sort((a,b) => (b.rating || 0) - (a.rating || 0));
+        
+        const unwatchedList = db.filter(v => v.status !== 'watched');
+        db = [...watchedList, ...unwatchedList];
+        saveData(); renderUI();
+    }
+
+    function openSortSheet() { showSheet('sortSheet'); }
+    function openRecordSortSheet() { showSheet('recordSortSheet'); }
+    function openGridSheet() { showSheet('gridSheet'); }
+
+    let selectedVideoId = null;
+    function openActionSheet(title, customBtnText = null, isDanger = false, videoId = null) {
+        selectedVideoId = videoId;
+        document.getElementById('actionSheetTitle').innerText = title;
+        const list = document.getElementById('actionSheetList');
+        
+        if (customBtnText) {
+            list.innerHTML = `
+                <div class="action-item" onclick="closeAllSecondary()">取消</div>
+                <div class="action-item delete" onclick="confirmClearData()">${customBtnText}</div>
+            `;
+        } else {
+            const video = db.find(v => v.id === selectedVideoId);
+            const favText = (video && video.isFav) ? '取消收藏' : '加入收藏';
+            list.innerHTML = `
+                <div class="action-item" onclick="playSelectedVideo()">立即播放</div>
+                <div class="action-item" onclick="toggleFavorite()">${favText}</div>
+                <div class="action-item" onclick="openMoveCategorySheet()">移动至分类</div>
+                <div class="action-item" onclick="openRenameSheet()">重命名</div>
+                <div class="action-item" onclick="openCoverSelect()">自定义封面</div>
+                <div class="action-item delete" onclick="deleteVideo()">移出片库</div>
+            `;
+        }
+        showSheet('actionSheet');
+    }
+
+    function playSelectedVideo() { closeAllSecondary(); preparePlay(selectedVideoId); }
+    
+    function toggleFavorite() {
+        const v = db.find(x => x.id === selectedVideoId);
+        if(v) {
+            v.isFav = !v.isFav;
+            saveData(); renderUI(); closeAllSecondary();
+            showToast(v.isFav ? '已加入收藏' : '已取消收藏');
+        }
+    }
+
+    function deleteVideo() {
+        db = db.filter(x => x.id !== selectedVideoId);
+        saveData(); renderUI(); closeAllSecondary(); showToast('已移出片库');
+    }
+
+    function openMoveCategorySheet() {
+        closeAllSecondary(); 
+        setTimeout(() => {
+            const catList = document.getElementById('moveCatList');
+            catList.innerHTML = currentCategories.map(cat => `
+                <div class="move-cat-item" onclick="moveToCategory('${cat}')">${cat}</div>
+            `).join('');
+            showSheet('moveCategorySheet');
+        }, 250);
+    }
+
+    function moveToCategory(categoryName) {
+        const v = db.find(x => x.id === selectedVideoId);
+        if(v) { v.category = categoryName; saveData(); renderUI(); }
+        closeAllSecondary();
+        setTimeout(() => { showToast(`已移动至「${categoryName}」`); }, 300);
+    }
+
+    function openRenameSheet() {
+        closeAllSecondary();
+        setTimeout(() => {
+            const v = db.find(x => x.id === selectedVideoId);
+            document.getElementById('renameInput').value = v ? v.name : ''; 
+            showSheet('renameSheet');
+        }, 250);
+    }
+
+    function saveRename() {
+        const newName = document.getElementById('renameInput').value.trim();
+        if (newName === '') { showToast('视频名不能为空'); return; }
+        const v = db.find(x => x.id === selectedVideoId);
+        if(v) { v.name = newName; saveData(); renderUI(); }
+        closeAllSecondary();
+        setTimeout(() => { showToast('重命名成功'); }, 300);
+    }
+
+    function openCategorySheet() { renderCategories(); showSheet('categorySheet'); }
+
+    function renderCategories() {
+        const container = document.getElementById('existingCategories');
+        container.innerHTML = currentCategories.map(cat => `
+            <div class="cat-row">
+                <span>${cat}</span>
+                ${(cat !== '全部分类' && cat !== '我的最爱') ? `<span class="cat-del" onclick="deleteCategory('${cat}')">删除</span>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function createCategory() {
+        const input = document.getElementById('newCatName');
+        const name = input.value.trim();
+        if (name && !currentCategories.includes(name)) {
+            currentCategories.push(name);
+            input.value = '';
+            saveData(); renderCategories(); renderUI();
+            showToast('分类已创建');
+        }
+    }
+
+    function deleteCategory(name) {
+        currentCategories = currentCategories.filter(c => c !== name);
+        saveData(); renderCategories(); renderUI();
+        showToast('分类已删除');
+    }
+
+    /* ========================================= */
+    /* 🌟 记录页打分逻辑 🌟 */
+    /* ========================================= */
+    let currentRating = 0;
+    function openWriteNoteSheet(videoId) {
+        selectedVideoId = videoId;
+        const v = db.find(x => x.id === selectedVideoId);
+        if(!v) return;
+        
+        document.getElementById('noteInput').value = v.review || '';
+        currentRating = v.rating || 0;
+        setRating(currentRating);
+        showSheet('writeNoteSheet');
+    }
+
+    function setRating(rating) {
+        currentRating = rating;
+        const stars = document.querySelectorAll('#starSelector .star');
+        stars.forEach((star, index) => {
+            if(index < rating) star.classList.add('active');
+            else star.classList.remove('active');
+        });
+    }
+
+    function saveNote() {
+        const v = db.find(x => x.id === selectedVideoId);
+        if(v) {
+            v.review = document.getElementById('noteInput').value;
+            v.rating = currentRating; 
+            saveData(); renderUI();
+        }
+        closeAllSecondary();
+        setTimeout(() => { showToast('记录已保存'); }, 300);
+    }
+
+    /* ========================================= */
+    /* 🌟 全屏视频播放器引擎 🌟 */
+    /* ========================================= */
+    const playerOverlay = document.getElementById('playerOverlay');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const progressBarWrap = document.getElementById('progressBarWrap');
+    
+    let playerState = {
+        duration: 0, speed: 1.0, isLocked: false, isLandscape: false,
+        uiTimeout: null, startY: 0, startX: 0, startVol: 1, startBright: 0,
+        isSwipingProgress: false, initialTime: 0, tempProgressTime: null
+    };
+
+    function preparePlay(id) {
+        const video = db.find(v => v.id === id);
+        if(!video) return;
+        
+        const file = fileCache[id];
+        if(!file) {
+            showToast('由于浏览器刷新，请重新导入此视频以恢复播放');
+            return;
+        }
+
+        videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.load();
+
+        selectedVideoId = id;
+        currentPlayId = id;
+        document.getElementById('playerTitle').innerText = formatName(video.name);
+        
+        if(thumbCache[id]) {
+            document.getElementById('playerBg').style.backgroundImage = `url(${thumbCache[id]})`;
+        } else {
+            document.getElementById('playerBg').style.backgroundImage = `none`;
+        }
+        
+        playerOverlay.classList.add('show');
+        playerState.isLocked = false;
+        unlockBtn.classList.remove('show');
+        
+        videoEl.src = URL.createObjectURL(file);
+        videoEl.playbackRate = 1.0;
+        playerState.speed = 1.0;
+        document.getElementById('speedBtn').innerText = '1.0x';
+        
+        videoEl.onloadedmetadata = () => {
+            if (currentPlayId !== id || !playerOverlay.classList.contains('show')) return;
+
+            playerState.duration = videoEl.duration;
+            document.getElementById('totalTime').innerText = formatTime(videoEl.duration);
+            
+            if(video.progress > 0 && video.progress < 100) {
+                videoEl.currentTime = (video.progress / 100) * videoEl.duration;
+                showCenterToast(`已从 ${formatTime(videoEl.currentTime)} 继续播放`);
+            } else {
+                videoEl.currentTime = 0;
+            }
+            
+            if(video.status === 'all') { 
+                video.status = 'playing'; 
+                saveData(); 
+                renderUI(); 
+            }
+            
+            videoEl.play().catch(e => showToast('请再次点击播放按钮'));
+            updatePlayIcon();
+            startHideUITimer();
+        };
+        requestWakeLock();
+    }
+
+    videoEl.addEventListener('timeupdate', () => {
+        if (!videoEl.duration) return;
+        const current = videoEl.currentTime;
+        const percent = (current / videoEl.duration) * 100;
+        
+        if (!playerState.isSwipingProgress && !isDraggingProgress) {
+            document.getElementById('currentTime').innerText = formatTime(current);
+            document.getElementById('progressCurrent').style.width = `${percent}%`;
+            document.getElementById('progressThumb').style.left = `${percent}%`;
+        }
+        
+        if (Math.random() < 0.2) {
+            const video = db.find(v => v.id === currentPlayId);
+            if (video && video.status !== 'watched') {
+                video.progress = percent;
+                if (video.status === 'all') video.status = 'playing';
+                saveData();
+            }
+        }
+    });
+
+    videoEl.addEventListener('ended', () => {
+        const video = db.find(v => v.id === currentPlayId);
+        if (video) { 
+            video.progress = 100; 
+            video.status = 'watched'; 
+            saveData(); 
+            renderUI();
+        }
+        closePlayer();
+    });
+
+    function updateProgressFromTouch(clientX) {
+        const rect = progressBarWrap.getBoundingClientRect();
+        let percent = (clientX - rect.left) / rect.width;
+        percent = Math.max(0, Math.min(1, percent));
+        videoEl.currentTime = percent * videoEl.duration;
+        document.getElementById('currentTime').innerText = formatTime(videoEl.currentTime);
+        document.getElementById('progressCurrent').style.width = `${percent * 100}%`;
+        document.getElementById('progressThumb').style.left = `${percent * 100}%`;
+    }
+
+    progressBarWrap.addEventListener('click', (e) => {
+        if (playerState.isLocked) return;
+        updateProgressFromTouch(e.clientX);
+        startHideUITimer(); 
+    });
+
+    progressBarWrap.addEventListener('touchstart', (e) => {
+        if (playerState.isLocked) return;
+        isDraggingProgress = true;
+        playerState.isSwipingProgress = true;
+        videoEl.pause();
+        updateProgressFromTouch(e.touches[0].clientX);
+    }, {passive: false});
+
+    progressBarWrap.addEventListener('touchmove', (e) => {
+        if (!isDraggingProgress) return;
+        e.preventDefault();
+        updateProgressFromTouch(e.touches[0].clientX);
+    }, {passive: false});
+
+    progressBarWrap.addEventListener('touchend', (e) => {
+        if (!isDraggingProgress) return;
+        isDraggingProgress = false;
+        playerState.isSwipingProgress = false;
+        videoEl.play();
+        startHideUITimer();
+    });
+
+    function togglePlay() {
+        if (playerState.isLocked) return;
+        if (videoEl.paused) videoEl.play(); 
+        else videoEl.pause();
+        updatePlayIcon(); startHideUITimer();
+    }
+    function updatePlayIcon() {
+        document.getElementById('playIcon').innerHTML = videoEl.paused ? '<polygon points="5 3 19 12 5 21 5 3"></polygon>' : '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+    }
+    function startHideUITimer() {
+        clearTimeout(playerState.uiTimeout);
+        playerUI.classList.remove('hide');
+        if (!videoEl.paused) {
+            playerState.uiTimeout = setTimeout(() => { if(!playerState.isLocked) playerUI.classList.add('hide'); }, 3000);
+        }
+    }
+
+    const gestureLayer = document.querySelector('.gesture-layer');
+    
+    gestureLayer.addEventListener('click', (e) => {
+        if (playerState.isLocked) {
+            if (unlockBtn.classList.contains('show')) {
+                unlockBtn.classList.remove('show');
+            } else {
+                unlockBtn.classList.add('show');
+            }
+            return; 
+        }
+        
+        if (playerUI.classList.contains('hide')) startHideUITimer();
+        else togglePlay();
+    });
+
+    function toggleLock() {
+        playerState.isLocked = !playerState.isLocked;
+        if (playerState.isLocked) {
+            playerUI.classList.add('hide');
+            unlockBtn.classList.remove('show'); 
+            showCenterToast('已锁定屏幕防误触');
+        } else {
+            playerUI.classList.remove('hide');
+            unlockBtn.classList.remove('show'); 
+            startHideUITimer();
+            showCenterToast('屏幕已解锁');
+        }
+    }
+
+    let longPressTimer = null;
+    gestureLayer.addEventListener('touchstart', (e) => {
+        if (playerState.isLocked) return;
+        longPressTimer = setTimeout(() => {
+            videoEl.playbackRate = 2.0;
+            document.getElementById('centerToast').innerText = '2.0x 播放中';
+            document.getElementById('centerToast').style.opacity = 1;
+        }, 500);
+    }, {passive: true});
+    gestureLayer.addEventListener('touchend', () => {
+        clearTimeout(longPressTimer);
+        if (videoEl.playbackRate === 2.0 && playerState.speed !== 2.0) {
+            videoEl.playbackRate = playerState.speed;
+            document.getElementById('centerToast').style.opacity = 0;
+        }
+    });
+    gestureLayer.addEventListener('touchmove', () => { clearTimeout(longPressTimer); }, {passive: true});
+
+    let lastTap = 0;
+    gestureLayer.addEventListener('touchend', (e) => {
+        if (playerState.isLocked) return;
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+            const rect = gestureLayer.getBoundingClientRect();
+            const clientX = e.changedTouches[0].clientX - rect.left;
+            if (clientX < rect.width / 2) {
+                videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
+                showCenterToast('◁◁ 快退 10s');
+            } else {
+                videoEl.currentTime = Math.min(videoEl.duration, videoEl.currentTime + 10);
+                showCenterToast('快进 10s ▷▷');
+            }
+            e.preventDefault();
+        }
+        lastTap = currentTime;
+    });
+
+    let touchMode = null;
+    gestureLayer.addEventListener('touchstart', (e) => {
+        if (playerState.isLocked) return;
+        const touch = e.touches[0];
+        playerState.startX = touch.clientX;
+        playerState.startY = touch.clientY;
+        playerState.startVol = videoEl.volume;
+        playerState.initialTime = videoEl.currentTime;
+        
+        const rect = gestureLayer.getBoundingClientRect();
+        const clientX = touch.clientX - rect.left;
+        
+        if (clientX < rect.width / 3) { touchMode = 'brightness'; playerState.startBright = parseFloat(document.getElementById('brightnessMask').style.opacity || 0); } 
+        else if (clientX > (rect.width / 3) * 2) { touchMode = 'volume'; } 
+        else { touchMode = 'progress'; playerState.isSwipingProgress = true; }
+    }, {passive: true});
+
+    gestureLayer.addEventListener('touchmove', (e) => {
+        if (playerState.isLocked || !touchMode) return;
+        const touch = e.touches[0];
+        const diffX = touch.clientX - playerState.startX;
+        const diffY = touch.clientY - playerState.startY;
+
+        if ((touchMode === 'volume' || touchMode === 'brightness') && Math.abs(diffY) > Math.abs(diffX)) {
+            e.preventDefault();
+            const change = -(diffY / 200); 
+            if (touchMode === 'brightness') {
+                let opacity = Math.min(0.8, Math.max(0, playerState.startBright + change));
+                document.getElementById('brightnessMask').style.opacity = opacity;
+                showCenterToast(`亮度 ${Math.floor((1-opacity)*100)}%`);
+            } else if (touchMode === 'volume') {
+                let vol = Math.min(1, Math.max(0, playerState.startVol + change));
+                videoEl.volume = vol;
+                showCenterToast(`音量 ${Math.floor(vol * 100)}%`);
+            }
+        }
+        
+        if (touchMode === 'progress' && Math.abs(diffX) > Math.abs(diffY)) {
+            e.preventDefault();
+            const changePercent = diffX / (gestureLayer.clientWidth * 0.8); 
+            let targetTime = playerState.initialTime + (videoEl.duration * changePercent);
+            targetTime = Math.min(videoEl.duration, Math.max(0, targetTime));
+            
+            document.getElementById('currentTime').innerText = formatTime(targetTime);
+            document.getElementById('progressCurrent').style.width = `${(targetTime/videoEl.duration)*100}%`;
+            document.getElementById('progressThumb').style.left = `${(targetTime/videoEl.duration)*100}%`;
+            showCenterToast(`${formatTime(targetTime)} / ${formatTime(videoEl.duration)}`);
+            playerState.tempProgressTime = targetTime;
+        }
+    }, {passive: false});
+
+    gestureLayer.addEventListener('touchend', () => {
+        if (playerState.isLocked) return;
+        if (touchMode === 'progress' && playerState.tempProgressTime) { videoEl.currentTime = playerState.tempProgressTime; playerState.tempProgressTime = null; }
+        playerState.isSwipingProgress = false;
+        touchMode = null;
+    });
+
+    function formatTime(seconds) { if(isNaN(seconds)) return "00:00"; const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
+    function showCenterToast(text) { const toast = document.getElementById('centerToast'); toast.innerText = text; toast.style.opacity = 1; clearTimeout(window.centerToastTimer); window.centerToastTimer = setTimeout(() => { toast.style.opacity = 0; }, 800); }
+    function cycleSpeed() { const speeds = [1.0, 1.25, 1.5, 2.0, 0.75]; let currentIdx = speeds.indexOf(playerState.speed); let nextSpeed = speeds[(currentIdx + 1) % speeds.length]; playerState.speed = nextSpeed; videoEl.playbackRate = nextSpeed; document.getElementById('speedBtn').innerText = nextSpeed.toFixed(2).replace(/\.?0+$/, '') + 'x'; showCenterToast(`倍速 ${nextSpeed}x`); startHideUITimer(); }
+    function toggleOrientation() { playerState.isLandscape = !playerState.isLandscape; playerOverlay.classList.toggle('landscape', playerState.isLandscape); }
+    
+    function closePlayer() {
+        playerOverlay.classList.remove('show'); playerOverlay.classList.remove('landscape'); playerState.isLandscape = false;
+        videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load();
+        if(navigator.wakeLock && wakeLockSentinel) wakeLockSentinel.release();
+        renderUI(); 
+    }
+
+    let wakeLockSentinel = null;
+    async function requestWakeLock() { 
+        if (!settings.wakeLock) return; 
+        try { 
+            if ('wakeLock' in navigator) wakeLockSentinel = await navigator.wakeLock.request('screen'); 
+        } catch (err) {} 
+    }
+
+    // 初始化
+    renderUI();
+</script>
+
+</body>
+</html>
