@@ -923,7 +923,7 @@ private fun formatTime(ms: Long): String {
 }
 
 private fun displayVideoName(name: String): String = name.replace(
-    Regex("\\\\.(mp4|mkv|avi|mov|wmv|flv|webm)$", RegexOption.IGNORE_CASE), ""
+    Regex("\\.(mp4|mkv|avi|mov|wmv|flv|webm)$", RegexOption.IGNORE_CASE), ""
 )
 
 private fun formatClock(ms: Long): String {
