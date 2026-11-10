@@ -44,6 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -68,6 +73,56 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
+
+
+private val FrameHomeIcon: ImageVector = ImageVector.Builder("FrameHome", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f); lineTo(21f, 20f); quadraticTo(21f, 22f, 19f, 22f); lineTo(5f, 22f); quadraticTo(3f, 22f, 3f, 20f); close()
+        moveTo(9f, 22f); lineTo(9f, 12f); lineTo(15f, 12f); lineTo(15f, 22f)
+    }
+}.build()
+private val FrameLibraryIcon: ImageVector = ImageVector.Builder("FrameLibrary", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(4.5f, 2f); lineTo(19.5f, 2f); quadraticTo(22f, 2f, 22f, 4.5f); lineTo(22f, 19.5f); quadraticTo(22f, 22f, 19.5f, 22f); lineTo(4.5f, 22f); quadraticTo(2f, 22f, 2f, 19.5f); lineTo(2f, 4.5f); quadraticTo(2f, 2f, 4.5f, 2f); close()
+        moveTo(7f, 2f); lineTo(7f, 22f); moveTo(17f, 2f); lineTo(17f, 22f); moveTo(2f, 12f); lineTo(22f, 12f)
+        moveTo(2f, 7f); lineTo(7f, 7f); moveTo(2f, 17f); lineTo(7f, 17f); moveTo(17f, 7f); lineTo(22f, 7f); moveTo(17f, 17f); lineTo(22f, 17f)
+    }
+}.build()
+private val FrameRecentIcon: ImageVector = ImageVector.Builder("FrameRecent", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(12f, 2f); arcTo(10f, 10f, 0f, true, true, 12f, 22f); arcTo(10f, 10f, 0f, true, true, 12f, 2f); close()
+        moveTo(12f, 6f); lineTo(12f, 12f); lineTo(16f, 14f)
+    }
+}.build()
+private val FrameRecordsIcon: ImageVector = ImageVector.Builder("FrameRecords", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(4f, 19.5f); quadraticTo(4f, 17f, 6.5f, 17f); lineTo(20f, 17f); moveTo(6.5f, 2f); lineTo(20f, 2f); lineTo(20f, 22f); lineTo(6.5f, 22f); quadraticTo(4f, 22f, 4f, 19.5f); lineTo(4f, 4.5f); quadraticTo(4f, 2f, 6.5f, 2f); close()
+    }
+}.build()
+private val FrameTagIcon: ImageVector = ImageVector.Builder("FrameTag", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(20.59f, 13.41f); lineTo(13.42f, 20.58f); quadraticTo(12.25f, 21.75f, 11.01f, 20.58f); lineTo(2f, 12f); lineTo(2f, 2f); lineTo(12f, 2f); lineTo(20.59f, 10.59f); quadraticTo(21.76f, 11.76f, 20.59f, 13.41f); close()
+        moveTo(7f, 7f); lineTo(7.01f, 7f)
+    }
+}.build()
+private val FrameSortIcon: ImageVector = ImageVector.Builder("FrameSort", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(12f, 20f); lineTo(12f, 4f); moveTo(6f, 10f); lineTo(12f, 4f); lineTo(18f, 10f)
+    }
+}.build()
+private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(3f, 3f); lineTo(10f, 3f); lineTo(10f, 10f); lineTo(3f, 10f); close()
+        moveTo(14f, 3f); lineTo(21f, 3f); lineTo(21f, 10f); lineTo(14f, 10f); close()
+        moveTo(14f, 14f); lineTo(21f, 14f); lineTo(21f, 21f); lineTo(14f, 21f); close()
+        moveTo(3f, 14f); lineTo(10f, 14f); lineTo(10f, 21f); lineTo(3f, 21f); close()
+    }
+}.build()
+private val FrameHamburgerIcon: ImageVector = ImageVector.Builder("FrameMenu", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color(0xFF333333)), strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(5f, 8f); lineTo(19f, 8f); moveTo(5f, 16f); lineTo(19f, 16f)
+    }
+}.build()
 
 private val PageBg = Color(0xFFF5F5F7)
 private val MainText = Color(0xFF1A1A1A)
@@ -278,7 +333,7 @@ private fun FrameNativeApp(
                 AnimatedVisibility(showFab) {
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         FabAction(Icons.Outlined.Search, "搜索") { sheet = SheetType.SEARCH; showFab = false }
-                        FabAction(Icons.Outlined.VideoLibrary, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
+                        FabAction(Icons.Outlined.Add, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
                     }
                 }
                 val fabRotation by animateFloatAsState(if (showFab) 45f else 0f, tween(300), label = "fab-rotation")
@@ -287,7 +342,7 @@ private fun FrameNativeApp(
                     shape = CircleShape, color = Glass, shadowElevation = 8.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Add, null, tint = MainText, modifier = Modifier.size(25.dp).rotate(fabRotation))
+                        Icon(FrameHamburgerIcon, null, tint = Color.Unspecified, modifier = Modifier.size(20.dp).rotate(fabRotation))
                     }
                 }
             }
@@ -474,12 +529,12 @@ private fun FrameNativeApp(
 @Composable
 private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit) {
     val entries = listOf(
-        MainPage.HOME to Icons.Outlined.Home,
-        MainPage.LIBRARY to Icons.Outlined.VideoLibrary,
-        MainPage.RECENT to Icons.Outlined.History,
-        MainPage.RECORDS to Icons.Outlined.Bookmarks
+        MainPage.HOME to FrameHomeIcon,
+        MainPage.LIBRARY to FrameLibraryIcon,
+        MainPage.RECENT to FrameRecentIcon,
+        MainPage.RECORDS to FrameRecordsIcon
     )
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 62.dp, bottom = 16.dp).height(56.dp).clip(CircleShape).background(Glass).padding(4.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 16.dp, end = 62.dp, bottom = 16.dp).height(56.dp).clip(RoundedCornerShape(28.dp)).background(Glass).padding(4.dp)) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "nav-indicator")
@@ -488,7 +543,7 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().clickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                    Text(item.label, fontSize = 10.sp, color = MainText)
+                    Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
             }
         }
@@ -553,9 +608,9 @@ private fun LibraryPage(
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            IconButton(onClick = onCategories) { Icon(Icons.Outlined.MoreHoriz, "分类管理") }
-            IconButton(onClick = onSort) { Icon(Icons.Outlined.Sort, "排序") }
-            IconButton(onClick = onGrid) { Icon(Icons.Outlined.GridView, "布局管理") }
+            ActionIcon(FrameTagIcon, "分类管理", onCategories)
+            ActionIcon(FrameSortIcon, "排序", onSort)
+            ActionIcon(FrameGridIcon, "布局管理", onGrid)
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             listOf("全部", "在看", "已看").forEach { value ->
@@ -789,6 +844,21 @@ private fun formatClock(ms: Long): String {
         Locale.getDefault(), "%02d:%02d:%02d",
         seconds / 3600, (seconds % 3600) / 60, seconds % 60
     )
+}
+
+
+@Composable
+private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.padding(start = 5.dp).size(36.dp).clickable(onClick = onClick),
+        shape = CircleShape,
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, description, Modifier.size(20.dp), tint = Color(0xFF333333))
+        }
+    }
 }
 
 @Composable
