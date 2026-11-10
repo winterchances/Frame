@@ -33,12 +33,35 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Build release-ready debug APK
+      - name: Build debug APK
         run: gradle --no-daemon clean assembleDebug
 
+      - name: Install and launch APK in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am force-stop com.frame.cinema
+            adb shell am start -W -n com.frame.cinema/.MainActivity
+            sleep 20
+            echo "===== APP PROCESS ====="
+            adb shell pidof com.frame.cinema || true
+            echo "===== CRASH LOG ====="
+            adb logcat -d -v threadtime | grep -E -A 35 -B 8 "FATAL EXCEPTION|Fatal signal|Process: com.frame.cinema|AndroidRuntime" || true
+            if ! adb shell pidof com.frame.cinema >/dev/null; then
+              echo "ERROR: app process exited after launch"
+              exit 1
+            fi
+
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Frame-native-debug
           path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          if-no-files-found: ignore
