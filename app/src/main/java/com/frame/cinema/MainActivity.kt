@@ -1390,6 +1390,7 @@ private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
     return this.clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun Modifier.noRippleCombinedClickable(onClick: () -> Unit, onLongClick: () -> Unit): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
