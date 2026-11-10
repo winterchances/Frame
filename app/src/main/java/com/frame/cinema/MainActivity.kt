@@ -432,7 +432,7 @@ private fun FrameNativeApp(
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
                 },
                 onWatchTime = { deltaMs ->
-                    repository.recordWatchTime(deltaMs)
+                    playing?.let { repository.recordWatchTime(it.id, deltaMs) }
                 }
             )
         }
