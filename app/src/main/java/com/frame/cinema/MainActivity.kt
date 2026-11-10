@@ -80,10 +80,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = NativeLibraryRepository(this)
+        player = ExoPlayer.Builder(this).build()
         setContent {
             MaterialTheme(colorScheme = lightColorScheme(background = PageBg, surface = PageBg, primary = ThemeTeal, onBackground = MainText)) {
                 FrameNativeApp(
                     repository = repository,
+                    player = player!!,
                     onPlay = { item -> startNativePlayback(item) },
                     onOrientation = { requested ->
                         requestedOrientation = if (requested) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -117,6 +119,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun FrameNativeApp(
     repository: NativeLibraryRepository,
+    player: ExoPlayer,
     onPlay: (VideoItem) -> Unit,
     onOrientation: (Boolean) -> Unit,
     onKeepAwake: (Boolean) -> Unit
@@ -246,6 +249,7 @@ private fun FrameNativeApp(
         } else {
             NativePlayerOverlay(
                 item = playing!!,
+                player = player,
                 speeds = speeds,
                 speedIndex = speedIndex,
                 locked = locked,
@@ -553,18 +557,12 @@ private fun RecordsPage(videos: List<VideoItem>, onEdit: (VideoItem) -> Unit) {
 
 @Composable
 private fun NativePlayerOverlay(
-    item: VideoItem, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
+    item: VideoItem, player: ExoPlayer, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
     onClose: () -> Unit, onToggleControls: () -> Unit, onToggleLock: () -> Unit,
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onProgress: (Long, Long) -> Unit
 ) {
-    val context = LocalContext.current
-    val player = remember(item.id) { ExoPlayer.Builder(context).build().apply {
-        setMediaItem(MediaItem.fromUri(item.contentUri)); prepare()
-        if (item.durationMs > 0 && item.progress > 0f) seekTo((item.durationMs * item.progress / 100f).toLong())
-        playWhenReady = true
-    } }
-    var isPlaying by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
     var brightness by remember { mutableFloatStateOf(.5f) }
@@ -577,7 +575,7 @@ private fun NativePlayerOverlay(
             override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) onEnded() }
         }
         player.addListener(listener)
-        onDispose { player.removeListener(listener); player.release() }
+        onDispose { player.removeListener(listener) }
     }
     LaunchedEffect(player) {
         while (true) {
