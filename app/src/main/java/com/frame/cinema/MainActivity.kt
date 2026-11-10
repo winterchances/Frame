@@ -77,6 +77,7 @@ private enum class SortMode { ADDED, NAME, RATING, WATCHED }
 class MainActivity : ComponentActivity() {
     private var player: ExoPlayer? = null
     private lateinit var repository: NativeLibraryRepository
+    private var backgroundPlaybackAllowed = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     repository = repository,
                     player = player!!,
                     onPlay = { item -> startNativePlayback(item) },
+                    onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
                     onOrientation = { requested ->
                         requestedOrientation = if (requested) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     },
@@ -108,6 +110,11 @@ class MainActivity : ComponentActivity() {
         exo.playWhenReady = true
     }
 
+    override fun onStop() {
+        if (!backgroundPlaybackAllowed) player?.pause()
+        super.onStop()
+    }
+
     override fun onDestroy() {
         player?.release()
         player = null
@@ -122,6 +129,7 @@ private fun FrameNativeApp(
     repository: NativeLibraryRepository,
     player: ExoPlayer,
     onPlay: (VideoItem) -> Unit,
+    onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
     onKeepAwake: (Boolean) -> Unit
 ) {
@@ -261,7 +269,7 @@ private fun FrameNativeApp(
                 speedIndex = speedIndex,
                 locked = locked,
                 controlsVisible = controlsVisible,
-                onClose = { playing = null; refresh() },
+                onClose = { player.pause(); playing = null; refresh() },
                 onToggleControls = { controlsVisible = !controlsVisible },
                 onToggleLock = { locked = !locked },
                 onSpeed = {
@@ -296,7 +304,7 @@ private fun FrameNativeApp(
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
                         SheetHeading("设置")
                         Text("播放偏好", color = MutedText, fontSize = 13.sp)
-                        SettingRow("允许后台播放", allowBackground) { allowBackground = it; preferences.edit().putBoolean("allow_background", it).apply() }
+                        SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
                         SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
                         SheetAction("清空全部本地数据", danger = true) { sheet = SheetType.CLEAR_DATA }
                         Spacer(Modifier.height(26.dp))
