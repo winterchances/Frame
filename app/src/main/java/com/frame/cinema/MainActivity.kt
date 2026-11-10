@@ -251,7 +251,7 @@ private fun FrameNativeApp(
                             )
                             MainPage.RECENT -> RecentPage(
                                 videos,
-                                onVideo = { selected = it; playing = it; onPlay(it) },
+                                onVideo = { selected = it; playVideo(it) },
                                 onClear = { sheet = SheetType.CLEAR_RECENT },
                                 onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
                             )
