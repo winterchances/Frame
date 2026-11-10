@@ -648,13 +648,13 @@ private fun NativePlayerOverlay(
 
     Box(
         Modifier.fillMaxSize().background(Color.Black)
-            .pointerInput(locked) {
+            .pointerInput(locked, speedIndex) {
                 detectTapGestures(
                     onPress = {
                         tryAwaitRelease()
                         if (!locked) player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex]))
                     },
-                    onTap = { if (!locked) { player.playWhenReady = !player.isPlaying; onToggleControls() } },
+                    onTap = { if (!locked) { if (player.isPlaying) player.pause() else player.play(); onToggleControls() } },
                     onDoubleTap = { offset ->
                         if (!locked) {
                             val forward = offset.x > size.width / 2
@@ -705,7 +705,7 @@ private fun NativePlayerOverlay(
             }
             Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(46.dp)) {
                 Text("↶10", color = Color.White, fontSize = 18.sp, modifier = Modifier.clickable { player.seekTo((player.currentPosition - 10000).coerceAtLeast(0)) })
-                Text(if (isPlaying) "Ⅱ" else "▶", color = Color.White, fontSize = 36.sp, modifier = Modifier.clickable { player.playWhenReady = !player.isPlaying })
+                Text(if (isPlaying) "Ⅱ" else "▶", color = Color.White, fontSize = 36.sp, modifier = Modifier.clickable { if (player.isPlaying) player.pause() else player.play() })
                 Text("10↷", color = Color.White, fontSize = 18.sp, modifier = Modifier.clickable { player.seekTo(player.currentPosition + 10000) })
             }
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 18.dp, vertical = 20.dp)) {
