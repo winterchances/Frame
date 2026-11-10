@@ -40,6 +40,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -432,6 +433,8 @@ private fun BottomPillNavigation(current: MainPage, onSelect: (MainPage) -> Unit
 @Composable
 private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (VideoItem) -> Unit) {
     val continuing = videos.filter { it.progress > 0f && it.progress < 100f }.take(5)
+    var continueExpanded by remember { mutableStateOf(true) }
+    var recentExpanded by remember { mutableStateOf(true) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         item {
             Header("首页", onSettings)
@@ -441,29 +444,30 @@ private fun HomePage(videos: List<VideoItem>, onSettings: () -> Unit, onVideo: (
                 val hours = videos.sumOf { it.durationMs * it.progress / 100.0 }.toLong() / 3600000
                 Stat("累计时长", hours.toString(), "h")
             }
-            SectionHeading("继续观看")
+            SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded }
         }
-        if (continuing.isEmpty()) item { EmptyHint("暂无观看记录") }
-        else item {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-                continuing.forEach { video ->
-                    Box(Modifier.width(280.dp).height(160.dp).clip(RoundedCornerShape(20.dp)).background(PosterColor(video.bgIndex)).clickable { onVideo(video) }) {
-                        Thumbnail(video, Modifier.fillMaxSize())
-                        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)))
-                        Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
-                            Text(video.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                            Spacer(Modifier.height(8.dp))
-                            Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .35f))) {
-                                Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
+        if (continueExpanded) {
+            if (continuing.isEmpty()) item { EmptyHint("暂无观看记录") }
+            else item {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                    continuing.forEach { video ->
+                        Box(Modifier.width(280.dp).height(160.dp).clip(RoundedCornerShape(20.dp)).background(PosterColor(video.bgIndex)).clickable { onVideo(video) }) {
+                            Thumbnail(video, Modifier.fillMaxSize())
+                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)))
+                            Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
+                                Text(video.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Spacer(Modifier.height(8.dp))
+                                Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .35f))) {
+                                    Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
+                                }
                             }
                         }
                     }
                 }
             }
-            SectionHeading("最近添加")
         }
-        if (continuing.isEmpty()) item { SectionHeading("最近添加") }
-        items(videos.sortedByDescending { it.addedAt }.take(4), key = { it.id }) { video ->
+        item { SectionHeading("最近添加", recentExpanded) { recentExpanded = !recentExpanded } }
+        if (recentExpanded) items(videos.sortedByDescending { it.addedAt }.take(4), key = { it.id }) { video ->
             VideoRow(video, "${video.date} 添加", { onVideo(video) })
         }
         if (videos.isEmpty()) item { EmptyHint("暂无视频，点击右下角添加") }
@@ -698,10 +702,12 @@ private fun Header(title: String, onSettings: () -> Unit) {
 }
 
 @Composable
-private fun SectionHeading(text: String) {
-    Row(Modifier.fillMaxWidth().padding(top = 25.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: (() -> Unit)? = null) {
+    val rotation by animateFloatAsState(if (expanded == false) -90f else 0f, tween(220), label = "section-chevron")
+    Row(Modifier.fillMaxWidth().padding(top = 25.dp, bottom = 12.dp).then(if (onToggle != null) Modifier.clickable { onToggle() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeTeal))
-        Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(start = 8.dp))
+        Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(start = 8.dp).weight(1f))
+        if (expanded != null) Icon(Icons.Outlined.ExpandMore, null, tint = MutedText, modifier = Modifier.rotate(rotation).size(20.dp))
     }
 }
 
