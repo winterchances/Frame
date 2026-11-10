@@ -5,6 +5,10 @@ on:
     branches: [ "parity-fixes" ]
   workflow_dispatch:
 
+concurrency:
+  group: android-native-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
