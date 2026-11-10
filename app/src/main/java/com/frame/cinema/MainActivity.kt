@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -915,14 +916,14 @@ private fun Stat(label: String, value: String, unit: String) {
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp)).background(Glass).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(Color.White).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            Text(video.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 5.dp))
+            Text(video.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
 }
@@ -930,9 +931,8 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit) {
-    val height = if (compact) 166.dp else 235.dp
     Column(Modifier.combinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
-        Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(12.dp)).background(PosterColor(video.bgIndex))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterColor(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
@@ -940,7 +940,7 @@ private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -
             }
             if (video.isFav) Text("♥", color = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(7.dp))
         }
-        Text(video.name, fontSize = if (compact) 12.sp else 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222), maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 7.dp))
+        Text(video.name, fontSize = if (compact) 12.sp else 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF222222), maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
