@@ -12,27 +12,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 1. 锁定 Node.js 22（Capacitor 最新要求）
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
 
-    # 1. 明确安装 JDK 21
+    # 2. 锁定 Java 21 和 Temurin 发行版
     - name: Setup Java JDK
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '21'
 
-    # 2. 强制指定 Gradle 使用 JDK 21
+    # 3. 强制 Gradle 使用 Java 21
     - name: Setup Gradle JDK
       run: |
         echo "JAVA_HOME=$JAVA_HOME"
-        # 将 JAVA_HOME 写入 gradle.properties，确保 Gradle 使用 JDK 21
         echo "org.gradle.java.home=$JAVA_HOME" >> $GITHUB_WORKSPACE/gradle.properties
 
+    # 4. 使用最新的 Android SDK 设置
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v4.0.4
+      uses: android-actions/setup-android@v4
       with:
         packages: ''
 
@@ -41,6 +42,7 @@ jobs:
         mkdir www
         mv index.html www/
 
+    # 5. 安装 Capacitor 时自动匹配最新版，避免版本错位
     - name: Install Capacitor & Assets
       run: |
         npm init -y
@@ -58,6 +60,7 @@ jobs:
       run: |
         npx capacitor-assets generate --android
 
+    # 6. 清理缓存并构建
     - name: Build APK with Gradle
       run: |
         npx cap sync
