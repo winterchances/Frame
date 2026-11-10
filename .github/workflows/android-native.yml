@@ -1,8 +1,6 @@
 name: Build Native Android APK
 
 on:
-  push:
-    branches: [ "native-android" ]
   workflow_dispatch:
 
 permissions:
@@ -29,7 +27,7 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Build debug APK
+      - name: Build release-ready debug APK
         run: gradle --no-daemon clean assembleDebug
 
       - name: Upload APK
