@@ -389,19 +389,66 @@ private fun FrameNativeApp(
             }
             Column(
                 Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
-                horizontalAlignment = Alignment.End,
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                AnimatedVisibility(showFab) {
-                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        FabAction(Icons.Outlined.Search, "搜索") { sheet = SheetType.SEARCH; showFab = false }
-                        FabAction(Icons.Outlined.Add, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
-                    }
+                val fabEasing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)
+                val fabOffsetY = with(androidx.compose.ui.platform.LocalDensity.current) { 20.dp.roundToPx() }
+                AnimatedVisibility(
+                    visible = showFab,
+                    enter = fadeIn(tween(300, delayMillis = 50, easing = fabEasing)) +
+                        androidx.compose.animation.scaleIn(
+                            initialScale = .5f,
+                            animationSpec = tween(300, delayMillis = 50, easing = fabEasing)
+                        ) +
+                        slideInVertically(
+                            initialOffsetY = { fabOffsetY },
+                            animationSpec = tween(300, delayMillis = 50, easing = fabEasing)
+                        ),
+                    exit = fadeOut(tween(300, easing = fabEasing)) +
+                        androidx.compose.animation.scaleOut(
+                            targetScale = .5f,
+                            animationSpec = tween(300, easing = fabEasing)
+                        ) +
+                        slideOutVertically(
+                            targetOffsetY = { fabOffsetY },
+                            animationSpec = tween(300, easing = fabEasing)
+                        )
+                ) {
+                    FabAction(Icons.Outlined.Search, "搜索") { sheet = SheetType.SEARCH; showFab = false }
                 }
-                val fabRotation by animateFloatAsState(if (showFab) 45f else 0f, tween(300), label = "fab-rotation")
+                AnimatedVisibility(
+                    visible = showFab,
+                    enter = fadeIn(tween(300, delayMillis = 100, easing = fabEasing)) +
+                        androidx.compose.animation.scaleIn(
+                            initialScale = .5f,
+                            animationSpec = tween(300, delayMillis = 100, easing = fabEasing)
+                        ) +
+                        slideInVertically(
+                            initialOffsetY = { fabOffsetY },
+                            animationSpec = tween(300, delayMillis = 100, easing = fabEasing)
+                        ),
+                    exit = fadeOut(tween(300, easing = fabEasing)) +
+                        androidx.compose.animation.scaleOut(
+                            targetScale = .5f,
+                            animationSpec = tween(300, easing = fabEasing)
+                        ) +
+                        slideOutVertically(
+                            targetOffsetY = { fabOffsetY },
+                            animationSpec = tween(300, easing = fabEasing)
+                        )
+                ) {
+                    FabAction(Icons.Outlined.Add, "导入视频") { sheet = SheetType.IMPORT; showFab = false }
+                }
+                val fabRotation by animateFloatAsState(
+                    if (showFab) 45f else 0f,
+                    tween(300, easing = fabEasing),
+                    label = "fab-rotation"
+                )
                 Surface(
                     modifier = Modifier.size(56.dp).clickable { showFab = !showFab },
-                    shape = CircleShape, color = Glass, shadowElevation = 8.dp
+                    shape = CircleShape, color = Glass, shadowElevation = 4.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = .05f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(FrameHamburgerIcon, null, tint = Color.Unspecified, modifier = Modifier.size(20.dp).rotate(fabRotation))
