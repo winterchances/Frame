@@ -676,20 +676,43 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
                 when (playedDate) { today -> "今天"; yesterday -> "昨天"; else -> "更早" }
             }
             groups.forEach { (label, list) ->
-                item { Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.padding(vertical = 10.dp)) }
-                items(list, key = { it.id }) { video ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f)) {
-                            val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
-                            VideoRow(
-                                video,
-                                "时长 ${formatClock(video.durationMs)} · 已播放 ${formatClock(playedMs)}",
-                                { onVideo(video) }
-                            )
-                        }
-                        IconButton(onClick = { onMore(video) }) { Icon(Icons.Outlined.MoreVert, "更多") }
-                    }
+                stickyHeader {
+                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF666666),
+                        modifier = Modifier.fillMaxWidth().background(Color(0xF2F5F5F7))
+                            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp))
                 }
+                items(list, key = { it.id }) { video ->
+                    RecentHistoryCard(video, onClick = { onVideo(video) }, onMore = { onMore(video) })
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit) {
+    val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            .shadow(3.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
+            .background(Color.White).clickable(onClick = onClick).padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
+    ) {
+        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterColor(video.bgIndex))) {
+            Thumbnail(video, Modifier.fillMaxSize())
+        }
+        Box(Modifier.weight(1f).height(84.dp)) {
+            Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                Text(video.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222),
+                    lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("总时长  ${formatClock(video.durationMs)}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                    Text("已播放  ${formatClock(playedMs)}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                }
+            }
+            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).clickable(onClick = onMore), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFD0D0D0), modifier = Modifier.size(16.dp))
             }
         }
     }
