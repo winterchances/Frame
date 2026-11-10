@@ -334,24 +334,21 @@ private fun FrameNativeApp(
             }
     ) {
         if (playing == null) {
-            Scaffold(
-                modifier = Modifier.blur(sheetBlur),
-                containerColor = PageBg,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                bottomBar = { BottomPillNavigation(page) { page = it; showFab = false } }
-            ) { insets ->
-                Box(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
-                    androidx.compose.animation.AnimatedContent(
-                        targetState = page,
-                        transitionSpec = {
-                            androidx.compose.animation.slideInHorizontally(animationSpec = tween(260)) { it / 5 } +
-                                androidx.compose.animation.fadeIn(tween(220)) togetherWith
-                                androidx.compose.animation.slideOutHorizontally(animationSpec = tween(220)) { -it / 5 } +
-                                androidx.compose.animation.fadeOut(tween(180))
-                        },
-                        label = "frame-page"
-                    ) { target ->
-                        when (target) {
+            Box(Modifier.fillMaxSize().blur(sheetBlur)) {
+                androidx.compose.animation.AnimatedContent(
+                    targetState = page,
+                    transitionSpec = {
+                        val forward = targetState.ordinal > initialState.ordinal
+                        (androidx.compose.animation.slideInHorizontally(
+                            animationSpec = tween(350, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f))
+                        ) { fullWidth -> if (forward) fullWidth else -fullWidth } ) togetherWith
+                            androidx.compose.animation.slideOutHorizontally(
+                                animationSpec = tween(350, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f))
+                            ) { fullWidth -> if (forward) -fullWidth else fullWidth }
+                    },
+                    label = "frame-page"
+                ) { target ->
+                    when (target) {
                             MainPage.HOME -> HomePage(
                                 videos = videos,
                                 weeklyWatchTimeMs = weeklyWatchTimeMs,
@@ -386,6 +383,7 @@ private fun FrameNativeApp(
                         }
                     }
                 }
+                BottomPillNavigation(page) { page = it; showFab = false }
             }
             Column(
                 Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
