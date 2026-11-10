@@ -937,8 +937,8 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     Row(
         modifier.fillMaxWidth().padding(bottom = 12.dp)
-            .shadow(1.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
-            .background(Color.White).clickable(onClick = onClick).padding(12.dp),
+            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
+            .background(Color.White).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
         Box(Modifier.size(104.dp, 72.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
@@ -999,7 +999,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        .shadow(1.dp, RoundedCornerShape(20.dp))
+                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                         .clip(RoundedCornerShape(20.dp))
                         .background(Glass)
                         .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -1040,7 +1040,7 @@ private fun RecordsPage(
                     ) {
                         Box(
                             Modifier.size(75.dp, 100.dp)
-                                .shadow(2.dp, RoundedCornerShape(12.dp))
+                                .shadow(2.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(PosterBrush(video.bgIndex))
                         ) { Thumbnail(video, Modifier.fillMaxSize()) }
@@ -1391,6 +1391,12 @@ private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
     return this.clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
 }
 
+@Composable
+private fun Modifier.noRippleCombinedClickable(onClick: () -> Unit, onLongClick: () -> Unit): Modifier {
+    val interactionSource = remember { MutableInteractionSource() }
+    return this.combinedClickable(interactionSource = interactionSource, indication = null, onClick = onClick, onLongClick = onLongClick)
+}
+
 private fun formatClock(ms: Long): String {
     if (ms <= 0L) return "--:--:--"
     val seconds = ms / 1000
@@ -1450,7 +1456,7 @@ private fun Stat(label: String, value: String, unit: String) {
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(1.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(Color.White).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
@@ -1465,8 +1471,8 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.combinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(1.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
+    Column(modifier.noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
