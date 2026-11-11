@@ -146,6 +146,20 @@ private val FrameRecentIcon: ImageVector = ImageVector.Builder("FrameRecent", 24
         moveTo(12f, 6f); lineTo(12f, 12f); lineTo(16f, 14f)
     }
 }.build()
+private val FrameTimelineClockIcon: ImageVector = ImageVector.Builder("FrameTimelineClock", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color(0xFFB0B0B0)), strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(12f, 3f); curveTo(16.97f, 3f, 21f, 7.03f, 21f, 12f)
+        curveTo(21f, 16.97f, 16.97f, 21f, 12f, 21f)
+        curveTo(7.03f, 21f, 3f, 16.97f, 3f, 12f)
+        curveTo(3f, 7.03f, 7.03f, 3f, 12f, 3f); close()
+        moveTo(12f, 7f); lineTo(12f, 12f); lineTo(15f, 15f)
+    }
+}.build()
+private val FrameTimelinePlayIcon: ImageVector = ImageVector.Builder("FrameTimelinePlay", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color(0xFFB0B0B0)), strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(5f, 3f); lineTo(19f, 12f); lineTo(5f, 21f); close()
+    }
+}.build()
 private val FrameRecordsIcon: ImageVector = ImageVector.Builder("FrameRecords", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(4f, 19.5f); quadTo(4f, 17f, 6.5f, 17f); lineTo(20f, 17f); moveTo(6.5f, 2f); lineTo(20f, 2f); lineTo(20f, 22f); lineTo(6.5f, 22f); quadTo(4f, 22f, 4f, 19.5f); lineTo(4f, 4.5f); quadTo(4f, 2f, 6.5f, 2f); close()
@@ -1198,11 +1212,11 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(FrameRecentIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Icon(FrameTimelineClockIcon, null, modifier = Modifier.size(12.dp))
                         Text(formatClock(video.durationMs), fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(Icons.Outlined.PlayArrow, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Icon(FrameTimelinePlayIcon, null, modifier = Modifier.size(12.dp))
                         Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
                     }
                 }
