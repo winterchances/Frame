@@ -807,7 +807,7 @@ private fun FrameNativeApp(
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("编辑观影记录")
-                        Row(Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
                             (1..5).forEach { n ->
                                 Text(if (n <= editRating) "★" else "★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
@@ -841,16 +841,18 @@ private fun FrameNativeApp(
                 val cardTop = with(density) { bounds.top.toDp() }
                 val cardWidth = with(density) { bounds.width.toDp() }
                 val cardBottom = with(density) { bounds.bottom.toDp() }
-                val menuWidth = 240.dp
-                val menuHeight = 310.dp
-                val menuX = cardLeft.coerceIn(12.dp, (maxWidth - menuWidth - 12.dp).coerceAtLeast(12.dp))
-                val menuY = if (cardBottom + menuHeight + 12.dp <= maxHeight) cardBottom + 8.dp else (cardTop - menuHeight - 8.dp).coerceAtLeast(12.dp)
+                val menuWidth = minOf(216.dp, maxWidth - 32.dp)
+                val menuHeight = 300.dp
+                val menuX = (cardLeft + cardWidth / 2f - menuWidth / 2f)
+                    .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
+                val safeBottom = 80.dp
+                val menuY = if (cardBottom + menuHeight + safeBottom <= maxHeight) cardBottom + 8.dp
+                    else (cardTop - menuHeight - 8.dp).coerceIn(12.dp, (maxHeight - menuHeight - safeBottom).coerceAtLeast(12.dp))
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
                     video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
                     modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth)
-                        .shadow(12.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp))
-                        .graphicsLayer { scaleX = 1.04f; scaleY = 1.04f; transformOrigin = TransformOrigin.Center }
+                        .shadow(5.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp))
                         .zIndex(1f)
                 )
                 Column(
@@ -865,15 +867,16 @@ private fun FrameNativeApp(
                         .shadow(16.dp, RoundedCornerShape(18.dp))
                         .clip(RoundedCornerShape(18.dp))
                         .background(Color.White)
+                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(18.dp))
                         .padding(vertical = 6.dp)
                         .zIndex(2f)
                 ) {
-                    ContextMenuAction("立即播放") { contextMenuOpen = false; playVideo(video) }
-                    ContextMenuAction(if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
-                    ContextMenuAction("移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
-                    ContextMenuAction("重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
-                    ContextMenuAction("更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
-                    ContextMenuAction("移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuOpen = false }
+                    ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
+                    ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
+                    ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
+                    ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
+                    ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
+                    ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuOpen = false }
                 }
             }
         }
@@ -1062,7 +1065,7 @@ private fun LibraryPage(
                     .padding(horizontal = 20.dp)
             ) {
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp),
+                    Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(25.dp)
                 ) {
                     listOf("全部", "在看", "已看").forEach { value ->
@@ -1073,7 +1076,7 @@ private fun LibraryPage(
                     }
                 }
                 Row(
-                    Modifier.fillMaxWidth() .padding(top = 18.dp, bottom = 10.dp)
+                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -1574,13 +1577,13 @@ private fun NativePlayerOverlay(
             exit = fadeOut(tween(300))
         ) {
             Box(
-                Modifier.align(Alignment.Center).zIndex(9f).size(60.dp).clip(CircleShape)
-                    .background(Color.Black.copy(alpha = .5f))
-                    .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
-                    .noRippleClickable { unlockVisible = false; onToggleLock() },
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().zIndex(9f), contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
+                Box(Modifier.size(60.dp).clip(CircleShape).background(Color.Black.copy(alpha = .5f))
+                    .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
+                    .noRippleClickable { unlockVisible = false; onToggleLock() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
+                }
             }
         }
         AnimatedVisibility(
@@ -1805,8 +1808,10 @@ private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 }
 
 @Composable
-private fun ContextMenuAction(label: String, danger: Boolean = false, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(48.dp).noRippleClickable(onClick).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun ContextMenuAction(icon: ImageVector, label: String, danger: Boolean = false, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().height(48.dp).noRippleClickable(onClick).padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Icon(icon, contentDescription = null, tint = if (danger) Color(0xFFFF3B30) else Color(0xFF666666), modifier = Modifier.size(18.dp))
         Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
 }
