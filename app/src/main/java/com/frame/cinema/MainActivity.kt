@@ -197,7 +197,7 @@ private val MutedText = Color(0xFF888888)
 private val Glass = Color.White.copy(alpha = .85f)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, VIDEO_ACTIONS, RENAME, MOVE, NOTE, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME, RATING, WATCHED }
 
 class MainActivity : ComponentActivity() {
@@ -407,7 +407,7 @@ private fun FrameNativeApp(
 
     Box(
         Modifier.fillMaxSize().background(PageBg)
-            .pointerInput(page, sheet, playing) {
+            .pointerInput(page, sheet, playing, contextMenuVideo) {
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
@@ -787,7 +787,6 @@ private fun FrameNativeApp(
                         }
                         Spacer(Modifier.height(12.dp))
                     }
-                    SheetType.VIDEO_ACTIONS -> Unit
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
                         BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
@@ -804,13 +803,13 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("观影记录")
+                        SheetHeading("编辑观影记录")
                         Row(Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
                             (1..5).forEach { n ->
                                 Text(if (n <= editRating) "★" else "★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp).padding(bottom = 20.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }.padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                             Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         }
@@ -845,8 +844,9 @@ private fun FrameNativeApp(
                 val menuY = if (cardBottom + menuHeight + 12.dp <= maxHeight) cardBottom + 8.dp else (cardTop - menuHeight - 8.dp).coerceAtLeast(12.dp)
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
-                    video = video, compact = compact, onPlay = {}, onLong = {},
+                    video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
                     modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth)
+                        .shadow(12.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp))
                         .graphicsLayer { scaleX = 1.04f; scaleY = 1.04f; transformOrigin = TransformOrigin.Center }
                         .zIndex(1f)
                 )
@@ -982,9 +982,9 @@ private fun HomePage(
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
                     Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
                 }
-                Spacer(Modifier.height(25.dp))
                 }
             }
+            item(key = "home-stat-panel-gap") { Spacer(Modifier.height(25.dp)) }
             item(key = "home-continue-heading") { SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded } }
             item(key = "home-continue-content") {
                 AnimatedVisibility(
