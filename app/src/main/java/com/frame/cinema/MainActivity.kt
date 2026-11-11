@@ -576,6 +576,7 @@ private fun FrameNativeApp(
                     onOrientation(isLandscape)
                 },
                 onEnded = {
+                    controlsVisible = true
                     playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
                     refresh()
                 },
@@ -1029,7 +1030,6 @@ private fun HomePage(
             }
             item { Spacer(Modifier.height(20.dp)) }
         }
-    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
