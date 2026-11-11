@@ -1114,13 +1114,14 @@ private fun LibraryPage(
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    val recentItems = videos.sortedByDescending { it.addedAt }
-    val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
-    val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
+    val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
+    val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
+    val today = dateFormat.format(Date())
+    val yesterday = dateFormat.format(Date(System.currentTimeMillis() - 86400000L))
     val groups = listOf(
-        "今天" to recentItems.filter { it.date == today },
-        "昨天" to recentItems.filter { it.date == yesterday },
-        "更早" to recentItems.filter { it.date != today && it.date != yesterday }
+        "今天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == today },
+        "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
+        "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
     ).filter { it.second.isNotEmpty() }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
@@ -1168,23 +1169,24 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
 @Composable
 private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
+    val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
     Row(
         modifier.fillMaxWidth().padding(bottom = 12.dp)
             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
-        Box(Modifier.size(104.dp, 72.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
+        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
         }
-        Box(Modifier.weight(1f).height(72.dp)) {
+        Box(Modifier.weight(1f).height(84.dp)) {
             Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     displayVideoName(video.name),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
                     color = Color(0xFF222222),
-                    lineHeight = 18.sp,
+                    lineHeight = 21.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1195,7 +1197,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(Icons.Outlined.PlayArrow, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
-                        Text("${formatClock(playedMs)} · ${video.date}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
                     }
                 }
             }
