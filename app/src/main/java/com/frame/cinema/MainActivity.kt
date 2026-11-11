@@ -518,6 +518,7 @@ private fun FrameNativeApp(
         ) {
             Box(
                 Modifier.fillMaxSize()
+                    .zIndex(2f)
                     .background(Color.Black.copy(alpha = .4f))
                     .clickable(
                         indication = null,
