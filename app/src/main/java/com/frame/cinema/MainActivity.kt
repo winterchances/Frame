@@ -553,6 +553,8 @@ private fun FrameNativeApp(
             )
         }
 
+        val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
+
         AnimatedVisibility(
             visibleState = sheetVisibility,
             enter = fadeIn(tween(250)),
@@ -571,10 +573,10 @@ private fun FrameNativeApp(
                         .animateEnterExit(
                             enter = slideInVertically(
                                 animationSpec = tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))
-                            ) { 24.dp.roundToPx() } + fadeIn(tween(220)),
+                            ) { sheetSlideOffsetPx } + fadeIn(tween(220)),
                             exit = slideOutVertically(
                                 animationSpec = tween(220, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
-                            ) { 24.dp.roundToPx() } + fadeOut(tween(180))
+                            ) { sheetSlideOffsetPx } + fadeOut(tween(180))
                         )
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
