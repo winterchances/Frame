@@ -469,8 +469,7 @@ private fun FrameNativeApp(
                         }
                     }
             }
-            {
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
                 Column(
@@ -537,7 +536,6 @@ private fun FrameNativeApp(
                     Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
                 }
-            }
         } else {
             NativePlayerOverlay(
                 item = playing!!,
@@ -576,7 +574,7 @@ private fun FrameNativeApp(
         ) {
             Box(
                 Modifier.fillMaxSize().zIndex(2f).blur(8.dp * clearDialogProgress)
-                    .background(Color.Black.copy(alpha = .4f))
+                    .background(Color.Black.copy(alpha = .4f * (1f - clearDialogProgress)))
                     .clickable(
                         indication = null,
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
