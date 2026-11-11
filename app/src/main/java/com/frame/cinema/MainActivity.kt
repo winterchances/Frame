@@ -551,6 +551,14 @@ private fun FrameNativeApp(
             ) {
                 Column(
                     Modifier.align(Alignment.BottomCenter)
+                        .animateEnterExit(
+                            enter = slideInVertically(
+                                animationSpec = spring(dampingRatio = 1f, stiffness = 500f)
+                            ) { it },
+                            exit = slideOutVertically(
+                                animationSpec = spring(dampingRatio = 1f, stiffness = 850f)
+                            ) { it }
+                        )
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
                         .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
@@ -561,14 +569,6 @@ private fun FrameNativeApp(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
-                        .animateEnterExit(
-                            enter = slideInVertically(
-                                animationSpec = spring(dampingRatio = 1f, stiffness = 500f)
-                            ) { it },
-                            exit = slideOutVertically(
-                                animationSpec = spring(dampingRatio = 1f, stiffness = 850f)
-                            ) { it }
-                        )
                         .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
                 ) {
                 when (displayedSheet) {
