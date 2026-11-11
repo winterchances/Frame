@@ -1383,6 +1383,7 @@ private fun RecordsPage(
                 Spacer(Modifier.height(20.dp))
             }
         } else {
+            item { Spacer(Modifier.height(26.dp)) }
             items(videos, key = { it.id }) { video ->
                 Column(
                     Modifier.fillMaxWidth()
