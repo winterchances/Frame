@@ -246,8 +246,7 @@ class MainActivity : ComponentActivity() {
         val controller = player ?: return
         controller.setMediaItem(MediaItem.fromUri(item.contentUri))
         controller.prepare()
-        if (item.progress >= 99f || item.status == "watched") controller.seekTo(0L)
-        else if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
+        if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
         controller.play()
     }
 
@@ -469,7 +468,7 @@ private fun FrameNativeApp(
                                 { selected = it; playVideo(it) }
                             )
                             MainPage.RECENT -> RecentPage(
-                                videos.filter { it.lastPlayedAt > 0L },
+                                videos,
                                 onVideo = { selected = it; playVideo(it) },
                                 onClear = { sheet = SheetType.CLEAR_RECENT },
                                 onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
@@ -575,10 +574,7 @@ private fun FrameNativeApp(
                     isLandscape = !isLandscape
                     onOrientation(isLandscape)
                 },
-                onEnded = {
-                    playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
-                    refresh()
-                },
+                onEnded = { closePlayer(completed = true) },
                 onProgress = { pos, duration ->
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
                 },
@@ -1118,14 +1114,13 @@ private fun LibraryPage(
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
-    val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
-    val today = dateFormat.format(Date())
-    val yesterday = dateFormat.format(Date(System.currentTimeMillis() - 86400000L))
+    val recentItems = videos.sortedByDescending { it.addedAt }
+    val today = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date())
+    val yesterday = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis() - 86400000L))
     val groups = listOf(
-        "今天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == today },
-        "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
-        "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
+        "今天" to recentItems.filter { it.date == today },
+        "昨天" to recentItems.filter { it.date == yesterday },
+        "更早" to recentItems.filter { it.date != today && it.date != yesterday }
     ).filter { it.second.isNotEmpty() }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
@@ -1173,21 +1168,26 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
 @Composable
 private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
-    val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
     Row(
         modifier.fillMaxWidth().padding(bottom = 12.dp)
-            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-            .clip(RoundedCornerShape(16.dp))
+            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
-        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
+        Box(Modifier.size(104.dp, 72.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
         }
-        Box(Modifier.weight(1f).height(84.dp)) {
+        Box(Modifier.weight(1f).height(72.dp)) {
             Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Text(displayVideoName(video.name), fontSize = 15.sp, fontWeight = FontWeight.Medium,
-                    color = Color(0xFF222222), lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    displayVideoName(video.name),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color(0xFF222222),
+                    lineHeight = 18.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(FrameRecentIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
@@ -1195,12 +1195,377 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(Icons.Outlined.PlayArrow, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
-                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                        Text("${formatClock(playedMs)} · ${video.date}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
                     }
                 }
             }
             Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFD0D0D0), modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun RecordsPage(
+    videos: List<VideoItem>,
+    onSearch: () -> Unit,
+    onSort: () -> Unit,
+    onEdit: (VideoItem) -> Unit
+) {
+    LazyColumn(Modifier.fillMaxSize()) {
+        item {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                    ActionIcon(FrameSortIcon, "记录排序", onSort)
+                }
+            }
+        }
+        stickyHeader {
+            Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 10.dp)
+                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Glass)
+                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Stat("已看完", videos.size.toString(), "部")
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
+                }
+            }
+        }
+        item { Spacer(Modifier.height(26.dp)) }
+        if (videos.isEmpty()) {
+            item {
+                EmptyHint("暂无已看完的视频")
+                Spacer(Modifier.height(20.dp))
+            }
+        } else {
+            items(videos, key = { it.id }) { video ->
+                Column(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 16.dp)
+                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .noRippleClickable { onEdit(video) }
+                        .padding(15.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(15.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier.size(75.dp, 100.dp)
+                                .shadow(2.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(PosterBrush(video.bgIndex))
+                        ) { Thumbnail(video, Modifier.fillMaxSize()) }
+                        Column(
+                            Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                displayVideoName(video.name),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFF222222),
+                                lineHeight = 22.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(video.date + " 看完", fontSize = 12.sp, color = Color(0xFF999999))
+                            Text(
+                                "★".repeat(video.rating.coerceIn(0, 5)) + "☆".repeat(5 - video.rating.coerceIn(0, 5)),
+                                color = if (video.rating > 0) Color(0xFFFFB800) else Color(0xFFE0E0E0),
+                                fontSize = 14.sp,
+                                letterSpacing = 2.sp
+                            )
+                        }
+                    }
+                    val hasReview = video.review.isNotBlank()
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .height(androidx.compose.foundation.layout.IntrinsicSize.Min)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF9F9FB))
+                    ) {
+                        Box(
+                            Modifier.width(3.dp).fillMaxHeight()
+                                .background(if (hasReview) ThemeTeal else Color(0xFFE0E0E0))
+                        )
+                        Text(
+                            video.review.ifBlank { "点击添加你的观影感想..." },
+                            color = if (hasReview) Color(0xFF555555) else Color(0xFFB0B0B0),
+                            fontSize = 13.sp,
+                            lineHeight = 20.sp,
+                            fontStyle = if (hasReview) androidx.compose.ui.text.font.FontStyle.Normal else androidx.compose.ui.text.font.FontStyle.Italic,
+                            modifier = Modifier.weight(1f).padding(12.dp)
+                        )
+                    }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(20.dp)) }
+    }
+}
+@Composable
+private fun NativePlayerOverlay(
+    item: VideoItem, player: Player, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
+    onClose: () -> Unit, onToggleControls: () -> Unit, onAutoHideControls: () -> Unit, onToggleLock: () -> Unit,
+    onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
+    onProgress: (Long, Long) -> Unit,
+    onWatchTime: (Long) -> Unit
+) {
+    var isPlaying by remember { mutableStateOf(player.isPlaying) }
+    var current by remember { mutableLongStateOf(0L) }
+    var duration by remember { mutableLongStateOf(item.durationMs) }
+    var brightnessMask by remember { mutableFloatStateOf(0f) }
+    var volume by remember { mutableFloatStateOf(player.volume) }
+    var unlockVisible by remember { mutableStateOf(false) }
+    var centerMessage by remember { mutableStateOf("") }
+    var dragMode by remember { mutableStateOf("none") }
+    var dragStartX by remember { mutableFloatStateOf(0f) }
+    var dragStartY by remember { mutableFloatStateOf(0f) }
+    var dragStartPosition by remember { mutableLongStateOf(0L) }
+    var dragStartVolume by remember { mutableFloatStateOf(player.volume) }
+    var dragStartBrightness by remember { mutableFloatStateOf(0f) }
+
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(value: Boolean) { isPlaying = value }
+            override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) onEnded() }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
+    }
+    LaunchedEffect(player) {
+        var lastPersistedAt = 0L
+        var previousTick = SystemClock.elapsedRealtime()
+        var wasPlaying = player.isPlaying
+        while (true) {
+            current = player.currentPosition.coerceAtLeast(0L)
+            if (player.duration > 0L) duration = player.duration
+            val now = System.currentTimeMillis()
+            val elapsedNow = SystemClock.elapsedRealtime()
+            val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
+            val playingNow = player.isPlaying
+            if (playingNow && wasPlaying) onWatchTime(elapsed)
+            wasPlaying = playingNow
+            previousTick = elapsedNow
+            if (now - lastPersistedAt >= 5000L) {
+                onProgress(current, duration)
+                lastPersistedAt = now
+            }
+            delay(500)
+        }
+    }
+    LaunchedEffect(centerMessage) {
+        if (centerMessage.isNotEmpty()) {
+            delay(800)
+            centerMessage = ""
+        }
+    }
+    LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
+    LaunchedEffect(controlsVisible, isPlaying, locked) {
+        if (controlsVisible && isPlaying && !locked) {
+            delay(3000)
+            onAutoHideControls()
+        }
+    }
+
+    Box(
+        Modifier.fillMaxSize().background(Color.Black)
+            .pointerInput(locked, controlsVisible, speedIndex, duration) {
+                detectTapGestures(
+                    onTap = {
+                        if (locked) {
+                            unlockVisible = !unlockVisible
+                        } else if (!controlsVisible) {
+                            onToggleControls()
+                        } else {
+                            if (player.isPlaying) player.pause() else player.play()
+                        }
+                    },
+                    onDoubleTap = { offset ->
+                        if (!locked) {
+                            val forward = offset.x > size.width / 2f
+                            val target = (player.currentPosition + if (forward) 10_000L else -10_000L)
+                                .coerceIn(0L, duration.coerceAtLeast(0L))
+                            player.seekTo(target)
+                            current = target
+                            centerMessage = if (forward) "快进 10s" else "快退 10s"
+                        }
+                    },
+                    onLongPress = {
+                        if (!locked) {
+                            player.setPlaybackParameters(PlaybackParameters(2f))
+                            centerMessage = "2.0x 播放中"
+                        }
+                    },
+                    onPress = {
+                        tryAwaitRelease()
+                        if (!locked) player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex]))
+                    }
+                )
+            }
+            .pointerInput(locked, duration) {
+                detectDragGestures(
+                    onDragStart = { start ->
+                        if (!locked) {
+                            dragStartX = start.x
+                            dragStartY = start.y
+                            dragStartPosition = player.currentPosition.coerceAtLeast(0L)
+                            dragStartVolume = player.volume
+                            dragStartBrightness = brightnessMask
+                            dragMode = when {
+                                start.x < size.width / 3f -> "brightness"
+                                start.x > size.width * 2f / 3f -> "volume"
+                                else -> "progress"
+                            }
+                        }
+                    },
+                    onDragEnd = {
+                        if (dragMode == "progress") player.seekTo(current)
+                        dragMode = "none"
+                    },
+                    onDragCancel = { dragMode = "none" },
+                    onDrag = { change, _ ->
+                        if (!locked && dragMode != "none") {
+                            change.consume()
+                            val dx = change.position.x - dragStartX
+                            val dy = change.position.y - dragStartY
+                            when {
+                                dragMode == "brightness" && abs(dy) > abs(dx) -> {
+                                    brightnessMask = (dragStartBrightness - dy / 200f).coerceIn(0f, .8f)
+                                    centerMessage = "亮度 ${((1f - brightnessMask) * 100).toInt()}%"
+                                }
+                                dragMode == "volume" && abs(dy) > abs(dx) -> {
+                                    volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
+                                    player.volume = volume
+                                    centerMessage = "音量 ${(volume * 100).toInt()}%"
+                                }
+                                dragMode == "progress" && abs(dx) > abs(dy) -> {
+                                    val changeMs = (dx / (size.width * .8f) * duration.coerceAtLeast(0L)).toLong()
+                                    current = (dragStartPosition + changeMs).coerceIn(0L, duration.coerceAtLeast(0L))
+                                    centerMessage = "${formatTime(current)} / ${formatTime(duration)}"
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+    ) {
+        AndroidView(
+            factory = { ctx -> PlayerView(ctx).apply {
+                this.player = player
+                useController = false
+                layoutParams = ViewGroup.LayoutParams(-1, -1)
+            } },
+            modifier = Modifier.fillMaxSize(),
+            update = { it.player = player }
+        )
+        if (brightnessMask > 0f) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = brightnessMask)))
+        }
+        AnimatedVisibility(
+            visible = controlsVisible && !locked,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .8f), Color.Transparent)))
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+                    PlayerIconButton(Icons.Outlined.ArrowBack, "返回", onClose)
+                    Text(displayVideoName(item.name), color = Color.White, fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1,
+                        overflow = TextOverflow.Ellipsis)
+                    PlayerIconButton(Icons.Outlined.ScreenRotation, "旋转屏幕", onOrientation)
+                    PlayerIconButton(Icons.Outlined.Lock, "锁定屏幕", onToggleLock)
+                }
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .8f))))
+                        .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 30.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                        Text(formatTime(current), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        PlayerProgressBar(
+                            progress = if (duration > 0L) (current.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
+                            modifier = Modifier.weight(1f),
+                            onSeek = { fraction ->
+                                current = (duration * fraction).toLong().coerceIn(0L, duration.coerceAtLeast(0L))
+                                player.seekTo(current)
+                            }
+                        )
+                        Text(formatTime(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { if (player.isPlaying) player.pause() else player.play() }, modifier = Modifier.size(48.dp)) {
+                            Icon(
+                                if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                contentDescription = if (isPlaying) "暂停" else "播放",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Box(
+                            Modifier.clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = .2f))
+                                .noRippleClickable { onSpeed() }
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+        AnimatedVisibility(
+            visible = locked && unlockVisible,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Box(
+                Modifier.align(Alignment.Center).zIndex(9f).size(60.dp).clip(CircleShape)
+                    .background(Color.Black.copy(alpha = .5f))
+                    .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
+                    .noRippleClickable { unlockVisible = false; onToggleLock() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+        }
+        AnimatedVisibility(
+            visible = centerMessage.isNotEmpty() && !locked,
+            modifier = Modifier.align(Alignment.Center).zIndex(10f),
+            enter = fadeIn(tween(180)), exit = fadeOut(tween(180))
+        ) {
+            Box(Modifier.clip(CircleShape).background(Color.Black.copy(alpha = .68f)).padding(horizontal = 22.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+                Text(centerMessage, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
     }
