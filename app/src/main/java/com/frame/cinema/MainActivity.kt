@@ -809,7 +809,7 @@ private fun FrameNativeApp(
                                 Text(if (n <= editRating) "★" else "★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp).padding(bottom = 20.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }.padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                             Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         }
@@ -992,7 +992,7 @@ private fun HomePage(
                     enter = androidx.compose.animation.expandVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f))) + fadeIn(tween(300)),
                     exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
                 ) {
-                    if (continuing.isEmpty()) EmptyHint("暂无观看记录") else {
+                    if (continuing.isEmpty()) EmptyHint("暂无观看记录", horizontalPadding = 0.dp) else {
                         val heroListState = rememberLazyListState()
                         val snapFling = rememberSnapFlingBehavior(heroListState, SnapPosition.Start)
                         val gentleSnapFling = remember(snapFling) {
@@ -1030,7 +1030,7 @@ private fun HomePage(
                     enter = androidx.compose.animation.expandVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f))) + fadeIn(tween(300)),
                     exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
                 ) {
-                    if (recent.isEmpty()) EmptyHint("暂无视频，点击右下角添加")
+                    if (recent.isEmpty()) EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
                     else Column { recent.forEach { video -> VideoRow(video, "${video.date} 添加") { onVideo(video) } } }
                 }
             }
@@ -1797,8 +1797,8 @@ private fun PosterBrush(index: Int): Brush {
 }
 
 @Composable
-private fun EmptyHint(text: String) {
-    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp))
+private fun EmptyHint(text: String, horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp) {
+    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding, vertical = 20.dp))
 }
 
 @Composable
