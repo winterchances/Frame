@@ -1000,7 +1000,7 @@ private fun LibraryPage(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText)
+                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 ActionIcon(FrameTagIcon, "分类管理", onCategories)
                 ActionIcon(FrameSortIcon, "排序", onSort)
                 ActionIcon(FrameGridIcon, "布局管理", onGrid)
@@ -1083,7 +1083,7 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText)
+                Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
             }
         }
@@ -1174,7 +1174,7 @@ private fun RecordsPage(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText)
+                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
                     ActionIcon(FrameSortIcon, "记录排序", onSort)
@@ -1611,7 +1611,7 @@ private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Un
 @Composable
 private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText, letterSpacing = .5.sp)
+        Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
         Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText)
         }
