@@ -349,7 +349,7 @@ private fun FrameNativeApp(
         onSystemBarsVisible(false)
         onPlay(item)
     }
-    fun closePlayer(completed: Boolean = false) {
+    fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
         playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
         player.pause()
         playing = null
