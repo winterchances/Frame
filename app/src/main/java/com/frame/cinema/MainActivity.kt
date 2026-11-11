@@ -1221,12 +1221,12 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(FrameTimelineClockIcon, null, modifier = Modifier.size(12.dp))
-                        Text(formatClock(video.durationMs), fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                        Icon(FrameTimelineClockIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Text(formatClock(video.durationMs), fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(FrameTimelinePlayIcon, null, modifier = Modifier.size(12.dp))
-                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, color = Color(0xFF999999), maxLines = 1)
+                        Icon(FrameTimelinePlayIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true)
                     }
                 }
             }
