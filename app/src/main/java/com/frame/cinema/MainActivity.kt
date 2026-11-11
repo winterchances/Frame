@@ -1328,7 +1328,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     }
                 }
             }
-            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomCenter) {
                 Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFD0D0D0), modifier = Modifier.size(16.dp))
             }
         }
