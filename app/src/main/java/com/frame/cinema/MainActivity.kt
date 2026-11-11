@@ -466,11 +466,11 @@ private fun FrameNativeApp(
                     }
             }
             {
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f).blur(backdropBlur)) {
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).blur(backdropBlur),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -982,6 +982,7 @@ private fun HomePage(
         }
     }
 }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryPage(
