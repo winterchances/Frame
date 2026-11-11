@@ -36,29 +36,53 @@ jobs:
       - name: Build debug APK
         run: gradle --no-daemon clean assembleDebug
 
-      - name: Install and diagnose app startup in Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb logcat -c
-            adb shell am force-stop com.frame.cinema
-            adb shell am start -n com.frame.cinema/.MainActivity
-            sleep 15
-            echo "===== APP PROCESS ====="
-            adb shell pidof com.frame.cinema
-            echo "===== LAST ANR ====="
-            adb shell dumpsys activity lastanr
-            echo "===== MAIN THREAD DUMP ====="
-            adb shell kill -3 $(adb shell pidof com.frame.cinema) || true
+      - name: Boot emulator and diagnose app startup
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "emulator" "platform-tools" "system-images;android-35;google_apis;x86_64"
+          echo "no" | avdmanager create avd -n frame-ci -k "system-images;android-35;google_apis;x86_64" -d pixel_2 --force
+          nohup "$ANDROID_HOME/emulator/emulator" -avd frame-ci -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none > emulator.log 2>&1 &
+          adb wait-for-device
+          booted=0
+          for i in $(seq 1 180); do
+            value="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+            if [ "$value" = "1" ]; then booted=1; break; fi
             sleep 2
-            adb logcat -d -v threadtime > startup-logcat.txt
-            echo "===== APP STARTUP / ANR / CRASH SUMMARY ====="
-            grep -E -A 45 -B 8 "FATAL EXCEPTION|Fatal signal|ANR in Window|ANR\ in\ com.frame.cinema|DALVIK THREADS|"main" prio|Process: com.frame.cinema|com.frame.cinema" startup-logcat.txt | tail -n 500 || true
+          done
+          if [ "$booted" != "1" ]; then
+            echo "Emulator did not finish booting"
+            cat emulator.log
+            exit 1
+          fi
+          input_ready=0
+          for i in $(seq 1 60); do
+            if adb shell service check input 2>&1 | grep -q found; then input_ready=1; break; fi
+            sleep 2
+          done
+          if [ "$input_ready" = "1" ]; then adb shell input keyevent 82 || true; fi
+          adb shell settings put global window_animation_scale 0.0 || true
+          adb shell settings put global transition_animation_scale 0.0 || true
+          adb shell settings put global animator_duration_scale 0.0 || true
+          adb install -r app/build/outputs/apk/debug/app-debug.apk
+          adb logcat -c
+          adb shell am force-stop com.frame.cinema
+          adb shell am start -n com.frame.cinema/.MainActivity
+          sleep 20
+          echo "===== APP PROCESS ====="
+          adb shell pidof com.frame.cinema | tee app-process.txt || true
+          echo "===== LAST ANR ====="
+          adb shell dumpsys activity lastanr > last-anr.txt || true
+          echo "===== MAIN THREAD DUMP ====="
+          app_pid="$(adb shell pidof com.frame.cinema | tr -d '\r' || true)"
+          if [ -n "$app_pid" ]; then adb shell kill -3 "$app_pid" || true; fi
+          sleep 2
+          adb logcat -d -v threadtime > startup-logcat.txt
+          echo "===== APP STARTUP / ANR / CRASH SUMMARY ====="
+          grep -E -A 45 -B 8 'FATAL EXCEPTION|Fatal signal|ANR in Window|ANR in com.frame.cinema|DALVIK THREADS|Process: com.frame.cinema|com.frame.cinema' startup-logcat.txt | tail -n 500 || true
+          echo "===== EMULATOR LOG TAIL ====="
+          tail -n 100 emulator.log || true
 
       - name: Upload APK and startup diagnostics
         if: always()
@@ -68,4 +92,7 @@ jobs:
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             startup-logcat.txt
+            last-anr.txt
+            app-process.txt
+            emulator.log
           if-no-files-found: ignore
