@@ -397,11 +397,12 @@ private fun FrameNativeApp(
                         }
                     }
             }
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
-                BottomPillNavigation(page, hazeState, sheetBlur) { page = it; showFab = false }
-            }
-            Column(
-                Modifier.align(Alignment.BottomEnd).blur(sheetBlur).padding(end = 16.dp, bottom = 16.dp),
+            if (sheet == SheetType.NONE) {
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
+                    BottomPillNavigation(page, hazeState, 0.dp) { page = it; showFab = false }
+                }
+                Column(
+                Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -463,6 +464,7 @@ private fun FrameNativeApp(
                 ) {
                     Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
+                }
             }
         } else {
             NativePlayerOverlay(
@@ -510,6 +512,7 @@ private fun FrameNativeApp(
         }
 
         AnimatedVisibility(
+            modifier = Modifier.fillMaxSize().zIndex(10f),
             visible = sheet != SheetType.NONE,
             enter = fadeIn(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f))),
             exit = fadeOut(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f)))
@@ -741,7 +744,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(0.dp))
                     Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
             }
