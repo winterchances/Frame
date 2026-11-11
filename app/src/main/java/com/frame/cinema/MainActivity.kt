@@ -456,8 +456,7 @@ private fun FrameNativeApp(
                             MainPage.HOME -> HomePage(
                                 videos = videos,
                                 weeklyWatchTimeMs = weeklyWatchTimeMs,
-                                hazeState = hazeState,
-                                onSettings = { sheet = SheetType.SETTINGS },
+                                                                onSettings = { sheet = SheetType.SETTINGS },
                                 onVideo = { selected = it; playVideo(it) }
                             )
                             MainPage.LIBRARY -> LibraryPage(
@@ -942,46 +941,33 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomePage(
-    videos: List<VideoItem>, weeklyWatchTimeMs: Long, hazeState: HazeState,
+    videos: List<VideoItem>, weeklyWatchTimeMs: Long,
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(4)
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-    val listState = rememberLazyListState()
-    val fadeDistancePx = with(LocalDensity.current) { 88.dp.toPx() }
-    val topBarProgress by remember(listState, fadeDistancePx) {
-        derivedStateOf {
-            val offset = if (listState.firstVisibleItemIndex > 0) fadeDistancePx else listState.firstVisibleItemScrollOffset.toFloat()
-            (offset / fadeDistancePx).coerceIn(0f, 1f)
-        }
-    }
-    Box(Modifier.fillMaxSize()) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             item(key = "home-large-title") { Header("首页", onSettings) }
             stickyHeader(key = "home-stat-panel") {
-                Column(
-                    Modifier.fillMaxWidth()
-                        .background(Color(0xD9F5F5F7))
-                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color(0xD9F5F5F7), tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
-                        .drawBehind {
-                            val lineY = size.height - 0.5.dp.toPx()
-                            drawLine(Color(0x26000000), Offset(0f, lineY), Offset(size.width, lineY), 0.5.dp.toPx())
-                        }
-                ) {
-                Row(
-                    Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                        .clip(RoundedCornerShape(20.dp)).background(Glass).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 10.dp, vertical = 15.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
-                }
+                Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Glass)
+                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 15.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
+                        Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                        Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
+                        Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                        Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
+                    }
                 }
             }
             item(key = "home-stat-panel-gap") { Spacer(Modifier.height(25.dp)) }
@@ -1035,20 +1021,6 @@ private fun HomePage(
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
-        }
-        // 毛玻璃仅绘制在独立背景层，导航文字与图标不会被模糊。
-        Box(
-            Modifier.fillMaxWidth().height(56.dp).align(Alignment.TopCenter).zIndex(2f)
-                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color.White.copy(alpha = .82f * topBarProgress), tints = emptyList(), blurRadius = 20.dp * topBarProgress, noiseFactor = 0f))
-                .background(Color.White.copy(alpha = .82f * topBarProgress))
-        )
-        Box(Modifier.fillMaxWidth().height(56.dp).align(Alignment.TopCenter).zIndex(3f)) {
-            Text("首页", Modifier.align(Alignment.Center).graphicsLayer { alpha = topBarProgress }, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MainText)
-            Box(
-                Modifier.align(Alignment.CenterEnd).padding(end = 20.dp).size(36.dp).graphicsLayer { alpha = topBarProgress }
-                    .clip(CircleShape).noRippleClickable(onSettings),
-                contentAlignment = Alignment.Center
-            ) { Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText) }
         }
     }
 }
