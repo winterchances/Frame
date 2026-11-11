@@ -11,6 +11,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
@@ -86,6 +87,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -218,6 +221,10 @@ class MainActivity : ComponentActivity() {
                                 onKeepAwake = { enabled ->
                                     if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                                     else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                },
+                                onSystemBarsVisible = { visible ->
+                                    val controller = WindowInsetsControllerCompat(window, window.decorView)
+                                    if (visible) controller.show(WindowInsetsCompat.Type.statusBars()) else controller.hide(WindowInsetsCompat.Type.statusBars())
                                 }
                             )
                         }
@@ -257,7 +264,8 @@ private fun FrameNativeApp(
     onPlay: (VideoItem) -> Unit,
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
-    onKeepAwake: (Boolean) -> Unit
+    onKeepAwake: (Boolean) -> Unit,
+    onSystemBarsVisible: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val hazeState = remember { HazeState() }
@@ -296,15 +304,18 @@ private fun FrameNativeApp(
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
+    var showClearDataDialog by remember { mutableStateOf(false) }
     val sheetProgress by animateFloatAsState(
         targetValue = if (sheet == SheetType.NONE) 0f else 1f,
-        animationSpec = spring(
-            dampingRatio = 1f,
-            stiffness = if (sheet == SheetType.NONE) 850f else 500f
-        ),
+        animationSpec = tween(if (sheet == SheetType.NONE) 240 else 340, easing = if (sheet == SheetType.NONE) androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f) else androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f)),
         label = "sheet-background-progress"
     )
-    val sheetBlur = 8.dp * sheetProgress
+    val clearDialogProgress by animateFloatAsState(
+        targetValue = if (showClearDataDialog) 1f else 0f,
+        animationSpec = tween(if (showClearDataDialog) 300 else 240, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)),
+        label = "clear-data-backdrop-progress"
+    )
+    val backdropBlur = 8.dp * maxOf(sheetProgress, clearDialogProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
@@ -314,7 +325,18 @@ private fun FrameNativeApp(
         controlsVisible = true
         locked = false
         playing = item
+        onSystemBarsVisible(false)
         onPlay(item)
+    }
+    fun closePlayer() {
+        playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L)) }
+        player.pause()
+        playing = null
+        locked = false
+        controlsVisible = true
+        onSystemBarsVisible(true)
+        if (isLandscape) { isLandscape = false; onOrientation(false) }
+        refresh()
     }
 
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -349,10 +371,14 @@ private fun FrameNativeApp(
     val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
     LaunchedEffect(sheet) {
         sheetVisibility.targetState = sheet != SheetType.NONE
-        if (sheet == SheetType.NONE) {
-            sheetKeyboardUp = false
-        } else {
-            displayedSheet = sheet
+        if (sheet == SheetType.NONE) sheetKeyboardUp = false else displayedSheet = sheet
+    }
+    BackHandler(enabled = showClearDataDialog || sheet != SheetType.NONE || playing != null || showFab) {
+        when {
+            showClearDataDialog -> showClearDataDialog = false
+            sheet != SheetType.NONE -> sheet = SheetType.NONE
+            playing != null -> closePlayer()
+            showFab -> showFab = false
         }
     }
 
@@ -387,7 +413,7 @@ private fun FrameNativeApp(
                         scaleX = 1f - .05f * sheetProgress
                         scaleY = 1f - .05f * sheetProgress
                     }
-                    .blur(sheetBlur)
+                    .blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
@@ -439,12 +465,12 @@ private fun FrameNativeApp(
                         }
                     }
             }
-            if (!sheetVisibility.currentState && !sheetVisibility.targetState) {
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
-                    BottomPillNavigation(page, hazeState, sheetBlur) { page = it; showFab = false }
+            {
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f).blur(backdropBlur)) {
+                    BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).blur(backdropBlur),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -516,15 +542,7 @@ private fun FrameNativeApp(
                 speedIndex = speedIndex,
                 locked = locked,
                 controlsVisible = controlsVisible,
-                onClose = {
-                    playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L)) }
-                    player.pause()
-                    playing = null
-                    locked = false
-                    controlsVisible = true
-                    if (isLandscape) { isLandscape = false; onOrientation(false) }
-                    refresh()
-                },
+                onClose = { closePlayer() },
                 onToggleControls = { controlsVisible = !controlsVisible },
                 onAutoHideControls = { controlsVisible = false },
                 onToggleLock = { locked = !locked; controlsVisible = !locked },
@@ -537,12 +555,7 @@ private fun FrameNativeApp(
                 },
                 onEnded = {
                     playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), true) }
-                    player.pause()
-                    playing = null
-                    locked = false
-                    controlsVisible = true
-                    if (isLandscape) { isLandscape = false; onOrientation(false) }
-                    refresh()
+                    closePlayer()
                 },
                 onProgress = { pos, duration ->
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
@@ -557,8 +570,8 @@ private fun FrameNativeApp(
 
         AnimatedVisibility(
             visibleState = sheetVisibility,
-            enter = fadeIn(tween(250)),
-            exit = fadeOut(tween(180))
+            enter = fadeIn(tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
+            exit = fadeOut(tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)))
         ) {
             Box(
                 Modifier.fillMaxSize().zIndex(2f)
@@ -572,11 +585,11 @@ private fun FrameNativeApp(
                     Modifier.align(Alignment.BottomCenter)
                         .animateEnterExit(
                             enter = slideInVertically(
-                                animationSpec = tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))
-                            ) { sheetSlideOffsetPx } + fadeIn(tween(220)),
+                                animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))
+                            ) { sheetSlideOffsetPx } + fadeIn(tween(340)),
                             exit = slideOutVertically(
-                                animationSpec = tween(220, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
-                            ) { sheetSlideOffsetPx } + fadeOut(tween(180))
+                                animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
+                            ) { sheetSlideOffsetPx } + fadeOut(tween(240))
                         )
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
@@ -612,7 +625,7 @@ private fun FrameNativeApp(
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
-                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { sheet = SheetType.CLEAR_DATA }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { showClearDataDialog = true }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
                         }
@@ -792,15 +805,28 @@ private fun FrameNativeApp(
                         Text("只清除观看进度，不会删除片库中的视频。", color = MutedText, modifier = Modifier.padding(bottom = 12.dp))
                         SheetAction("确认清空", danger = true) { repository.clearRecent(); refresh(); sheet = SheetType.NONE }
                     }
-                    SheetType.CLEAR_DATA -> SheetContent("清空全部数据？") {
-                        Text("此操作会删除片库条目、分类、封面和本地记录。", color = MutedText, modifier = Modifier.padding(bottom = 12.dp))
-                        SheetAction("确认清空全部数据", danger = true) { repository.clearAll(); refresh(); sheet = SheetType.NONE }
-                    }
+                    SheetType.CLEAR_DATA -> Unit
                     SheetType.DELETE_RECENT -> SheetContent("删除这条播放记录？") {
                         SheetAction("删除播放记录", danger = true) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
                     SheetType.NONE -> Unit
                 }
+                }
+            }
+        }
+        if (showClearDataDialog || clearDialogProgress > 0f) {
+            Box(Modifier.fillMaxSize().zIndex(5f).background(Color.Black.copy(alpha = .4f * clearDialogProgress)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) {
+                androidx.compose.animation.AnimatedVisibility(visible = showClearDataDialog,
+                    enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
+                    exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(Color.White).noRippleClickable { }.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("清空全部数据？", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MainText)
+                        Text("此操作会删除片库条目、分类、封面和本地记录，且无法撤销。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 12.dp, bottom = 22.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFF3B30)).noRippleClickable { repository.clearAll(); refresh(); showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("确认清空", color = Color.White, fontWeight = FontWeight.SemiBold) }
+                        }
+                    }
                 }
             }
         }
