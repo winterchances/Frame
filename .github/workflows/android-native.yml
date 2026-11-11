@@ -36,7 +36,7 @@ jobs:
       - name: Build debug APK
         run: gradle --no-daemon clean assembleDebug
 
-      - name: Install and launch APK in Android emulator
+      - name: Install and diagnose app startup in Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -47,21 +47,25 @@ jobs:
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb logcat -c
             adb shell am force-stop com.frame.cinema
-            adb shell am start -W -n com.frame.cinema/.MainActivity
-            sleep 20
+            adb shell am start -n com.frame.cinema/.MainActivity
+            sleep 15
             echo "===== APP PROCESS ====="
-            adb shell pidof com.frame.cinema || true
-            echo "===== CRASH LOG ====="
-            adb logcat -d -v threadtime | grep -E -A 35 -B 8 "FATAL EXCEPTION|Fatal signal|Process: com.frame.cinema|AndroidRuntime" || true
-            if ! adb shell pidof com.frame.cinema >/dev/null; then
-              echo "ERROR: app process exited after launch"
-              exit 1
-            fi
+            adb shell pidof com.frame.cinema
+            echo "===== LAST ANR ====="
+            adb shell dumpsys activity lastanr
+            echo "===== MAIN THREAD DUMP ====="
+            adb shell kill -3 $(adb shell pidof com.frame.cinema) || true
+            sleep 2
+            adb logcat -d -v threadtime > startup-logcat.txt
+            echo "===== APP STARTUP / ANR / CRASH SUMMARY ====="
+            grep -E -A 45 -B 8 "FATAL EXCEPTION|Fatal signal|ANR in Window|ANR\ in\ com.frame.cinema|DALVIK THREADS|"main" prio|Process: com.frame.cinema|com.frame.cinema" startup-logcat.txt | tail -n 500 || true
 
-      - name: Upload APK
+      - name: Upload APK and startup diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Frame-native-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Frame-native-diagnostics
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            startup-logcat.txt
           if-no-files-found: ignore
