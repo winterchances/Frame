@@ -156,7 +156,7 @@ private val FrameTimelineClockIcon: ImageVector = ImageVector.Builder("FrameTime
     }
 }.build()
 private val FrameTimelinePlayIcon: ImageVector = ImageVector.Builder("FrameTimelinePlay", 24.dp, 24.dp, 24f, 24f).apply {
-    path(fill = null, stroke = SolidColor(Color(0xFFB0B0B0)), strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+    path(fill = null, stroke = SolidColor(Color(0xFF888888)), strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(5f, 3f); lineTo(19f, 12f); lineTo(5f, 21f); close()
     }
 }.build()
