@@ -471,7 +471,8 @@ private fun FrameNativeApp(
                             MainPage.HOME -> HomePage(
                                 videos = videos,
                                 weeklyWatchTimeMs = weeklyWatchTimeMs,
-                                                                onSettings = { sheet = SheetType.SETTINGS },
+                                hazeState = hazeState,
+                                onSettings = { sheet = SheetType.SETTINGS },
                                 onVideo = { selected = it; playVideo(it) }
                             )
                             MainPage.LIBRARY -> LibraryPage(
@@ -962,7 +963,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomePage(
-    videos: List<VideoItem>, weeklyWatchTimeMs: Long,
+    videos: List<VideoItem>, weeklyWatchTimeMs: Long, hazeState: HazeState,
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(4)
@@ -972,7 +973,15 @@ private fun HomePage(
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             item(key = "home-large-title") { Header("首页", onSettings) }
             stickyHeader(key = "home-stat-panel") {
-                Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(PageBg.copy(alpha = .95f))
+                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg.copy(alpha = .95f), tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
+                        .drawBehind {
+                            val lineY = size.height - 0.5.dp.toPx()
+                            drawLine(Color(0x26000000), Offset(0f, lineY), Offset(size.width, lineY), 0.5.dp.toPx())
+                        }
+                ) {
                     Row(
                         Modifier.fillMaxWidth()
                             .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
