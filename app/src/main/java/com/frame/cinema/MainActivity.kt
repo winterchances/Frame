@@ -1249,11 +1249,11 @@ private fun RecordsPage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Stat("已看完", videos.size.toString(), "部")
+                    Stat("已看完", videos.size.toString(), "部", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h")
+                    Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇")
+                    Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇", Modifier.weight(1f))
                 }
             }
         }
