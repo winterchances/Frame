@@ -47,6 +47,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -755,7 +756,7 @@ private fun FrameNativeApp(
                                                 repository.saveCategories(categories - cat)
                                                 videos.filter { it.category == cat }.forEach { repository.update(it.copy(category = "全部分类")) }
                                                 refresh()
-                                            }.padding(start = 12.dp, vertical = 10.dp)
+                                            }.padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
                                         )
                                     }
                                 }
