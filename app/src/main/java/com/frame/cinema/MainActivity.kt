@@ -517,7 +517,7 @@ private fun FrameNativeApp(
             exit = fadeOut(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f)))
         ) {
             Box(
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize().zIndex(2f)
                     .background(Color.Black.copy(alpha = .4f))
                     .clickable(
                         indication = null,
@@ -743,7 +743,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(0.dp))
                     Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
             }
