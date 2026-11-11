@@ -147,7 +147,7 @@ private val FrameRecentIcon: ImageVector = ImageVector.Builder("FrameRecent", 24
     }
 }.build()
 private val FrameTimelineClockIcon: ImageVector = ImageVector.Builder("FrameTimelineClock", 24.dp, 24.dp, 24f, 24f).apply {
-    path(fill = null, stroke = SolidColor(Color(0xFFB0B0B0)), strokeLineWidth = 1.5f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+    path(fill = null, stroke = SolidColor(Color(0xFF888888)), strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(12f, 3f); curveTo(16.97f, 3f, 21f, 7.03f, 21f, 12f)
         curveTo(21f, 16.97f, 16.97f, 21f, 12f, 21f)
         curveTo(7.03f, 21f, 3f, 16.97f, 3f, 12f)
@@ -222,6 +222,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = android.graphics.Color.WHITE
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
         repository = NativeLibraryRepository(this)
         val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
         val future = MediaController.Builder(this, token).buildAsync()
@@ -681,28 +683,117 @@ private fun FrameNativeApp(
                     }
                     SheetType.CATEGORIES -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("分类管理")
-                        categories.forEach { cat ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(cat, Modifier.weight(1f).padding(vertical = 10.dp), color = MainText)
-                                if (cat !in listOf("全部分类", "我的最爱")) {
-                                    TextButton(onClick = {
-                                        repository.saveCategories(categories - cat)
-                                        videos.filter { it.category == cat }.forEach { repository.update(it.copy(category = "全部分类")) }
-                                        refresh()
-                                    }) { Text("删除", color = Color(0xFFE65C5C)) }
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .shadow(5.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(Color.White)
+                        ) {
+                            categories.forEachIndexed { index, cat ->
+                                val isDefault = cat == "全部分类" || cat == "我的最爱"
+                                var dragRemainder by remember(cat) { mutableFloatStateOf(0f) }
+                                Row(
+                                    Modifier.fillMaxWidth().height(50.dp)
+                                        .then(
+                                            if (!isDefault) Modifier.pointerInput(cat, categories) {
+                                                detectDragGestures(
+                                                    onDragEnd = { dragRemainder = 0f },
+                                                    onDragCancel = { dragRemainder = 0f }
+                                                ) { change, dragAmount ->
+                                                    change.consume()
+                                                    dragRemainder += dragAmount.y
+                                                    val threshold = 25.dp.toPx()
+                                                    val step = when {
+                                                        dragRemainder >= threshold -> 1
+                                                        dragRemainder <= -threshold -> -1
+                                                        else -> 0
+                                                    }
+                                                    if (step != 0) {
+                                                        val from = categories.indexOf(cat)
+                                                        val to = (from + step).coerceIn(2, categories.lastIndex)
+                                                        if (from != to) {
+                                                            val reordered = categories.toMutableList()
+                                                            val moved = reordered.removeAt(from)
+                                                            reordered.add(to, moved)
+                                                            categories = reordered
+                                                            repository.saveCategories(reordered)
+                                                        }
+                                                        dragRemainder = 0f
+                                                    }
+                                                }
+                                            } else Modifier
+                                        )
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        when (cat) {
+                                            "全部分类" -> Icons.Outlined.Lock
+                                            "我的最爱" -> Icons.Outlined.Star
+                                            else -> Icons.Outlined.DragHandle
+                                        },
+                                        contentDescription = null,
+                                        tint = if (isDefault) Color(0xFF888888) else Color(0xFF999999),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        cat,
+                                        Modifier.weight(1f).padding(start = 12.dp),
+                                        color = MainText,
+                                        fontSize = 15.sp
+                                    )
+                                    if (isDefault) {
+                                        Text("默认", color = Color(0xFFAAAAAA), fontSize = 12.sp)
+                                    } else {
+                                        Text(
+                                            "删除",
+                                            color = Color(0xFFE65C5C),
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.noRippleClickable {
+                                                repository.saveCategories(categories - cat)
+                                                videos.filter { it.category == cat }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                                refresh()
+                                            }.padding(start = 12.dp, vertical = 10.dp)
+                                        )
+                                    }
+                                }
+                                if (index < categories.lastIndex) {
+                                    Box(Modifier.fillMaxWidth().padding(start = 46.dp).height(0.5.dp).background(Color(0xFFF0F0F0)))
                                 }
                             }
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true, decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() })
-                            TextButton(onClick = {
-                                val name = newCategory.trim()
-                                if (name.isNotEmpty() && name !in categories) {
-                                    repository.saveCategories(categories + name); newCategory = ""; refresh()
-                                }
-                            }) { Text("添加") }
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = 14.dp)
+                                .shadow(5.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BasicTextField(
+                                newCategory,
+                                { newCategory = it },
+                                Modifier.weight(1f).height(42.dp)
+                                    .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                                singleLine = true,
+                                decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() },
+                                textStyle = TextStyle(fontSize = 15.sp, color = MainText)
+                            )
+                            Box(
+                                Modifier.size(40.dp).clip(CircleShape).background(ThemeTeal)
+                                    .noRippleClickable {
+                                        val name = newCategory.trim()
+                                        if (name.isNotEmpty() && name !in categories) {
+                                            repository.saveCategories(categories + name); newCategory = ""; refresh()
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Outlined.Add, "添加分类", tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
                         }
-                        Spacer(Modifier.height(28.dp))
+                        Spacer(Modifier.height(20.dp))
                     }
                     SheetType.RECORD_SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索观影记录")
@@ -970,16 +1061,18 @@ private fun HomePage(
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") { Header("首页", onSettings) }
             stickyHeader(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
-                        .background(PageBg.copy(alpha = .95f))
-                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg.copy(alpha = .95f), tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
+                        .background(PageBg)
+                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                         .drawBehind {
+                            val bleed = 20.dp.toPx()
+                            drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
                             val lineY = size.height - 0.5.dp.toPx()
-                            drawLine(Color(0x26000000), Offset(0f, lineY), Offset(size.width, lineY), 0.5.dp.toPx())
+                            drawLine(Color(0x26000000), Offset(-bleed, lineY), Offset(size.width + bleed, lineY), 0.5.dp.toPx())
                         }
                 ) {
                     Row(
@@ -1067,7 +1160,7 @@ private fun LibraryPage(
     }
     val columns = if (compact) 3 else 2
     val gap = if (compact) 10.dp else 15.dp
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         item {
             Row(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
@@ -1104,12 +1197,14 @@ private fun LibraryPage(
                 ) {
                     categories.forEach { value ->
                         Surface(
-                            Modifier.noRippleClickable { onCategory(value) },
+                            Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .noRippleClickable { onCategory(value) },
                             shape = CircleShape,
                             color = if (category == value) ThemeTeal else Color.White,
-                            shadowElevation = if (category == value) 2.dp else 1.dp,
+                            shadowElevation = 0.dp,
                         ) {
-                            Text(value, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            val label = when (value) { "全部分类" -> "全部"; "我的最爱" -> "收藏"; else -> value }
+                            Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                     }
                 }
@@ -1152,7 +1247,7 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
         "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
         "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
     ).filter { it.second.isNotEmpty() }
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         item {
             Row(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
@@ -1201,7 +1296,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
     Row(
         modifier.fillMaxWidth().padding(bottom = 12.dp)
-            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
+            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
@@ -1222,11 +1317,11 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(FrameTimelineClockIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Icon(FrameTimelineClockIcon, null, tint = Color(0xFF888888), modifier = Modifier.size(12.dp))
                         Text(formatClock(video.durationMs), fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(FrameTimelinePlayIcon, null, tint = Color(0xFFB0B0B0), modifier = Modifier.size(12.dp))
+                        Icon(FrameTimelinePlayIcon, null, tint = Color(0xFF888888), modifier = Modifier.size(12.dp))
                         Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                     }
                 }
@@ -1245,7 +1340,7 @@ private fun RecordsPage(
     onSort: () -> Unit,
     onEdit: (VideoItem) -> Unit
 ) {
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         item {
             Row(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
@@ -1280,7 +1375,6 @@ private fun RecordsPage(
                 }
             }
         }
-        item { Spacer(Modifier.height(26.dp)) }
         if (videos.isEmpty()) {
             item {
                 EmptyHint("暂无已看完的视频")
@@ -1292,7 +1386,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
-                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .shadow(6.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
                         .noRippleClickable { onEdit(video) }
@@ -1556,7 +1650,7 @@ private fun NativePlayerOverlay(
                                 player.seekTo(current)
                             }
                         )
-                        Text(formatTime(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(formatClock(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = {
@@ -1748,11 +1842,11 @@ private fun Stat(label: String, value: String, unit: String, modifier: Modifier 
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111),
+                value, fontSize = 22.sp, lineHeight = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111),
                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
             )
             Text(
-                unit, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(start = 2.dp),
+                unit, fontSize = 12.sp, lineHeight = 12.sp, color = MutedText, modifier = Modifier.padding(start = 3.dp, bottom = 2.dp),
                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
             )
         }
@@ -1761,7 +1855,7 @@ private fun Stat(label: String, value: String, unit: String, modifier: Modifier 
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
@@ -1820,7 +1914,7 @@ private fun PosterBrush(index: Int): Brush {
 
 @Composable
 private fun EmptyHint(text: String, horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp) {
-    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding, vertical = 20.dp))
+    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding).padding(top = 16.dp, bottom = 20.dp))
 }
 
 @Composable
