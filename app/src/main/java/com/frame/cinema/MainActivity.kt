@@ -46,7 +46,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -697,7 +697,7 @@ private fun FrameNativeApp(
                                     Modifier.fillMaxWidth().height(50.dp)
                                         .then(
                                             if (!isDefault) Modifier.pointerInput(cat) {
-                                                detectDragGestures(
+                                                detectDragGesturesAfterLongPress(
                                                     onDragEnd = { dragRemainder = 0f },
                                                     onDragCancel = { dragRemainder = 0f }
                                                 ) { change, dragAmount ->
