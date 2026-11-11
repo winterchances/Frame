@@ -584,7 +584,7 @@ private fun FrameNativeApp(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
-                        .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else if (displayedSheet == SheetType.SETTINGS) 18.dp else 40.dp)
+                        .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else if (displayedSheet == SheetType.SETTINGS) 30.dp else 40.dp)
                 ) {
                 when (displayedSheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
@@ -948,7 +948,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                                     Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
                                         Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                                         Spacer(Modifier.height(6.dp))
-                                        Text("已看 \${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                                        Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                                         Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
                                             Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
                                         }
@@ -995,7 +995,7 @@ private fun HomePage(videos: List<VideoItem>, weeklyWatchTimeMs: Long, onSetting
                                 enter = fadeIn(tween(210)) + androidx.compose.animation.slideInVertically(tween(210)) { it / 12 },
                                 exit = fadeOut(tween(110))
                             ) {
-                                VideoRow(video, "\${video.date} 添加", { onVideo(video) })
+                                VideoRow(video, "${video.date} 添加", { onVideo(video) })
                             }
                         }
                     }
