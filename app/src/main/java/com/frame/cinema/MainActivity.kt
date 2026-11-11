@@ -37,6 +37,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -274,6 +280,8 @@ private fun FrameNativeApp(
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
+    var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
+    var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories()) }
@@ -316,7 +324,8 @@ private fun FrameNativeApp(
         animationSpec = tween(if (showClearDataDialog) 300 else 240, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)),
         label = "clear-data-backdrop-progress"
     )
-    val backdropBlur = 8.dp * maxOf(sheetProgress, clearDialogProgress)
+    val contextMenuProgress by animateFloatAsState(if (contextMenuVideo != null) 1f else 0f, tween(200), label = "library-context-backdrop")
+    val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress), 12.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
@@ -374,8 +383,9 @@ private fun FrameNativeApp(
         sheetVisibility.targetState = sheet != SheetType.NONE
         if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
-    BackHandler(enabled = showClearDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
+    BackHandler(enabled = contextMenuVideo != null || showClearDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
+            contextMenuVideo != null -> { contextMenuVideo = null; contextMenuBounds = null }
             showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
             sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
             sheet != SheetType.NONE -> sheet = SheetType.NONE
@@ -391,7 +401,7 @@ private fun FrameNativeApp(
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
-                        if (sheet == SheetType.NONE && playing == null) {
+                        if (sheet == SheetType.NONE && playing == null && contextMenuVideo == null) {
                             horizontalDistance += dragAmount
                         }
                     },
@@ -445,7 +455,7 @@ private fun FrameNativeApp(
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
-                                { selected = it; sheet = SheetType.VIDEO_ACTIONS },
+                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; showFab = false },
                                 { selected = it; playVideo(it) }
                             )
                             MainPage.RECENT -> RecentPage(
@@ -570,7 +580,8 @@ private fun FrameNativeApp(
         AnimatedVisibility(
             visibleState = sheetVisibility,
             enter = fadeIn(tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
-            exit = fadeOut(tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)))
+            exit = fadeOut(tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))),
+            modifier = Modifier.zIndex(4f)
         ) {
             Box(
                 Modifier.fillMaxSize().zIndex(2f).blur(8.dp * clearDialogProgress)
@@ -600,7 +611,8 @@ private fun FrameNativeApp(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
-                        .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else if (displayedSheet == SheetType.SETTINGS) 30.dp else 40.dp)
+                         .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else if (displayedSheet == SheetType.SETTINGS) 30.dp else 40.dp)
+                        .navigationBarsPadding()
                 ) {
                 when (displayedSheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
@@ -765,16 +777,7 @@ private fun FrameNativeApp(
                         }
                         Spacer(Modifier.height(12.dp))
                     }
-                    SheetType.VIDEO_ACTIONS -> SheetContent(selected?.name?.let(::displayVideoName) ?: "视频操作") {
-                        SheetAction("立即播放") { selected?.let { playVideo(it) }; sheet = SheetType.NONE }
-                        SheetAction(if (selected?.isFav == true) "取消收藏" else "加入收藏") {
-                            selected?.let { repository.favorite(it.id) }; refresh(); sheet = SheetType.NONE
-                        }
-                        SheetAction("移动到分类") { parentSheet = sheet; sheet = SheetType.MOVE }
-                        SheetAction("重命名") { editName = selected?.name?.let(::displayVideoName).orEmpty(); parentSheet = sheet; sheet = SheetType.RENAME }
-                        SheetAction("更换封面") { coverPicker.launch("image/*") }
-                        SheetAction("移出片库", danger = true) { selected?.let { repository.delete(it.id) }; refresh(); sheet = SheetType.NONE }
-                    }
+                    SheetType.VIDEO_ACTIONS -> Unit
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
                         BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
@@ -792,13 +795,15 @@ private fun FrameNativeApp(
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("观影记录")
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
                             (1..5).forEach { n ->
-                                Text(if (n <= editRating) "★" else "☆", color = Color(0xFFFFB800), fontSize = 28.sp, modifier = Modifier.noRippleClickable { editRating = n })
+                                Text(if (n <= editRating) "★" else "★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.heightIn(min = 110.dp).background(Color.White, RoundedCornerShape(14.dp)).padding(14.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的观影感想…", color = MutedText); inner() })
-                        SheetAction("保存记录") { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
+                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }.padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                            Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        }
                         Spacer(Modifier.height(24.dp))
                     }
                     SheetType.CLEAR_RECENT -> SheetContent("清空播放记录？") {
@@ -900,7 +905,17 @@ private fun HomePage(
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             item(key = "home-large-title") { Header("首页", onSettings) }
-            item(key = "home-stat-panel") {
+            stickyHeader(key = "home-stat-panel") {
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Color(0xD9F5F5F7))
+                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color(0xD9F5F5F7), tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
+                        .border(BorderStroke(0.dp, Color.Transparent))
+                        .drawBehind {
+                            val lineY = size.height - 0.5.dp.toPx()
+                            drawLine(Color(0x26000000), Offset(0f, lineY), Offset(size.width, lineY), 0.5.dp.toPx())
+                        }
+                ) {
                 Row(
                     Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                         .clip(RoundedCornerShape(20.dp)).background(Glass).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
@@ -914,6 +929,7 @@ private fun HomePage(
                     Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(25.dp))
+                }
             }
             item(key = "home-continue-heading") { SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded } }
             item(key = "home-continue-content") {
@@ -1027,7 +1043,7 @@ private fun LibraryPage(
                     }
                 }
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
+                    Modifier.fillMaxWidth() .padding(top = 18.dp, bottom = 10.dp)
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -1206,7 +1222,7 @@ private fun RecordsPage(
                 }
             }
         }
-        item { Spacer(Modifier.height(10.dp)) }
+        item { Spacer(Modifier.height(26.dp)) }
         if (videos.isEmpty()) {
             item {
                 EmptyHint("暂无已看完的视频")
@@ -1726,7 +1742,7 @@ private fun PosterBrush(index: Int): Brush {
 
 @Composable
 private fun EmptyHint(text: String) {
-    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp))
+    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp))
 }
 
 @Composable
