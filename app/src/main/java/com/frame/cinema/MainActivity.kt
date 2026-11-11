@@ -743,7 +743,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(0.dp))
                     Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
                 }
             }
