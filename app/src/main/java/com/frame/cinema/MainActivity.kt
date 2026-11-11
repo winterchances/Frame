@@ -328,8 +328,8 @@ private fun FrameNativeApp(
         onSystemBarsVisible(false)
         onPlay(item)
     }
-    fun closePlayer() {
-        playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L)) }
+    fun closePlayer(completed: Boolean = false) {
+        playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
         player.pause()
         playing = null
         locked = false
@@ -553,10 +553,7 @@ private fun FrameNativeApp(
                     isLandscape = !isLandscape
                     onOrientation(isLandscape)
                 },
-                onEnded = {
-                    playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), true) }
-                    closePlayer()
-                },
+                onEnded = { closePlayer(completed = true) },
                 onProgress = { pos, duration ->
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
                 },
@@ -574,7 +571,7 @@ private fun FrameNativeApp(
             exit = fadeOut(tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)))
         ) {
             Box(
-                Modifier.fillMaxSize().zIndex(2f)
+                Modifier.fillMaxSize().zIndex(2f).blur(8.dp * clearDialogProgress)
                     .background(Color.Black.copy(alpha = .4f))
                     .clickable(
                         indication = null,
