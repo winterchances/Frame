@@ -21,6 +21,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -287,7 +288,16 @@ private fun FrameNativeApp(
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
-    val sheetBlur = if (sheet == SheetType.NONE) 0.dp else 5.dp
+    val sheetProgress by animateFloatAsState(
+        targetValue = if (sheet == SheetType.NONE) 0f else 1f,
+        animationSpec = spring(
+            dampingRatio = 1f,
+            stiffness = if (sheet == SheetType.NONE) 850f else 500f
+        ),
+        label = "sheet-background-progress"
+    )
+    val sheetBlur = 8.dp * sheetProgress
+    var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
     fun notify(message: String) { toast = message }
@@ -322,7 +332,13 @@ private fun FrameNativeApp(
     }
 
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
-    LaunchedEffect(sheet) { if (sheet == SheetType.NONE) sheetKeyboardUp = false }
+    LaunchedEffect(sheet) {
+        if (sheet == SheetType.NONE) {
+            sheetKeyboardUp = false
+        } else {
+            displayedSheet = sheet
+        }
+    }
 
     Box(
         Modifier.fillMaxSize().background(PageBg)
@@ -349,9 +365,16 @@ private fun FrameNativeApp(
             }
     ) {
         if (playing == null) {
-            Box(Modifier.fillMaxSize()) {
+            Box(
+                Modifier.fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = 1f - .05f * sheetProgress
+                        scaleY = 1f - .05f * sheetProgress
+                    }
+                    .blur(sheetBlur)
+            ) {
                 androidx.compose.animation.AnimatedContent(
-                    modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 0f).blur(sheetBlur),
+                    modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 0f),
                     targetState = page,
                     transitionSpec = {
                         val forward = targetState.ordinal > initialState.ordinal
@@ -515,8 +538,8 @@ private fun FrameNativeApp(
 
         AnimatedVisibility(
             visible = sheet != SheetType.NONE,
-            enter = fadeIn(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f))),
-            exit = fadeOut(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, .1f, .25f, 1f)))
+            enter = fadeIn(tween(250)),
+            exit = fadeOut(tween(180))
         ) {
             Box(
                 Modifier.fillMaxSize().zIndex(2f)
@@ -540,15 +563,15 @@ private fun FrameNativeApp(
                         ) { }
                         .animateEnterExit(
                             enter = slideInVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                                animationSpec = spring(dampingRatio = 1f, stiffness = 500f)
                             ) { it },
                             exit = slideOutVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, .8f, .2f, 1f))
+                                animationSpec = spring(dampingRatio = 1f, stiffness = 850f)
                             ) { it }
                         )
                         .padding(top = 25.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
                 ) {
-                when (sheet) {
+                when (displayedSheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
                         SheetAction("从文件中选择视频") { importPicker.launch(arrayOf("video/*")) }
                         SheetAction("扫描整个文件夹") { folderPicker.launch(null) }
@@ -728,7 +751,6 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
     )
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
-            .blur(sheetBlur)
             .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
             .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
@@ -740,7 +762,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
         val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
-        Box(Modifier.offset(x = offset).width(slot - 2.dp).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
+        Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
         Row(Modifier.fillMaxSize()) {
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
