@@ -271,6 +271,7 @@ private fun FrameNativeApp(
     val hazeState = remember { HazeState() }
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
+    var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var videos by remember { mutableStateOf(repository.videos()) }
@@ -371,12 +372,14 @@ private fun FrameNativeApp(
     val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
     LaunchedEffect(sheet) {
         sheetVisibility.targetState = sheet != SheetType.NONE
-        if (sheet == SheetType.NONE) sheetKeyboardUp = false else displayedSheet = sheet
+        if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
-    BackHandler(enabled = showClearDataDialog || sheet != SheetType.NONE || playing != null || showFab) {
+    BackHandler(enabled = showClearDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
-            showClearDataDialog -> showClearDataDialog = false
+            showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
+            sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
             sheet != SheetType.NONE -> sheet = SheetType.NONE
+            sheetVisibility.currentState || sheetVisibility.targetState -> Unit
             playing != null -> closePlayer()
             showFab -> showFab = false
         }
@@ -459,6 +462,7 @@ private fun FrameNativeApp(
                                 onSort = { sheet = SheetType.RECORD_SORT },
                                 onEdit = {
                                     selected = it; editReview = it.review; editRating = it.rating
+                                    parentSheet = SheetType.NONE
                                     sheet = SheetType.NOTE
                                 }
                             )
@@ -670,6 +674,7 @@ private fun FrameNativeApp(
                                     selected = video
                                     editReview = video.review
                                     editRating = video.rating
+                                    parentSheet = sheet
                                     sheet = SheetType.NOTE
                                 }
                             }
@@ -767,8 +772,8 @@ private fun FrameNativeApp(
                         SheetAction(if (selected?.isFav == true) "取消收藏" else "加入收藏") {
                             selected?.let { repository.favorite(it.id) }; refresh(); sheet = SheetType.NONE
                         }
-                        SheetAction("移动到分类") { sheet = SheetType.MOVE }
-                        SheetAction("重命名") { editName = selected?.name?.let(::displayVideoName).orEmpty(); sheet = SheetType.RENAME }
+                        SheetAction("移动到分类") { parentSheet = sheet; sheet = SheetType.MOVE }
+                        SheetAction("重命名") { editName = selected?.name?.let(::displayVideoName).orEmpty(); parentSheet = sheet; sheet = SheetType.RENAME }
                         SheetAction("更换封面") { coverPicker.launch("image/*") }
                         SheetAction("移出片库", danger = true) { selected?.let { repository.delete(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
