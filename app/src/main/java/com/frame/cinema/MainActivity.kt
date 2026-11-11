@@ -284,6 +284,7 @@ private fun FrameNativeApp(
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
+    var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories()) }
@@ -326,7 +327,14 @@ private fun FrameNativeApp(
         animationSpec = tween(if (showClearDataDialog) 300 else 240, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)),
         label = "clear-data-backdrop-progress"
     )
-    val contextMenuProgress by animateFloatAsState(if (contextMenuVideo != null) 1f else 0f, tween(200), label = "library-context-backdrop")
+    val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
+    LaunchedEffect(contextMenuOpen) {
+        if (!contextMenuOpen && contextMenuVideo != null) {
+            delay(200)
+            contextMenuVideo = null
+            contextMenuBounds = null
+        }
+    }
     val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress), 12.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
@@ -387,7 +395,7 @@ private fun FrameNativeApp(
     }
     BackHandler(enabled = contextMenuVideo != null || showClearDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
-            contextMenuVideo != null -> { contextMenuVideo = null; contextMenuBounds = null }
+            contextMenuVideo != null -> { contextMenuOpen = false }
             showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
             sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
             sheet != SheetType.NONE -> sheet = SheetType.NONE
@@ -408,7 +416,7 @@ private fun FrameNativeApp(
                         }
                     },
                     onDragEnd = {
-                        if (sheet == SheetType.NONE && playing == null && kotlin.math.abs(horizontalDistance) > 50f) {
+                        if (sheet == SheetType.NONE && playing == null && contextMenuVideo == null && kotlin.math.abs(horizontalDistance) > 50f) {
                             val next = when {
                                 horizontalDistance < 0f -> MainPage.values().getOrNull(MainPage.values().indexOf(page) + 1)
                                 else -> MainPage.values().getOrNull(MainPage.values().indexOf(page) - 1)
@@ -457,7 +465,7 @@ private fun FrameNativeApp(
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
-                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; showFab = false },
+                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuOpen = true; showFab = false },
                                 { selected = it; playVideo(it) }
                             )
                             MainPage.RECENT -> RecentPage(
@@ -835,7 +843,7 @@ private fun FrameNativeApp(
                 val menuHeight = 310.dp
                 val menuX = cardLeft.coerceIn(12.dp, (maxWidth - menuWidth - 12.dp).coerceAtLeast(12.dp))
                 val menuY = if (cardBottom + menuHeight + 12.dp <= maxHeight) cardBottom + 8.dp else (cardTop - menuHeight - 8.dp).coerceAtLeast(12.dp)
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f)).noRippleClickable { contextMenuVideo = null; contextMenuBounds = null })
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
                     video = video, compact = compact, onPlay = {}, onLong = {},
                     modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth)
@@ -857,12 +865,12 @@ private fun FrameNativeApp(
                         .padding(vertical = 6.dp)
                         .zIndex(2f)
                 ) {
-                    ContextMenuAction("立即播放") { contextMenuVideo = null; contextMenuBounds = null; playVideo(video) }
-                    ContextMenuAction(if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
-                    ContextMenuAction("移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.MOVE }
-                    ContextMenuAction("重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.RENAME }
-                    ContextMenuAction("更换封面") { selected = video; contextMenuVideo = null; contextMenuBounds = null; coverPicker.launch("image/*") }
-                    ContextMenuAction("移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
+                    ContextMenuAction("立即播放") { contextMenuOpen = false; playVideo(video) }
+                    ContextMenuAction(if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
+                    ContextMenuAction("移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
+                    ContextMenuAction("重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
+                    ContextMenuAction("更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
+                    ContextMenuAction("移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuOpen = false }
                 }
             }
         }
