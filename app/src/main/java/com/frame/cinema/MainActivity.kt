@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -858,17 +857,12 @@ private fun FrameNativeApp(
                         .padding(vertical = 6.dp)
                         .zIndex(2f)
                 ) {
-                    @Composable fun MenuAction(label: String, danger: Boolean = false, action: () -> Unit) {
-                        Row(Modifier.fillMaxWidth().height(48.dp).noRippleClickable(action).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                        }
-                    }
-                    MenuAction("立即播放") { contextMenuVideo = null; contextMenuBounds = null; playVideo(video) }
-                    MenuAction(if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
-                    MenuAction("移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.MOVE }
-                    MenuAction("重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.RENAME }
-                    MenuAction("更换封面") { selected = video; contextMenuVideo = null; contextMenuBounds = null; coverPicker.launch("image/*") }
-                    MenuAction("移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
+                    ContextMenuAction("立即播放") { contextMenuVideo = null; contextMenuBounds = null; playVideo(video) }
+                    ContextMenuAction(if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
+                    ContextMenuAction("移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.MOVE }
+                    ContextMenuAction("重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.RENAME }
+                    ContextMenuAction("更换封面") { selected = video; contextMenuVideo = null; contextMenuBounds = null; coverPicker.launch("image/*") }
+                    ContextMenuAction("移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
                 }
             }
         }
@@ -1803,6 +1797,13 @@ private fun EmptyHint(text: String) {
 private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     Surface(shape = CircleShape, color = ThemeTeal, shadowElevation = 4.dp, modifier = Modifier.size(48.dp).noRippleClickable(onClick)) {
         Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = Color.White) }
+    }
+}
+
+@Composable
+private fun ContextMenuAction(label: String, danger: Boolean = false, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().height(48.dp).noRippleClickable(onClick).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
 }
 
