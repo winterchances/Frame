@@ -77,6 +77,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -733,7 +735,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             .clip(RoundedCornerShape(28.dp))
             .background(Glass)
             .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(28.dp))
-            .padding(4.dp)
+            .padding(5.dp)
     ) {
         val slot = maxWidth / 4
         val target = slot * entries.indexOfFirst { it.first == current }
@@ -743,8 +745,15 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             entries.forEach { (item, icon) ->
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                    Spacer(Modifier.height(0.dp))
-                    Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MainText)
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        item.label,
+                        fontSize = 10.sp,
+                        lineHeight = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MainText,
+                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                    )
                 }
             }
         }
