@@ -39,6 +39,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -819,6 +822,56 @@ private fun FrameNativeApp(
                 }
             }
         }
+
+        if (contextMenuVideo != null && contextMenuBounds != null) {
+            val video = contextMenuVideo!!
+            val bounds = contextMenuBounds!!
+            BoxWithConstraints(Modifier.fillMaxSize().zIndex(6f)) {
+                val density = LocalDensity.current
+                val cardLeft = with(density) { bounds.left.toDp() }
+                val cardTop = with(density) { bounds.top.toDp() }
+                val cardWidth = with(density) { bounds.width.toDp() }
+                val cardBottom = with(density) { bounds.bottom.toDp() }
+                val menuWidth = 240.dp
+                val menuHeight = 310.dp
+                val menuX = cardLeft.coerceIn(12.dp, (maxWidth - menuWidth - 12.dp).coerceAtLeast(12.dp))
+                val menuY = if (cardBottom + menuHeight + 12.dp <= maxHeight) cardBottom + 8.dp else (cardTop - menuHeight - 8.dp).coerceAtLeast(12.dp)
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f)).noRippleClickable { contextMenuVideo = null; contextMenuBounds = null })
+                PosterCard(
+                    video = video, compact = compact, onPlay = {}, onLong = {},
+                    modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth)
+                        .graphicsLayer { scaleX = 1.04f; scaleY = 1.04f; transformOrigin = TransformOrigin.Center }
+                        .zIndex(1f)
+                )
+                Column(
+                    Modifier.offset(x = menuX, y = menuY).width(menuWidth)
+                        .graphicsLayer {
+                            val p = contextMenuProgress
+                            alpha = p
+                            scaleX = .9f + .1f * p
+                            scaleY = .9f + .1f * p
+                            transformOrigin = TransformOrigin(.5f, 0f)
+                        }
+                        .shadow(16.dp, RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.White)
+                        .padding(vertical = 6.dp)
+                        .zIndex(2f)
+                ) {
+                    @Composable fun MenuAction(label: String, danger: Boolean = false, action: () -> Unit) {
+                        Row(Modifier.fillMaxWidth().height(48.dp).noRippleClickable(action).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                    MenuAction("立即播放") { contextMenuVideo = null; contextMenuBounds = null; playVideo(video) }
+                    MenuAction(if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
+                    MenuAction("移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.MOVE }
+                    MenuAction("重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuVideo = null; contextMenuBounds = null; sheet = SheetType.RENAME }
+                    MenuAction("更换封面") { selected = video; contextMenuVideo = null; contextMenuBounds = null; coverPicker.launch("image/*") }
+                    MenuAction("移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuVideo = null; contextMenuBounds = null }
+                }
+            }
+        }
         if (showClearDataDialog || clearDialogProgress > 0f) {
             Box(Modifier.fillMaxSize().zIndex(5f).background(Color.Black.copy(alpha = .4f * clearDialogProgress)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) {
                 androidx.compose.animation.AnimatedVisibility(visible = showClearDataDialog,
@@ -910,7 +963,6 @@ private fun HomePage(
                     Modifier.fillMaxWidth()
                         .background(Color(0xD9F5F5F7))
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color(0xD9F5F5F7), tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
-                        .border(BorderStroke(0.dp, Color.Transparent))
                         .drawBehind {
                             val lineY = size.height - 0.5.dp.toPx()
                             drawLine(Color(0x26000000), Offset(0f, lineY), Offset(size.width, lineY), 0.5.dp.toPx())
@@ -1004,7 +1056,7 @@ private fun HomePage(
 private fun LibraryPage(
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
-    onCategories: () -> Unit, onLongVideo: (VideoItem) -> Unit, onPlay: (VideoItem) -> Unit
+    onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit
 ) {
     val filtered = videos.filter {
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
@@ -1074,7 +1126,7 @@ private fun LibraryPage(
                         verticalAlignment = Alignment.Top
                     ) {
                         rowVideos.forEach { video ->
-                            PosterCard(video, compact, onPlay, { onLongVideo(video) }, Modifier.weight(1f))
+                            PosterCard(video, compact, onPlay, { bounds -> onLongVideo(video, bounds) }, Modifier.weight(1f))
                         }
                         repeat(columns - rowVideos.size) {
                             Spacer(Modifier.weight(1f))
@@ -1699,8 +1751,10 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = onLong)) {
+private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: (Rect) -> Unit, modifier: Modifier = Modifier) {
+    val haptic = LocalHapticFeedback.current
+    var cardBounds by remember { mutableStateOf(Rect.Zero) }
+    Column(modifier.onGloballyPositioned { cardBounds = it.boundsInRoot() }.noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
