@@ -882,50 +882,30 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomePage(
-    videos: List<VideoItem>,
-    weeklyWatchTimeMs: Long,
-    hazeState: HazeState,
-    onSettings: () -> Unit,
-    onVideo: (VideoItem) -> Unit
+    videos: List<VideoItem>, weeklyWatchTimeMs: Long, hazeState: HazeState,
+    onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(4)
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val collapseDistancePx = with(density) { 88.dp.toPx() }
-    val collapseProgress by remember(listState, collapseDistancePx) {
+    val fadeDistancePx = with(LocalDensity.current) { 88.dp.toPx() }
+    val topBarProgress by remember(listState, fadeDistancePx) {
         derivedStateOf {
-            val offset = if (listState.firstVisibleItemIndex > 0) {
-                collapseDistancePx
-            } else {
-                listState.firstVisibleItemScrollOffset.toFloat()
-            }
-            (offset / collapseDistancePx).coerceIn(0f, 1f)
+            val offset = if (listState.firstVisibleItemIndex > 0) fadeDistancePx else listState.firstVisibleItemScrollOffset.toFloat()
+            (offset / fadeDistancePx).coerceIn(0f, 1f)
         }
     }
-    var titleWidthPx by remember { mutableFloatStateOf(0f) }
-    var titleHeightPx by remember { mutableFloatStateOf(0f) }
-
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)
-        ) {
-            item {
-                // Keeps the original large-title/header footprint while the title itself floats above it.
-                Spacer(Modifier.height(111.dp))
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+            item(key = "home-large-title") { Header("首页", onSettings) }
+            item(key = "home-stat-panel") {
                 Row(
-                    Modifier.fillMaxWidth()
-                        .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Glass)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                    Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(RoundedCornerShape(20.dp)).background(Glass).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
                         .padding(horizontal = 10.dp, vertical = 15.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
                 ) {
                     Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
@@ -935,81 +915,36 @@ private fun HomePage(
                 }
                 Spacer(Modifier.height(25.dp))
             }
-            stickyHeader {
-                Box(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
-                    SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded }
-                }
-            }
-            item(key = "continue-content") {
+            item(key = "home-continue-heading") { SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded } }
+            item(key = "home-continue-content") {
                 AnimatedVisibility(
                     visible = continueExpanded,
-                    enter = androidx.compose.animation.expandVertically(
-                        animationSpec = spring(dampingRatio = .72f, stiffness = 340f)
-                    ) + fadeIn(tween(220, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
-                    exit = androidx.compose.animation.shrinkVertically(
-                        animationSpec = spring(dampingRatio = 1f, stiffness = 420f)
-                    ) + fadeOut(tween(170))
+                    enter = androidx.compose.animation.expandVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f))) + fadeIn(tween(300)),
+                    exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
                 ) {
-                    if (continuing.isEmpty()) {
-                        EmptyHint("暂无观看记录")
-                    } else {
+                    if (continuing.isEmpty()) EmptyHint("暂无观看记录") else {
                         val heroListState = rememberLazyListState()
                         val snapFling = rememberSnapFlingBehavior(heroListState, SnapPosition.Start)
                         val gentleSnapFling = remember(snapFling) {
                             object : FlingBehavior {
-                                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-                                    return with(snapFling) { performFling(initialVelocity * .58f) }
-                                }
+                                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float =
+                                    with(snapFling) { performFling(initialVelocity * .58f) }
                             }
                         }
-                        LazyRow(
-                            state = heroListState,
-                            flingBehavior = gentleSnapFling,
-                            modifier = Modifier.padding(top = 2.dp, bottom = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
-                        ) {
-                            itemsIndexed(continuing, key = { _, video -> video.id }) { index, video ->
-                                var cardVisible by remember(video.id) { mutableStateOf(false) }
-                                LaunchedEffect(continueExpanded) {
-                                    if (continueExpanded) {
-                                        cardVisible = false
-                                        delay(index * 48L)
-                                        cardVisible = true
-                                    } else {
-                                        cardVisible = false
-                                    }
-                                }
-                                AnimatedVisibility(
-                                    visible = cardVisible,
-                                    enter = fadeIn(tween(210)) + androidx.compose.animation.slideInVertically(tween(210)) { it / 12 },
-                                    exit = fadeOut(tween(110))
+                        LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 2.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                            itemsIndexed(continuing, key = { _, video -> video.id }) { _, video ->
+                                Box(
+                                    Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                                        .clip(RoundedCornerShape(20.dp)).background(PosterBrush(video.bgIndex)).noRippleClickable { onVideo(video) }
                                 ) {
-                                    Box(
-                                        Modifier.width(280.dp).height(160.dp)
-                                            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                            .clip(RoundedCornerShape(20.dp))
-                                            .background(PosterBrush(video.bgIndex))
-                                            .noRippleClickable { onVideo(video) }
-                                    ) {
-                                        Thumbnail(video, Modifier.fillMaxSize())
-                                        Box(
-                                            Modifier.fillMaxSize().background(
-                                                Brush.verticalGradient(
-                                                    colorStops = arrayOf(
-                                                        0f to Color.Transparent,
-                                                        .4f to Color.Black.copy(alpha = .2f),
-                                                        1f to Color.Black.copy(alpha = .8f)
-                                                    )
-                                                )
-                                            )
-                                        )
-                                        Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
-                                            Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                            Spacer(Modifier.height(6.dp))
-                                            Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                                            Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
-                                                Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
-                                            }
+                                    Thumbnail(video, Modifier.fillMaxSize())
+                                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, .4f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .8f)))))
+                                    Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
+                                        Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                        Spacer(Modifier.height(6.dp))
+                                        Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                                        Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
+                                            Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
                                         }
                                     }
                                 }
@@ -1018,111 +953,32 @@ private fun HomePage(
                     }
                 }
             }
-            stickyHeader {
-                Box(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
-                    SectionHeading("最近添加", recentExpanded) { recentExpanded = !recentExpanded }
-                }
-            }
-            item(key = "recent-content") {
+            item(key = "home-recent-heading") { SectionHeading("最近添加", recentExpanded) { recentExpanded = !recentExpanded } }
+            item(key = "home-recent-content") {
                 AnimatedVisibility(
                     visible = recentExpanded,
-                    enter = androidx.compose.animation.expandVertically(
-                        animationSpec = spring(dampingRatio = .72f, stiffness = 340f)
-                    ) + fadeIn(tween(220, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
-                    exit = androidx.compose.animation.shrinkVertically(
-                        animationSpec = spring(dampingRatio = 1f, stiffness = 420f)
-                    ) + fadeOut(tween(170))
+                    enter = androidx.compose.animation.expandVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f))) + fadeIn(tween(300)),
+                    exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
                 ) {
-                    if (recent.isEmpty()) {
-                        EmptyHint("暂无视频，点击右下角添加")
-                    } else {
-                        Column {
-                            recent.forEachIndexed { index, video ->
-                                var cardVisible by remember(video.id) { mutableStateOf(false) }
-                                LaunchedEffect(recentExpanded) {
-                                    if (recentExpanded) {
-                                        cardVisible = false
-                                        delay(index * 42L)
-                                        cardVisible = true
-                                    } else {
-                                        cardVisible = false
-                                    }
-                                }
-                                AnimatedVisibility(
-                                    visible = cardVisible,
-                                    enter = fadeIn(tween(210)) + androidx.compose.animation.slideInVertically(tween(210)) { it / 12 },
-                                    exit = fadeOut(tween(110))
-                                ) {
-                                    VideoRow(video, "${video.date} 添加", { onVideo(video) })
-                                }
-                            }
-                        }
-                    }
+                    if (recent.isEmpty()) EmptyHint("暂无视频，点击右下角添加")
+                    else Column { recent.forEach { video -> VideoRow(video, "${video.date} 添加") { onVideo(video) } } }
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
         }
-
-        BoxWithConstraints(
-            Modifier.fillMaxWidth().height(112.dp).align(Alignment.TopCenter).zIndex(2f)
-        ) {
-            val containerWidthPx = with(density) { maxWidth.toPx() }
-            val startXpx = with(density) { 20.dp.toPx() }
-            val collapsedCenterYpx = with(density) { 28.dp.toPx() }
-            val initialTitleTopPx = with(density) { 60.dp.toPx() }
-            val initialActionCenterYpx = with(density) { 78.dp.toPx() }
-            val collapsedActionCenterYpx = with(density) { 28.dp.toPx() }
-
+        // 毛玻璃仅绘制在独立背景层，导航文字与图标不会被模糊。
+        Box(
+            Modifier.fillMaxWidth().height(56.dp).align(Alignment.TopCenter).zIndex(2f)
+                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color.White.copy(alpha = .82f * topBarProgress), tints = emptyList(), blurRadius = 20.dp * topBarProgress, noiseFactor = 0f))
+                .background(Color.White.copy(alpha = .82f * topBarProgress))
+        )
+        Box(Modifier.fillMaxWidth().height(56.dp).align(Alignment.TopCenter).zIndex(3f)) {
+            Text("首页", Modifier.align(Alignment.Center).graphicsLayer { alpha = topBarProgress }, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MainText)
             Box(
-                Modifier.fillMaxWidth().height(56.dp)
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = Color.White.copy(alpha = .82f * collapseProgress),
-                            tints = emptyList(),
-                            blurRadius = 18.dp * collapseProgress,
-                            noiseFactor = 0f
-                        )
-                    )
-                    .background(Color.White.copy(alpha = .82f * collapseProgress))
-            )
-            Box(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(.5.dp)
-                    .background(Color(0xFFE5E5E7).copy(alpha = collapseProgress))
-            )
-            Text(
-                text = "首页",
-                fontSize = (30f - 14f * collapseProgress).sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MainText,
-                letterSpacing = .5.sp,
-                maxLines = 1,
-                onTextLayout = {
-                    titleWidthPx = it.size.width.toFloat()
-                    titleHeightPx = it.size.height.toFloat()
-                },
-                modifier = Modifier.align(Alignment.TopStart)
-                    .padding(start = 20.dp, top = 60.dp)
-                    .graphicsLayer {
-                        translationX = ((containerWidthPx - titleWidthPx) / 2f - startXpx) * collapseProgress
-                        translationY = (collapsedCenterYpx - titleHeightPx / 2f - initialTitleTopPx) * collapseProgress
-                    }
-            )
-            Box(
-                Modifier.align(Alignment.TopEnd)
-                    .padding(end = 20.dp, top = 60.dp)
-                    .graphicsLayer {
-                        translationY = (collapsedActionCenterYpx - initialActionCenterYpx) * collapseProgress
-                    }
-                    .size(36.dp)
-                    .shadow(2.dp * (1f - collapseProgress), CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 1f - collapseProgress))
-                    .noRippleClickable(onSettings),
+                Modifier.align(Alignment.CenterEnd).padding(end = 20.dp).size(36.dp).graphicsLayer { alpha = topBarProgress }
+                    .clip(CircleShape).noRippleClickable(onSettings),
                 contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText)
-            }
+            ) { Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText) }
         }
     }
 }
@@ -1146,7 +1002,7 @@ private fun LibraryPage(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText)
                 ActionIcon(FrameTagIcon, "分类管理", onCategories)
                 ActionIcon(FrameSortIcon, "排序", onSort)
                 ActionIcon(FrameGridIcon, "布局管理", onGrid)
@@ -1229,7 +1085,7 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText)
                 ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
             }
         }
@@ -1320,7 +1176,7 @@ private fun RecordsPage(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
                     ActionIcon(FrameSortIcon, "记录排序", onSort)
@@ -1651,7 +1507,7 @@ private fun NativePlayerOverlay(
             exit = fadeOut(tween(300))
         ) {
             Box(
-                Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape)
+                Modifier.align(Alignment.Center).zIndex(9f).size(60.dp).clip(CircleShape)
                     .background(Color.Black.copy(alpha = .5f))
                     .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
                     .noRippleClickable { unlockVisible = false; onToggleLock() },
@@ -1662,14 +1518,11 @@ private fun NativePlayerOverlay(
         }
         AnimatedVisibility(
             visible = centerMessage.isNotEmpty() && !locked,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200))
+            modifier = Modifier.align(Alignment.Center).zIndex(10f),
+            enter = fadeIn(tween(180)), exit = fadeOut(tween(180))
         ) {
-            Box(
-                Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp))
-                    .background(Color.Black.copy(alpha = .6f)).padding(horizontal = 25.dp, vertical = 15.dp)
-            ) {
-                Text(centerMessage, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Box(Modifier.clip(CircleShape).background(Color.Black.copy(alpha = .68f)).padding(horizontal = 22.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+                Text(centerMessage, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
     }
@@ -1760,7 +1613,7 @@ private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Un
 @Composable
 private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
+        Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Black, color = MainText, letterSpacing = .5.sp)
         Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText)
         }
@@ -1771,7 +1624,7 @@ private fun Header(title: String, onSettings: () -> Unit) {
 private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: (() -> Unit)? = null) {
     val rotation by animateFloatAsState(
         if (expanded == false) -90f else 0f,
-        spring(dampingRatio = .72f, stiffness = 520f),
+        tween(durationMillis = if (expanded == false) 250 else 300, easing = if (expanded == false) androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f) else androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)),
         label = "section-chevron"
     )
     val interactionSource = remember { MutableInteractionSource() }
