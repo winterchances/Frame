@@ -692,10 +692,11 @@ private fun FrameNativeApp(
                             categories.forEachIndexed { index, cat ->
                                 val isDefault = cat == "全部分类" || cat == "我的最爱"
                                 var dragRemainder by remember(cat) { mutableFloatStateOf(0f) }
+                                val latestCategories by rememberUpdatedState(categories)
                                 Row(
                                     Modifier.fillMaxWidth().height(50.dp)
                                         .then(
-                                            if (!isDefault) Modifier.pointerInput(cat, categories) {
+                                            if (!isDefault) Modifier.pointerInput(cat) {
                                                 detectDragGestures(
                                                     onDragEnd = { dragRemainder = 0f },
                                                     onDragCancel = { dragRemainder = 0f }
@@ -709,10 +710,11 @@ private fun FrameNativeApp(
                                                         else -> 0
                                                     }
                                                     if (step != 0) {
-                                                        val from = categories.indexOf(cat)
-                                                        val to = (from + step).coerceIn(2, categories.lastIndex)
+                                                        val currentCategories = latestCategories
+                                                        val from = currentCategories.indexOf(cat)
+                                                        val to = (from + step).coerceIn(2, currentCategories.lastIndex)
                                                         if (from != to) {
-                                                            val reordered = categories.toMutableList()
+                                                            val reordered = currentCategories.toMutableList()
                                                             val moved = reordered.removeAt(from)
                                                             reordered.add(to, moved)
                                                             categories = reordered
