@@ -33,6 +33,11 @@ jobs:
         with:
           gradle-version: "8.13"
 
+      - name: Apply repository launcher icon
+        run: |
+          mkdir -p app/src/main/res/drawable-nodpi
+          cp icon.png app/src/main/res/drawable-nodpi/ic_launcher.png
+
       - name: Build release-ready debug APK
         run: gradle --no-daemon clean assembleDebug
 
