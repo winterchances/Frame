@@ -852,9 +852,8 @@ private fun FrameNativeApp(
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
                     video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
-                    modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth)
-                        .shadow(5.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp))
-                        .zIndex(1f)
+                    modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth).zIndex(1f),
+                    highlighted = true
                 )
                 Column(
                     Modifier.offset(x = menuX, y = menuY).width(menuWidth)
@@ -1752,11 +1751,11 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: (Rect) -> Unit, modifier: Modifier = Modifier) {
+private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: (Rect) -> Unit, modifier: Modifier = Modifier, highlighted: Boolean = false) {
     val haptic = LocalHapticFeedback.current
     var cardBounds by remember { mutableStateOf(Rect.Zero) }
     Column(modifier.onGloballyPositioned { cardBounds = it.boundsInRoot() }.noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
