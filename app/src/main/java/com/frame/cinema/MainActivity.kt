@@ -1074,8 +1074,6 @@ private fun HomePage(
                         .drawBehind {
                             val bleed = 20.dp.toPx()
                             drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
-                            val lineY = size.height - 0.5.dp.toPx()
-                            drawLine(Color(0x26000000), Offset(-bleed, lineY), Offset(size.width + bleed, lineY), 0.5.dp.toPx())
                         }
                 ) {
                     Row(
