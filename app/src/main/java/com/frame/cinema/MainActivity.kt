@@ -692,7 +692,7 @@ private fun FrameNativeApp(
                             categories.forEachIndexed { index, cat ->
                                 val isDefault = cat == "全部分类" || cat == "我的最爱"
                                 var dragRemainder by remember(cat) { mutableFloatStateOf(0f) }
-                                val latestCategories by rememberUpdatedState(categories)
+                                val latestCategories = rememberUpdatedState(categories)
                                 Row(
                                     Modifier.fillMaxWidth().height(50.dp)
                                         .then(
@@ -710,7 +710,7 @@ private fun FrameNativeApp(
                                                         else -> 0
                                                     }
                                                     if (step != 0) {
-                                                        val currentCategories = latestCategories
+                                                        val currentCategories = latestCategories.value
                                                         val from = currentCategories.indexOf(cat)
                                                         val to = (from + step).coerceIn(2, currentCategories.lastIndex)
                                                         if (from != to) {
