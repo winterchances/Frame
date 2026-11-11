@@ -39,8 +39,8 @@ jobs:
       - name: Boot emulator and diagnose app startup
         shell: bash
         run: |
-          set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null
+          set -eu
+          yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "emulator" "platform-tools" "system-images;android-35;google_apis;x86_64"
           echo "no" | avdmanager create avd -n frame-ci -k "system-images;android-35;google_apis;x86_64" -d pixel_2 --force
           nohup "$ANDROID_HOME/emulator/emulator" -avd frame-ci -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none > emulator.log 2>&1 &
