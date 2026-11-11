@@ -246,7 +246,8 @@ class MainActivity : ComponentActivity() {
         val controller = player ?: return
         controller.setMediaItem(MediaItem.fromUri(item.contentUri))
         controller.prepare()
-        if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
+        if (item.progress >= 99f || item.status == "watched") controller.seekTo(0L)
+        else if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
         controller.play()
     }
 
@@ -574,7 +575,10 @@ private fun FrameNativeApp(
                     isLandscape = !isLandscape
                     onOrientation(isLandscape)
                 },
-                onEnded = { closePlayer(completed = true) },
+                onEnded = {
+                    playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
+                    refresh()
+                },
                 onProgress = { pos, duration ->
                     playing?.let { repository.updatePlayback(it.id, pos, duration) }
                 },
@@ -1336,6 +1340,7 @@ private fun NativePlayerOverlay(
     onWatchTime: (Long) -> Unit
 ) {
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
+    var playbackEnded by remember(item.id) { mutableStateOf(player.playbackState == Player.STATE_ENDED) }
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
     var brightnessMask by remember { mutableFloatStateOf(0f) }
@@ -1352,7 +1357,10 @@ private fun NativePlayerOverlay(
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(value: Boolean) { isPlaying = value }
-            override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) onEnded() }
+            override fun onPlaybackStateChanged(state: Int) {
+                playbackEnded = state == Player.STATE_ENDED
+                if (state == Player.STATE_ENDED) onEnded()
+            }
         }
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
@@ -1371,7 +1379,7 @@ private fun NativePlayerOverlay(
             if (playingNow && wasPlaying) onWatchTime(elapsed)
             wasPlaying = playingNow
             previousTick = elapsedNow
-            if (now - lastPersistedAt >= 5000L) {
+            if (now - lastPersistedAt >= 5000L && player.playbackState != Player.STATE_ENDED) {
                 onProgress(current, duration)
                 lastPersistedAt = now
             }
@@ -1525,12 +1533,26 @@ private fun NativePlayerOverlay(
                         Text(formatTime(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { if (player.isPlaying) player.pause() else player.play() }, modifier = Modifier.size(48.dp)) {
+                        IconButton(onClick = {
+                            if (playbackEnded || player.playbackState == Player.STATE_ENDED) {
+                                player.seekTo(0L)
+                                current = 0L
+                                playbackEnded = false
+                                player.play()
+                            } else if (player.isPlaying) player.pause() else player.play()
+                        }, modifier = Modifier.size(48.dp)) {
                             Icon(
-                                if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
-                                contentDescription = if (isPlaying) "暂停" else "播放",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
+                                when {
+                                    playbackEnded || player.playbackState == Player.STATE_ENDED -> Icons.Outlined.Replay
+                                    isPlaying -> Icons.Outlined.Pause
+                                    else -> Icons.Outlined.PlayArrow
+                                },
+                                contentDescription = when {
+                                    playbackEnded || player.playbackState == Player.STATE_ENDED -> "重播"
+                                    isPlaying -> "暂停"
+                                    else -> "播放"
+                                },
+                                tint = Color.White, modifier = Modifier.size(32.dp)
                             )
                         }
                         Spacer(Modifier.weight(1f))
