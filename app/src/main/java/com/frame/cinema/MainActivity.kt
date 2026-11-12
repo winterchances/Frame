@@ -111,6 +111,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.session.MediaController
@@ -265,7 +266,31 @@ class MainActivity : ComponentActivity() {
 
     private fun startNativePlayback(item: VideoItem) {
         val controller = player ?: return
-        controller.setMediaItem(MediaItem.fromUri(item.contentUri))
+        val drawable = getDrawable(R.drawable.ic_notification)
+        val iconBytes = drawable?.let {
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                it.intrinsicWidth.coerceAtLeast(1),
+                it.intrinsicHeight.coerceAtLeast(1),
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            it.setBounds(0, 0, bitmap.width, bitmap.height)
+            it.draw(canvas)
+            java.io.ByteArrayOutputStream().use { stream ->
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                stream.toByteArray()
+            }
+        }
+        val metadataBuilder = MediaMetadata.Builder()
+            .setTitle(item.name)
+        if (iconBytes != null) {
+            metadataBuilder.setArtworkData(iconBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+        }
+        val mediaItem = MediaItem.Builder()
+            .setUri(item.contentUri)
+            .setMediaMetadata(metadataBuilder.build())
+            .build()
+        controller.setMediaItem(mediaItem)
         controller.prepare()
         if (item.progress >= 99f || item.status == "watched") controller.seekTo(0L)
         else if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
