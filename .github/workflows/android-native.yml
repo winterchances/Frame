@@ -1,8 +1,6 @@
 name: Build Native Android APK
 
 on:
-  push:
-    branches: [ "parity-fixes", "fix/build-99-haze-background" ]
   workflow_dispatch:
 
 concurrency:
