@@ -38,8 +38,14 @@ class PlaybackService : MediaSessionService() {
             .setSlots(CommandButton.SLOT_OVERFLOW)
             .build()
 
+        val mediaButtons = com.google.common.collect.ImmutableList.of(
+            rewindButton,
+            forwardButton,
+            closeButton
+        )
+
         mediaSession = MediaSession.Builder(this, player)
-            .setMediaButtonPreferences(com.google.common.collect.ImmutableList.of(rewindButton, forwardButton, closeButton))
+            .setMediaButtonPreferences(mediaButtons)
             .setCallback(object : MediaSession.Callback {
                 override fun onConnect(
                     session: MediaSession,
@@ -51,6 +57,14 @@ class PlaybackService : MediaSessionService() {
                         .add(Player.COMMAND_SEEK_FORWARD)
                         .add(Player.COMMAND_STOP)
                         .build()
+
+                    if (session.isMediaNotificationController(controller)) {
+                        return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
+                            .setAvailablePlayerCommands(playerCommands)
+                            .setMediaButtonPreferences(mediaButtons)
+                            .build()
+                    }
+
                     return MediaSession.ConnectionResult.accept(
                         MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS,
                         playerCommands
