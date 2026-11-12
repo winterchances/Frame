@@ -749,12 +749,19 @@ private fun FrameNativeApp(
                                         fontSize = 15.sp
                                     )
                                     if (isDefault) {
-                                        Text("默认", color = Color(0xFFAAAAAA), fontSize = 12.sp)
+                                        Text(
+                                            "默认",
+                                            color = Color(0xFFAAAAAA),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.padding(start = 12.dp, vertical = 10.dp)
+                                        )
                                     } else {
                                         Text(
                                             "删除",
                                             color = Color(0xFFE65C5C),
                                             fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
                                             modifier = Modifier.noRippleClickable {
                                                 repository.saveCategories(categories - cat)
                                                 videos.filter { it.category == cat }.forEach { repository.update(it.copy(category = "全部分类")) }
@@ -764,30 +771,37 @@ private fun FrameNativeApp(
                                     }
                                 }
                                 if (index < categories.lastIndex) {
-                                    Box(Modifier.fillMaxWidth().padding(start = 46.dp).height(0.5.dp).background(Color(0xFFF0F0F0)))
+                                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                                 }
                             }
                         }
+                        Spacer(Modifier.height(16.dp))
                         Row(
-                            Modifier.fillMaxWidth().padding(top = 14.dp)
+                            Modifier.fillMaxWidth()
+                                .height(52.dp)
                                 .shadow(5.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                                .padding(horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             BasicTextField(
                                 newCategory,
                                 { newCategory = it },
-                                Modifier.weight(1f).height(42.dp)
+                                Modifier.weight(1f)
                                     .onFocusChanged { sheetKeyboardUp = it.isFocused }
-                                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                                    .padding(horizontal = 12.dp),
                                 singleLine = true,
                                 decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() },
-                                textStyle = TextStyle(fontSize = 15.sp, color = MainText)
+                                textStyle = TextStyle(
+                                    fontSize = 15.sp,
+                                    lineHeight = 18.sp,
+                                    color = MainText,
+                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                )
                             )
                             Box(
-                                Modifier.size(40.dp).clip(CircleShape).background(ThemeTeal)
+                                Modifier.size(36.dp).clip(CircleShape).background(ThemeTeal)
                                     .noRippleClickable {
                                         val name = newCategory.trim()
                                         if (name.isNotEmpty() && name !in categories) {
@@ -905,11 +919,44 @@ private fun FrameNativeApp(
                     }
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
-                        BasicTextField(editName, { editName = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(12.dp)).padding(14.dp), singleLine = true)
-                        SheetAction("保存") {
-                            val newName = editName.trim()
-                            if (newName.isEmpty()) notify("视频名称不能为空")
-                            else { selected?.let { repository.rename(it.id, newName) }; refresh(); sheet = SheetType.NONE }
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .height(52.dp)
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BasicTextField(
+                                editName,
+                                { editName = it },
+                                Modifier.fillMaxWidth()
+                                    .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                    .padding(horizontal = 16.dp),
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    fontSize = 15.sp,
+                                    lineHeight = 18.sp,
+                                    color = MainText,
+                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                )
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Box(
+                            Modifier.fillMaxWidth()
+                                .height(50.dp)
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .noRippleClickable {
+                                    val newName = editName.trim()
+                                    if (newName.isEmpty()) notify("视频名称不能为空")
+                                    else { selected?.let { repository.rename(it.id, newName) }; refresh(); sheet = SheetType.NONE }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("保存", color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
                         Spacer(Modifier.height(24.dp))
                     }
@@ -1351,7 +1398,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 Text(
                     displayVideoName(video.name),
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF222222),
                     lineHeight = 21.sp,
                     maxLines = 2,
@@ -1734,27 +1781,24 @@ private fun NativePlayerOverlay(
                         Text(formatClock(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = {
+                        PlayerIconButton(
+                            icon = when {
+                                playbackEnded || player.playbackState == Player.STATE_ENDED -> Icons.Outlined.Replay
+                                isPlaying -> Icons.Outlined.Pause
+                                else -> Icons.Outlined.PlayArrow
+                            },
+                            description = when {
+                                playbackEnded || player.playbackState == Player.STATE_ENDED -> "重播"
+                                isPlaying -> "暂停"
+                                else -> "播放"
+                            }
+                        ) {
                             if (playbackEnded || player.playbackState == Player.STATE_ENDED) {
                                 player.seekTo(0L)
                                 current = 0L
                                 playbackEnded = false
                                 player.play()
                             } else if (player.isPlaying) player.pause() else player.play()
-                        }, modifier = Modifier.size(48.dp)) {
-                            Icon(
-                                when {
-                                    playbackEnded || player.playbackState == Player.STATE_ENDED -> Icons.Outlined.Replay
-                                    isPlaying -> Icons.Outlined.Pause
-                                    else -> Icons.Outlined.PlayArrow
-                                },
-                                contentDescription = when {
-                                    playbackEnded || player.playbackState == Player.STATE_ENDED -> "重播"
-                                    isPlaying -> "暂停"
-                                    else -> "播放"
-                                },
-                                tint = Color.White, modifier = Modifier.size(32.dp)
-                            )
                         }
                         Spacer(Modifier.weight(1f))
                         Box(
@@ -1833,7 +1877,10 @@ private fun PlayerProgressBar(progress: Float, modifier: Modifier = Modifier, on
 
 private fun formatTime(ms: Long): String {
     val seconds = (ms / 1000).coerceAtLeast(0)
-    return String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+    return String.format(
+        Locale.getDefault(), "%02d:%02d:%02d",
+        seconds / 3600, (seconds % 3600) / 60, seconds % 60
+    )
 }
 
 private fun displayVideoName(name: String): String = name.replace(
