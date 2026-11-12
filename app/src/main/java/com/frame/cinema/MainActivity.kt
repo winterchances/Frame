@@ -335,7 +335,11 @@ private fun FrameNativeApp(
     var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
-    var categories by remember { mutableStateOf(repository.categories().let { saved -> listOf("我的最爱") + saved.filterNot { it == "全部分类" || it == "我的最爱" } + "全部分类" }) }
+    var categories by remember { mutableStateOf(repository.categories().let { saved ->
+        val ordered = listOf("我的最爱") + saved.filterNot { it == "全部分类" || it == "我的最爱" } + "全部分类"
+        if (ordered != saved) repository.saveCategories(ordered)
+        ordered
+    }) }
     var status by remember { mutableStateOf("全部") }
     var category by remember { mutableStateOf("全部分类") }
     var compact by remember { mutableStateOf(true) }
