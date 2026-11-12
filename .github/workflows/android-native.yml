@@ -1,0 +1,47 @@
+name: Build Native Android APK
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: android-native-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Apply repository launcher icon
+        run: |
+          mkdir -p app/src/main/res/drawable-nodpi
+          cp icon.png app/src/main/res/drawable-nodpi/ic_launcher.png
+
+      - name: Build release-ready debug APK
+        run: gradle --no-daemon clean assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frame-native-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
