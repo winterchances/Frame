@@ -1524,6 +1524,7 @@ private fun LibraryPage(
                 item { Spacer(Modifier.height(gap)) }
             }
         }
+        }
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(250)) + slideInVertically { -it },
