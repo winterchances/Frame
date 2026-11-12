@@ -1065,8 +1065,31 @@ private fun HomePage(
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
-            item(key = "home-large-title") { Header("首页", onSettings) }
-            stickyHeader(key = "home-stat-panel") {
+            stickyHeader(key = "home-large-title") {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .zIndex(1f)
+                        .drawBehind {
+                            val bleed = 20.dp.toPx()
+                            val shadowHeight = 16.dp.toPx()
+                            drawRect(color = PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Color.Black.copy(alpha = 0.06f), Color.Transparent),
+                                    startY = size.height,
+                                    endY = size.height + shadowHeight
+                                ),
+                                topLeft = Offset(-bleed, size.height),
+                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
+                            )
+                        }
+                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                ) {
+                    Header("首页", onSettings)
+                }
+            }
+            item(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
                         .background(PageBg)
@@ -1343,19 +1366,40 @@ private fun RecordsPage(
     onEdit: (VideoItem) -> Unit
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
-        item {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
-                verticalAlignment = Alignment.CenterVertically
+        stickyHeader(key = "records-large-title") {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .zIndex(1f)
+                    .drawBehind {
+                        val bleed = 20.dp.toPx()
+                        val shadowHeight = 16.dp.toPx()
+                        drawRect(color = PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.06f), Color.Transparent),
+                                startY = size.height,
+                                endY = size.height + shadowHeight
+                            ),
+                            topLeft = Offset(-bleed, size.height),
+                            size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
+                        )
+                    }
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
             ) {
-                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                    ActionIcon(FrameSortIcon, "记录排序", onSort)
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                        ActionIcon(FrameSortIcon, "记录排序", onSort)
+                    }
                 }
             }
         }
-        stickyHeader {
+        item {
             Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
                 Row(
                     Modifier.fillMaxWidth()
