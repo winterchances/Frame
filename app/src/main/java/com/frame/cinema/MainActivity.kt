@@ -481,6 +481,7 @@ private fun FrameNativeApp(
                                 onVideo = { selected = it; playVideo(it) }
                             )
                             MainPage.LIBRARY -> LibraryPage(
+                                hazeState = hazeState,
                                 when (sort) { SortMode.NAME -> videos.sortedBy { it.name.lowercase(Locale.getDefault()) }; else -> videos.sortedByDescending { it.addedAt } }, categories, status, category, compact,
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
@@ -489,6 +490,7 @@ private fun FrameNativeApp(
                                 { selected = it; playVideo(it) }
                             )
                             MainPage.RECENT -> RecentPage(
+                                hazeState = hazeState,
                                 videos,
                                 onVideo = { selected = it; playVideo(it) },
                                 onClear = { sheet = SheetType.CLEAR_RECENT },
@@ -1215,7 +1217,7 @@ private fun HomePage(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(PageBg)
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .drawBehind {
                         val shadowHeight = 32.dp.toPx()
                         drawRect(
@@ -1240,6 +1242,7 @@ private fun HomePage(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryPage(
+    hazeState: HazeState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit
@@ -1266,7 +1269,7 @@ private fun LibraryPage(
         stickyHeader {
             Column(
                 Modifier.fillMaxWidth()
-                    .background(PageBg.copy(alpha = .95f))
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .padding(horizontal = 20.dp)
             ) {
                 Row(
@@ -1327,7 +1330,7 @@ private fun LibraryPage(
     }
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
+private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
     val today = dateFormat.format(Date())
@@ -1354,15 +1357,19 @@ private fun RecentPage(videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, on
         } else {
             groups.forEach { (label, list) ->
                 stickyHeader {
-                    Text(
-                        label,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF666666),
-                        modifier = Modifier.fillMaxWidth()
-                            .background(Color(0xF2F5F5F7))
-                            .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
-                    )
+                    Box(
+                        Modifier.fillMaxWidth()
+                            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    ) {
+                        Text(
+                            label,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF666666),
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+                        )
+                    }
                 }
                 item { Spacer(Modifier.height(10.dp)) }
                 items(list, key = { it.id }) { video ->
