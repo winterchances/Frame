@@ -1328,7 +1328,7 @@ private fun HomePage(
                 }
             }
             item(key = "home-stat-panel-gap") { Spacer(Modifier.height(25.dp)) }
-            item(key = "home-continue-heading") { SectionHeading("继续观看", continueExpanded) { continueExpanded = !continueExpanded } }
+            item(key = "home-continue-heading") { SectionHeading("继续观看", continueExpanded, onToggle = { continueExpanded = !continueExpanded }) }
             item(key = "home-continue-content") {
                 AnimatedVisibility(
                     visible = continueExpanded,
@@ -1374,7 +1374,9 @@ private fun HomePage(
                     chevronCollapseDurationMs = 240,
                     chevronExpandEasing = androidx.compose.animation.core.FastOutSlowInEasing,
                     chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing
-                ) { recentExpanded = !recentExpanded }
+                ,
+                    onToggle = { recentExpanded = !recentExpanded }
+                )
             }
             item(key = "home-recent-content") {
                 AnimatedVisibility(
