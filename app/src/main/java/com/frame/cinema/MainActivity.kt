@@ -1373,8 +1373,7 @@ private fun HomePage(
                     chevronExpandDurationMs = 320,
                     chevronCollapseDurationMs = 240,
                     chevronExpandEasing = androidx.compose.animation.core.FastOutSlowInEasing,
-                    chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing
-                ,
+                    chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing,
                     onToggle = { recentExpanded = !recentExpanded }
                 )
             }
