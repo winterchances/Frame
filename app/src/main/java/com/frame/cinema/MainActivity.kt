@@ -1378,13 +1378,42 @@ private fun HomePage(
                 )
             }
             item(key = "home-recent-content") {
-                AnimatedVisibility(
-                    visible = recentExpanded,
-                    enter = androidx.compose.animation.expandVertically(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeIn(tween(320)),
-                    exit = androidx.compose.animation.shrinkVertically(tween(240, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeOut(tween(240))
+                Column(
+                    Modifier.fillMaxWidth().animateContentSize(
+                        animationSpec = tween(420, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    )
                 ) {
-                    if (recent.isEmpty()) EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
-                    else Column { recent.forEach { video -> VideoRow(video, "${video.date} 添加") { onVideo(video) } } }
+                    if (recent.isEmpty()) {
+                        AnimatedVisibility(
+                            visible = recentExpanded,
+                            enter = fadeIn(tween(240)) + expandVertically(tween(240)),
+                            exit = fadeOut(tween(180)) + shrinkVertically(tween(180))
+                        ) {
+                            EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
+                        }
+                    } else {
+                        recent.forEachIndexed { index, video ->
+                            AnimatedVisibility(
+                                visible = recentExpanded,
+                                enter = expandVertically(
+                                    animationSpec = tween(250, delayMillis = index * 70, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                ) + fadeIn(tween(220, delayMillis = index * 70)) +
+                                    slideInVertically(
+                                        animationSpec = tween(250, delayMillis = index * 70, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                                        initialOffsetY = { it / 8 }
+                                    ),
+                                exit = shrinkVertically(
+                                    animationSpec = tween(190, delayMillis = (recent.size - index - 1) * 45, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                ) + fadeOut(tween(160, delayMillis = (recent.size - index - 1) * 45)) +
+                                    slideOutVertically(
+                                        animationSpec = tween(190, delayMillis = (recent.size - index - 1) * 45),
+                                        targetOffsetY = { it / 10 }
+                                    )
+                            ) {
+                                VideoRow(video, "${video.date} 添加") { onVideo(video) }
+                            }
+                        }
+                    }
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
