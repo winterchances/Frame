@@ -1565,7 +1565,7 @@ private fun RecordsPage(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(PageBg)
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .drawBehind {
                         val shadowHeight = 32.dp.toPx()
                         drawRect(
