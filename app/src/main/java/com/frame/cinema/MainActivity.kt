@@ -1186,7 +1186,7 @@ private fun FrameNativeApp(
                     else (cardTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
-                    video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
+                    video = video, compact = compact, onPlay = { _, _ -> contextMenuOpen = false }, onLong = {},
                     modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth).zIndex(1f),
                     highlighted = true
                 )
@@ -1577,7 +1577,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 items(list, key = { it.id }) { video ->
                     RecentHistoryCard(
                         video,
-                        onClick = { onVideo(video) },
+                        onClick = { rect -> onVideo(video, rect) },
                         onMore = { onMore(video) },
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
