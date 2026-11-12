@@ -1430,13 +1430,20 @@ private fun LibraryPage(
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    val showTopBar by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0
+        }
+    }
     val filtered = videos.filter {
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
             (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
     }
     val columns = if (compact) 3 else 2
     val gap = if (compact) 10.dp else 15.dp
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         item {
             Row(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
@@ -1454,6 +1461,7 @@ private fun LibraryPage(
                 Modifier.fillMaxWidth()
                     .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .offset(y = if (showTopBar) WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 46.dp else 0.dp)
                     .padding(horizontal = 20.dp)
             ) {
                 Row(
@@ -1514,6 +1522,36 @@ private fun LibraryPage(
                     }
                 }
                 item { Spacer(Modifier.height(gap)) }
+            }
+        }
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = fadeIn(tween(250)) + slideInVertically { -it },
+            exit = fadeOut(tween(250)) + slideOutVertically { -it },
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(PageBg)
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .statusBarsPadding()
+                    .drawBehind {
+                        val shadowHeight = 32.dp.toPx()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
+                                startY = size.height,
+                                endY = size.height + shadowHeight
+                            ),
+                            topLeft = Offset(0f, size.height),
+                            size = Size(size.width, shadowHeight)
+                        )
+                    }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("片库", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
             }
         }
     }
