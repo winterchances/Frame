@@ -1,6 +1,7 @@
 package com.frame.cinema
 
 import androidx.media3.common.Player
+import androidx.media3.session.CommandButton
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.DefaultMediaNotificationProvider
@@ -22,7 +23,17 @@ class PlaybackService : MediaSessionService() {
             setSeekBackIncrementMs(15_000L)
             setSeekForwardIncrementMs(15_000L)
         }
+        val rewindButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
+            .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+            .setSlots(CommandButton.SLOT_BACK)
+            .build()
+        val forwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_15)
+            .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+            .setSlots(CommandButton.SLOT_FORWARD)
+            .build()
+
         mediaSession = MediaSession.Builder(this, player)
+            .setMediaButtonPreferences(com.google.common.collect.ImmutableList.of(rewindButton, forwardButton))
             .setCallback(object : MediaSession.Callback {
                 override fun onConnect(
                     session: MediaSession,
