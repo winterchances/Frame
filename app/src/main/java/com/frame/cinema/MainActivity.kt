@@ -30,6 +30,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -285,7 +286,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FrameNativeApp(
     repository: NativeLibraryRepository,
@@ -690,18 +691,21 @@ private fun FrameNativeApp(
                     }
                     SheetType.CATEGORIES -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("分类管理")
-                        Column(
-                            Modifier.fillMaxWidth()
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth()
+                                .heightIn(max = 350.dp)
                                 .shadow(5.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(18.dp))
-                                .background(Color.White)
+                                .background(Color.White),
+                            userScrollEnabled = false
                         ) {
-                            categories.forEachIndexed { index, cat ->
+                            itemsIndexed(categories, key = { _, cat -> cat }) { index, cat ->
                                 val isDefault = cat == "全部分类" || cat == "我的最爱"
                                 var dragRemainder by remember(cat) { mutableFloatStateOf(0f) }
                                 val latestCategories = rememberUpdatedState(categories)
                                 Row(
                                     Modifier.fillMaxWidth().height(50.dp)
+                                        .animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         .then(
                                             if (!isDefault) Modifier.pointerInput(cat) {
                                                 detectDragGesturesAfterLongPress(
