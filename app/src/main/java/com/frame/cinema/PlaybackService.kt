@@ -19,10 +19,10 @@ class PlaybackService : MediaSessionService() {
         notificationProvider.setSmallIcon(R.drawable.ic_notification)
         setMediaNotificationProvider(notificationProvider)
 
-        val player = ExoPlayer.Builder(this).build().apply {
-            setSeekBackIncrementMs(15_000L)
-            setSeekForwardIncrementMs(15_000L)
-        }
+        val player = ExoPlayer.Builder(this)
+            .setSeekBackIncrementMs(15_000L)
+            .setSeekForwardIncrementMs(15_000L)
+            .build()
         val rewindButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
             .setPlayerCommand(Player.COMMAND_SEEK_BACK)
             .setSlots(CommandButton.SLOT_BACK)

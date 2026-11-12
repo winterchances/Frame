@@ -1121,7 +1121,7 @@ private fun FrameNativeApp(
                 val cardWidth = with(density) { bounds.width.toDp() }
                 val cardBottom = with(density) { bounds.bottom.toDp() }
                 val menuWidth = minOf(196.dp, maxWidth - 32.dp)
-                val menuHeight = 6 * 42.dp + 8.dp
+                val menuHeight = 42.dp * 6 + 8.dp
                 val menuX = (cardLeft + cardWidth / 2f - menuWidth / 2f)
                     .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
                 val safeTop = 60.dp
