@@ -31,9 +31,15 @@ class PlaybackService : MediaSessionService() {
             .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
             .setSlots(CommandButton.SLOT_FORWARD)
             .build()
+        val closeButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
+            .setCustomIconResId(R.drawable.ic_media_close)
+            .setDisplayName("关闭")
+            .setPlayerCommand(Player.COMMAND_STOP)
+            .setSlots(CommandButton.SLOT_OVERFLOW)
+            .build()
 
         mediaSession = MediaSession.Builder(this, player)
-            .setMediaButtonPreferences(com.google.common.collect.ImmutableList.of(rewindButton, forwardButton))
+            .setMediaButtonPreferences(com.google.common.collect.ImmutableList.of(rewindButton, forwardButton, closeButton))
             .setCallback(object : MediaSession.Callback {
                 override fun onConnect(
                     session: MediaSession,
