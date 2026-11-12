@@ -18,6 +18,7 @@ class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
 
     private val rewindCommand = SessionCommand("com.frame.cinema.REWIND_15", Bundle.EMPTY)
+    private val forwardCommand = SessionCommand("com.frame.cinema.FORWARD_15", Bundle.EMPTY)
     private val closeCommand = SessionCommand("com.frame.cinema.CLOSE_PLAYBACK", Bundle.EMPTY)
 
     override fun onCreate() {
@@ -33,6 +34,11 @@ class PlaybackService : MediaSessionService() {
             .setSessionCommand(rewindCommand)
             .setSlots(CommandButton.SLOT_BACK_SECONDARY)
             .build()
+        val forwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_15)
+            .setDisplayName("快进 15 秒")
+            .setSessionCommand(forwardCommand)
+            .setSlots(CommandButton.SLOT_FORWARD)
+            .build()
         val closeButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
             .setCustomIconResId(R.drawable.ic_media_close)
             .setDisplayName("关闭")
@@ -42,12 +48,14 @@ class PlaybackService : MediaSessionService() {
 
         val mediaButtons = com.google.common.collect.ImmutableList.of(
             rewindButton,
+            forwardButton,
             closeButton
         )
 
         val availableSessionCommands =
             MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                 .add(rewindCommand)
+                .add(forwardCommand)
                 .add(closeCommand)
                 .build()
 
@@ -80,6 +88,12 @@ class PlaybackService : MediaSessionService() {
                         rewindCommand.customAction -> {
                             val currentPosition = player.currentPosition
                             player.seekTo((currentPosition - 15_000L).coerceAtLeast(0L))
+                        }
+                        forwardCommand.customAction -> {
+                            val currentPosition = player.currentPosition
+                            val targetPosition = currentPosition + 15_000L
+                            val duration = player.duration
+                            player.seekTo(if (duration != androidx.media3.common.C.TIME_UNSET) targetPosition.coerceAtMost(duration) else targetPosition)
                         }
                         closeCommand.customAction -> {
                             player.stop()
