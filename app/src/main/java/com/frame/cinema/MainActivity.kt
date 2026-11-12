@@ -26,6 +26,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -45,6 +48,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.combinedClickable
@@ -108,6 +112,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -120,7 +125,9 @@ import androidx.media3.session.SessionToken
 import androidx.media3.ui.PlayerView
 import android.graphics.BitmapFactory
 import android.view.ViewGroup
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -357,6 +364,10 @@ private fun FrameNativeApp(
         onKeepAwake(keepAwake)
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
+    var playOriginRect by remember { mutableStateOf<Rect?>(null) }
+    var isClosing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var playerContainerSize by remember { mutableStateOf(IntSize.Zero) }
     var isLandscape by remember { mutableStateOf(false) }
     var speedIndex by remember { mutableIntStateOf(0) }
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
@@ -394,7 +405,8 @@ private fun FrameNativeApp(
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
     fun notify(message: String) { toast = message }
-    fun playVideo(item: VideoItem) {
+    fun playVideo(item: VideoItem, originRect: Rect? = null) {
+        playOriginRect = originRect
         speedIndex = 0
         controlsVisible = true
         locked = false
@@ -402,6 +414,35 @@ private fun FrameNativeApp(
         onSystemBarsVisible(false)
         onPlay(item)
     }
+    val initialScaleX = if (playerContainerSize.width > 0 && playOriginRect != null) {
+        (playOriginRect!!.width / playerContainerSize.width.toFloat()).coerceIn(0.01f, 1f)
+    } else 0.8f
+    val initialScaleY = if (playerContainerSize.height > 0 && playOriginRect != null) {
+        (playOriginRect!!.height / playerContainerSize.height.toFloat()).coerceIn(0.01f, 1f)
+    } else 0.8f
+    val initialX = if (playOriginRect != null && playerContainerSize.width > 0) {
+        playOriginRect!!.center.x - playerContainerSize.width / 2f
+    } else 0f
+    val initialY = if (playOriginRect != null && playerContainerSize.height > 0) {
+        playOriginRect!!.center.y - playerContainerSize.height / 2f
+    } else 0f
+
+    val playerScaleX = remember(playing?.id, playOriginRect, playerContainerSize) { Animatable(initialScaleX) }
+    val playerScaleY = remember(playing?.id, playOriginRect, playerContainerSize) { Animatable(initialScaleY) }
+    val playerTranslationX = remember(playing?.id, playOriginRect, playerContainerSize) { Animatable(initialX) }
+    val playerTranslationY = remember(playing?.id, playOriginRect, playerContainerSize) { Animatable(initialY) }
+
+    LaunchedEffect(playing?.id, playerContainerSize, playOriginRect, isClosing) {
+        if (playing != null && !isClosing && playerContainerSize.width > 0 && playerContainerSize.height > 0) {
+            coroutineScope {
+                launch { playerScaleX.animateTo(1f, tween(320, easing = FastOutSlowInEasing)) }
+                launch { playerScaleY.animateTo(1f, tween(320, easing = FastOutSlowInEasing)) }
+                launch { playerTranslationX.animateTo(0f, tween(320, easing = FastOutSlowInEasing)) }
+                launch { playerTranslationY.animateTo(0f, tween(320, easing = FastOutSlowInEasing)) }
+            }
+        }
+    }
+
     fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
         playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
         player.pause()
@@ -411,6 +452,23 @@ private fun FrameNativeApp(
         onSystemBarsVisible(true)
         if (isLandscape) { isLandscape = false; onOrientation(false) }
         refresh()
+    }
+
+    fun requestClosePlayer() {
+        if (playing != null && !isClosing) {
+            isClosing = true
+            scope.launch {
+                coroutineScope {
+                    launch { playerScaleX.animateTo(initialScaleX, tween(250, easing = FastOutLinearInEasing)) }
+                    launch { playerScaleY.animateTo(initialScaleY, tween(250, easing = FastOutLinearInEasing)) }
+                    launch { playerTranslationX.animateTo(initialX, tween(250, easing = FastOutLinearInEasing)) }
+                    launch { playerTranslationY.animateTo(initialY, tween(250, easing = FastOutLinearInEasing)) }
+                }
+                closePlayer()
+                playOriginRect = null
+                isClosing = false
+            }
+        }
     }
 
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -508,13 +566,14 @@ private fun FrameNativeApp(
             sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
             sheet != SheetType.NONE -> sheet = SheetType.NONE
             sheetVisibility.currentState || sheetVisibility.targetState -> Unit
-            playing != null -> closePlayer()
+            playing != null -> if (!isClosing) requestClosePlayer()
             showFab -> showFab = false
         }
     }
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black)
+        Modifier.fillMaxSize().background(PageBg)
+            .onSizeChanged { playerContainerSize = it }
             .pointerInput(page, sheet, playing, contextMenuVideo) {
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
@@ -537,185 +596,181 @@ private fun FrameNativeApp(
                 )
             }
     ) {
-        androidx.compose.animation.AnimatedContent(
-            targetState = playing,
-            contentKey = { it },
-            modifier = Modifier.fillMaxSize().background(Color.Black),
-            contentAlignment = Alignment.Center,
-            transitionSpec = {
-                if (targetState != null) {
-                    (androidx.compose.animation.scaleIn(initialScale = 0.85f, animationSpec = tween(320)) + fadeIn(tween(320))) togetherWith
-                        (androidx.compose.animation.scaleOut(targetScale = 0.9f, animationSpec = tween(320)) + fadeOut(tween(320)))
-                } else {
-                    (androidx.compose.animation.scaleIn(initialScale = 0.9f, animationSpec = tween(250)) + fadeIn(tween(250))) togetherWith
-                        (androidx.compose.animation.scaleOut(targetScale = 0.85f, animationSpec = tween(250)) + fadeOut(tween(250)))
-                }
-            },
-            label = "player-card-transition"
-        ) { targetPlaying ->
-          if (targetPlaying == null) {
-            Box(
-                Modifier.fillMaxSize().background(PageBg)
-                    .graphicsLayer {
-                        scaleX = 1f - .05f * sheetProgress
-                        scaleY = 1f - .05f * sheetProgress
-                    }
-                    .blur(backdropBlur)
-            ) {
-                androidx.compose.animation.AnimatedContent(
-                    modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
-                    targetState = page,
-                    transitionSpec = {
-                        val forward = targetState.ordinal > initialState.ordinal
-                        (androidx.compose.animation.slideInHorizontally(
-                            animationSpec = tween(350, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f))
-                        ) { fullWidth -> if (forward) fullWidth else -fullWidth } ) togetherWith
-                            androidx.compose.animation.slideOutHorizontally(
+        if (playing == null) {
+                Box(
+                    Modifier.fillMaxSize().background(PageBg)
+                        .graphicsLayer {
+                            scaleX = 1f - .05f * sheetProgress
+                            scaleY = 1f - .05f * sheetProgress
+                        }
+                        .blur(backdropBlur)
+                ) {
+                    androidx.compose.animation.AnimatedContent(
+                        modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
+                        targetState = page,
+                        transitionSpec = {
+                            val forward = targetState.ordinal > initialState.ordinal
+                            (androidx.compose.animation.slideInHorizontally(
                                 animationSpec = tween(350, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f))
-                            ) { fullWidth -> if (forward) -fullWidth else fullWidth }
-                    },
-                    label = "frame-page"
-                ) { target ->
-                    when (target) {
-                            MainPage.HOME -> HomePage(
-                                videos = videos,
-                                weeklyWatchTimeMs = weeklyWatchTimeMs,
-                                hazeState = hazeState,
-                                listState = homeListState,
-                                onSettings = { sheet = SheetType.SETTINGS },
-                                onVideo = { selected = it; playVideo(it) }
-                            )
-                            MainPage.LIBRARY -> LibraryPage(
-                                hazeState = hazeState,
-                                when (sort) { SortMode.NAME -> videos.sortedBy { it.name.lowercase(Locale.getDefault()) }; else -> videos.sortedByDescending { it.addedAt } }, categories, status, category, compact,
-                                { status = it }, { category = it },
-                                { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
-                                { sheet = SheetType.CATEGORIES },
-                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuOpen = true; showFab = false },
-                                { selected = it; playVideo(it) }
-                            )
-                            MainPage.RECENT -> RecentPage(
-                                hazeState = hazeState,
-                                videos,
-                                onVideo = { selected = it; playVideo(it) },
-                                onClear = { sheet = SheetType.CLEAR_RECENT },
-                                onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
-                            )
-                            MainPage.RECORDS -> RecordsPage(
-                                hazeState = hazeState,
-                                videos = videos.filter { it.status == "watched" || it.progress >= 100f }
-                                    .let { list -> if (recordSortByRating) list.sortedByDescending { it.rating } else list.sortedByDescending { it.lastPlayedAt } }
-                                    .filter { recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true) },
-                                onSearch = { sheet = SheetType.RECORD_SEARCH },
-                                onSort = { sheet = SheetType.RECORD_SORT },
-                                onEdit = {
-                                    selected = it; editReview = it.review; editRating = it.rating
-                                    parentSheet = SheetType.NONE
-                                    sheet = SheetType.NOTE
-                                }
-                            )
+                            ) { fullWidth -> if (forward) fullWidth else -fullWidth } ) togetherWith
+                                androidx.compose.animation.slideOutHorizontally(
+                                    animationSpec = tween(350, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f))
+                                ) { fullWidth -> if (forward) -fullWidth else fullWidth }
+                        },
+                        label = "frame-page"
+                    ) { target ->
+                        when (target) {
+                                MainPage.HOME -> HomePage(
+                                    videos = videos,
+                                    weeklyWatchTimeMs = weeklyWatchTimeMs,
+                                    hazeState = hazeState,
+                                    listState = homeListState,
+                                    onSettings = { sheet = SheetType.SETTINGS },
+                                    onVideo = { item, bounds -> selected = item; playVideo(item, bounds) }
+                                )
+                                MainPage.LIBRARY -> LibraryPage(
+                                    hazeState = hazeState,
+                                    when (sort) { SortMode.NAME -> videos.sortedBy { it.name.lowercase(Locale.getDefault()) }; else -> videos.sortedByDescending { it.addedAt } }, categories, status, category, compact,
+                                    { status = it }, { category = it },
+                                    { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
+                                    { sheet = SheetType.CATEGORIES },
+                                    { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuOpen = true; showFab = false },
+                                    { item, bounds -> selected = item; playVideo(item, bounds) }
+                                )
+                                MainPage.RECENT -> RecentPage(
+                                    hazeState = hazeState,
+                                    videos,
+                                    onVideo = { item, bounds -> selected = item; playVideo(item, bounds) },
+                                    onClear = { sheet = SheetType.CLEAR_RECENT },
+                                    onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
+                                )
+                                MainPage.RECORDS -> RecordsPage(
+                                    hazeState = hazeState,
+                                    videos = videos.filter { it.status == "watched" || it.progress >= 100f }
+                                        .let { list -> if (recordSortByRating) list.sortedByDescending { it.rating } else list.sortedByDescending { it.lastPlayedAt } }
+                                        .filter { recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true) },
+                                    onSearch = { sheet = SheetType.RECORD_SEARCH },
+                                    onSort = { sheet = SheetType.RECORD_SORT },
+                                    onEdit = {
+                                        selected = it; editReview = it.review; editRating = it.rating
+                                        parentSheet = SheetType.NONE
+                                        sheet = SheetType.NOTE
+                                    }
+                                )
+                            }
                         }
-                    }
-            }
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
-                    BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
-                Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        }
+        if (playing != null) {
+            Box(
+                Modifier.fillMaxSize().graphicsLayer {
+                    transformOrigin = TransformOrigin.Center
+                    scaleX = playerScaleX.value
+                    scaleY = playerScaleY.value
+                    translationX = playerTranslationX.value
+                    translationY = playerTranslationY.value
+                }.background(Color.Black)
             ) {
-                val fabEasing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)
-                val searchProgress by animateFloatAsState(
-                    if (showFab) 1f else 0f,
-                    tween(300, delayMillis = 50, easing = fabEasing),
-                    label = "fab-search-progress"
-                )
-                val importProgress by animateFloatAsState(
-                    if (showFab) 1f else 0f,
-                    tween(300, delayMillis = 100, easing = fabEasing),
-                    label = "fab-import-progress"
-                )
-                val fabRotation by animateFloatAsState(
-                    if (showFab) 45f else 0f,
-                    tween(300, easing = fabEasing),
-                    label = "fab-rotation"
-                )
-                Box(
-                    Modifier.size(48.dp)
-                        .graphicsLayer {
-                            alpha = searchProgress
-                            scaleX = .5f + .5f * searchProgress
-                            scaleY = .5f + .5f * searchProgress
-                            translationY = 20.dp.toPx() * (1f - searchProgress)
-                        }
-                        .then(if (showFab) Modifier.noRippleClickable { search = ""; sheet = SheetType.SEARCH; showFab = false } else Modifier),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Search, "搜索", tint = Color.White, modifier = Modifier.size(20.dp))
+                NativePlayerOverlay(
+                    item = playing!!,
+                    player = player,
+                    speeds = speeds,
+                    speedIndex = speedIndex,
+                    locked = locked,
+                    controlsVisible = controlsVisible,
+                    onClose = { requestClosePlayer() },
+                    onToggleControls = { controlsVisible = !controlsVisible },
+                    onAutoHideControls = { controlsVisible = false },
+                    onToggleLock = { locked = !locked; controlsVisible = !locked },
+                    onSpeed = {
+                        speedIndex = (speedIndex + 1) % speeds.size
+                    },
+                    onOrientation = {
+                        isLandscape = !isLandscape
+                        onOrientation(isLandscape)
+                    },
+                    onEnded = {
+                        controlsVisible = true
+                        playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
+                        refresh()
+                    },
+                    onProgress = { pos, duration ->
+                        playing?.let { repository.updatePlayback(it.id, pos, duration) }
+                    },
+                    onWatchTime = { deltaMs ->
+                        playing?.let { repository.recordWatchTime(it.id, deltaMs) }
                     }
-                }
-                Box(
-                    Modifier.size(48.dp)
-                        .graphicsLayer {
-                            alpha = importProgress
-                            scaleX = .5f + .5f * importProgress
-                            scaleY = .5f + .5f * importProgress
-                            translationY = 20.dp.toPx() * (1f - importProgress)
-                        }
-                        .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.IMPORT; showFab = false } else Modifier),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
+                )
+            }
+        }
+        if (playing == null) {
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
+                        BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                     }
-                }
-                Box(
-                    Modifier.size(56.dp)
-                        .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
-                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                        .clip(CircleShape)
-                        .background(Glass)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
-                        .noRippleClickable { showFab = !showFab },
-                    contentAlignment = Alignment.Center
+                    Column(
+                        Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
-                }
-                }
-          } else {
-            NativePlayerOverlay(
-                item = targetPlaying,
-                player = player,
-                speeds = speeds,
-                speedIndex = speedIndex,
-                locked = locked,
-                controlsVisible = controlsVisible,
-                onClose = { closePlayer() },
-                onToggleControls = { controlsVisible = !controlsVisible },
-                onAutoHideControls = { controlsVisible = false },
-                onToggleLock = { locked = !locked; controlsVisible = !locked },
-                onSpeed = {
-                    speedIndex = (speedIndex + 1) % speeds.size
-                },
-                onOrientation = {
-                    isLandscape = !isLandscape
-                    onOrientation(isLandscape)
-                },
-                onEnded = {
-                    controlsVisible = true
-                    playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
-                    refresh()
-                },
-                onProgress = { pos, duration ->
-                    playing?.let { repository.updatePlayback(it.id, pos, duration) }
-                },
-                onWatchTime = { deltaMs ->
-                    playing?.let { repository.recordWatchTime(it.id, deltaMs) }
-                }
-            )
-          }
+                    val fabEasing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)
+                    val searchProgress by animateFloatAsState(
+                        if (showFab) 1f else 0f,
+                        tween(300, delayMillis = 50, easing = fabEasing),
+                        label = "fab-search-progress"
+                    )
+                    val importProgress by animateFloatAsState(
+                        if (showFab) 1f else 0f,
+                        tween(300, delayMillis = 100, easing = fabEasing),
+                        label = "fab-import-progress"
+                    )
+                    val fabRotation by animateFloatAsState(
+                        if (showFab) 45f else 0f,
+                        tween(300, easing = fabEasing),
+                        label = "fab-rotation"
+                    )
+                    Box(
+                        Modifier.size(48.dp)
+                            .graphicsLayer {
+                                alpha = searchProgress
+                                scaleX = .5f + .5f * searchProgress
+                                scaleY = .5f + .5f * searchProgress
+                                translationY = 20.dp.toPx() * (1f - searchProgress)
+                            }
+                            .then(if (showFab) Modifier.noRippleClickable { search = ""; sheet = SheetType.SEARCH; showFab = false } else Modifier),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.Search, "搜索", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Box(
+                        Modifier.size(48.dp)
+                            .graphicsLayer {
+                                alpha = importProgress
+                                scaleX = .5f + .5f * importProgress
+                                scaleY = .5f + .5f * importProgress
+                                translationY = 20.dp.toPx() * (1f - importProgress)
+                            }
+                            .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.IMPORT; showFab = false } else Modifier),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Box(
+                        Modifier.size(56.dp)
+                            .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
+                            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                            .clip(CircleShape)
+                            .background(Glass)
+                            .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
+                            .noRippleClickable { showFab = !showFab },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
+                    }
+                    }
         }
 
         val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
@@ -1251,7 +1306,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
 private fun HomePage(
     videos: List<VideoItem>, weeklyWatchTimeMs: Long, hazeState: HazeState,
     listState: LazyListState,
-    onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
+    onSettings: () -> Unit, onVideo: (VideoItem, Rect) -> Unit
 ) {
     val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(4)
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
@@ -1315,9 +1370,12 @@ private fun HomePage(
                         }
                         LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 2.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                             itemsIndexed(continuing, key = { _, video -> video.id }) { _, video ->
+                                var cardBounds by remember { mutableStateOf(Rect.Zero) }
                                 Box(
                                     Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                        .clip(RoundedCornerShape(20.dp)).background(PosterBrush(video.bgIndex)).noRippleClickable { onVideo(video) }
+                                        .clip(RoundedCornerShape(20.dp)).background(PosterBrush(video.bgIndex))
+                                        .onGloballyPositioned { cardBounds = it.boundsInRoot() }
+                                        .noRippleClickable { onVideo(video, cardBounds) }
                                 ) {
                                     Thumbnail(video, Modifier.fillMaxSize())
                                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, .4f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .8f)))))
@@ -1343,7 +1401,7 @@ private fun HomePage(
                     exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
                 ) {
                     if (recent.isEmpty()) EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
-                    else Column { recent.forEach { video -> VideoRow(video, "${video.date} 添加") { onVideo(video) } } }
+                    else Column { recent.forEach { video -> VideoRow(video, "${video.date} 添加") { bounds -> onVideo(video, bounds) } } }
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
@@ -1357,8 +1415,8 @@ private fun HomePage(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .background(Glass)
                     .statusBarsPadding()
                     .drawBehind {
                         val shadowHeight = 32.dp.toPx()
@@ -1387,7 +1445,7 @@ private fun LibraryPage(
     hazeState: HazeState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
-    onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit
+    onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem, Rect) -> Unit
 ) {
     val filtered = videos.filter {
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
@@ -1411,8 +1469,8 @@ private fun LibraryPage(
         stickyHeader {
             Column(
                 Modifier.fillMaxWidth()
-                    .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .background(Glass)
                     .padding(horizontal = 20.dp)
             ) {
                 Row(
@@ -1473,7 +1531,7 @@ private fun LibraryPage(
     }
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
+private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem, Rect) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
     val today = dateFormat.format(Date())
@@ -1502,8 +1560,8 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 stickyHeader {
                     Box(
                         Modifier.fillMaxWidth()
-                            .background(PageBg)
                             .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                            .background(Glass)
                     ) {
                         Text(
                             label,
@@ -1532,13 +1590,14 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
 }
 
 @Composable
-private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
+private fun RecentHistoryCard(video: VideoItem, onClick: (Rect) -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
+    var cardBounds by remember { mutableStateOf(Rect.Zero) }
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
     Row(
-        modifier.fillMaxWidth().padding(bottom = 12.dp)
+        modifier.fillMaxWidth().onGloballyPositioned { cardBounds = it.boundsInRoot() }.padding(bottom = 12.dp)
             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
-            .background(Color.White).noRippleClickable(onClick).padding(12.dp),
+            .background(Color.White).noRippleClickable { onClick(cardBounds) }.padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
         Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
@@ -1710,6 +1769,7 @@ private fun RecordsPage(
                 Modifier
                     .fillMaxWidth()
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .background(Glass)
                     .drawBehind {
                         val shadowHeight = 32.dp.toPx()
                         drawRect(
@@ -1882,12 +1942,15 @@ private fun NativePlayerOverlay(
             }
     ) {
         AndroidView(
-            factory = { ctx -> PlayerView(ctx).apply {
-                this.player = player
-                useController = false
-                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
-                layoutParams = ViewGroup.LayoutParams(-1, -1)
-            } },
+            factory = { ctx ->
+                (android.view.LayoutInflater.from(ctx)
+                    .inflate(R.layout.player_view, null, false) as PlayerView).apply {
+                    this.player = player
+                    useController = false
+                    setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    layoutParams = ViewGroup.LayoutParams(-1, -1)
+                }
+            },
             modifier = Modifier.fillMaxSize(),
             update = { it.player = player }
         )
@@ -2134,8 +2197,9 @@ private fun Stat(label: String, value: String, unit: String, modifier: Modifier 
 }
 
 @Composable
-private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun VideoRow(video: VideoItem, subtitle: String, onClick: (Rect) -> Unit) {
+    var cardBounds by remember { mutableStateOf(Rect.Zero) }
+    Row(Modifier.fillMaxWidth().onGloballyPositioned { cardBounds = it.boundsInRoot() }.padding(bottom = 12.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable { onClick(cardBounds) }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
@@ -2149,10 +2213,10 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: (Rect) -> Unit, modifier: Modifier = Modifier, highlighted: Boolean = false) {
+private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem, Rect) -> Unit, onLong: (Rect) -> Unit, modifier: Modifier = Modifier, highlighted: Boolean = false) {
     val haptic = LocalHapticFeedback.current
     var cardBounds by remember { mutableStateOf(Rect.Zero) }
-    Column(modifier.onGloballyPositioned { cardBounds = it.boundsInRoot() }.noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })) {
+    Column(modifier.onGloballyPositioned { cardBounds = it.boundsInRoot() }.noRippleCombinedClickable(onClick = { onPlay(video, cardBounds) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
