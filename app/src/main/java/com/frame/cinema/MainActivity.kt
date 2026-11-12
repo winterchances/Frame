@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import Size
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -1086,7 +1086,7 @@ private fun HomePage(
                             drawRect(
                                 color = PageBg.copy(alpha = collapseFraction),
                                 topLeft = Offset(-bleed, -100f),
-                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height + 100f)
+                                size = Size(size.width + bleed * 2f, size.height + 100f)
                             )
                             drawRect(
                                 brush = Brush.verticalGradient(
@@ -1099,7 +1099,7 @@ private fun HomePage(
                                     endY = size.height + shadowHeight
                                 ),
                                 topLeft = Offset(-bleed, size.height),
-                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
+                                size = Size(size.width + bleed * 2f, shadowHeight)
                             )
                         }
                     }
@@ -1114,7 +1114,7 @@ private fun HomePage(
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                         .drawBehind {
                             val bleed = 20.dp.toPx()
-                            drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
+                            drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
 
                         }
                 ) {
@@ -1403,7 +1403,7 @@ private fun RecordsPage(
                             drawRect(
                                 color = PageBg.copy(alpha = collapseFraction),
                                 topLeft = Offset(-bleed, -100f),
-                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height + 100f)
+                                size = Size(size.width + bleed * 2f, size.height + 100f)
                             )
                             drawRect(
                                 brush = Brush.verticalGradient(
@@ -1416,7 +1416,7 @@ private fun RecordsPage(
                                     endY = size.height + shadowHeight
                                 ),
                                 topLeft = Offset(-bleed, size.height),
-                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
+                                size = Size(size.width + bleed * 2f, shadowHeight)
                             )
                         }
                     }
