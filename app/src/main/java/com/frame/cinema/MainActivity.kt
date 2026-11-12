@@ -673,7 +673,7 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(if (contextMenuVideo != null) -1f else 1f)) {
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
                 Column(
@@ -1161,11 +1161,6 @@ private fun FrameNativeApp(
                 val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
                     else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
-                PosterCard(
-                    video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
-                    modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth).zIndex(1f),
-                    highlighted = true
-                )
                 Column(
                     Modifier.offset(x = menuX, y = menuY).width(menuWidth)
                         .graphicsLayer {
@@ -1542,7 +1537,7 @@ private fun LibraryPage(
                             PosterCard(
                                 video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
                                 Modifier.weight(1f),
-                                alpha = if (contextMenuVideo?.id == video.id) contextMenuReturnProgress else 1f,
+                                alpha = 1f,
                                 onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
                             )
                         }
