@@ -1,8 +1,6 @@
 name: Build Android APK
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -18,20 +16,13 @@ jobs:
       with:
         node-version: 22
 
-    # 2. 锁定 Java 21 和 Temurin 发行版
+    # 2. 锁定 Java JDK 21 和 Temurin 发行版
     - name: Setup Java JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-
-    # 3. 强制 Gradle 使用 Java 21
-    - name: Setup Gradle JDK
       run: |
         echo "JAVA_HOME=$JAVA_HOME"
         echo "org.gradle.java.home=$JAVA_HOME" >> $GITHUB_WORKSPACE/gradle.properties
 
-    # 4. 使用最新的 Android SDK 设置
+    # 3. 强制 Gradle 使用 Java 21
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
       with:
@@ -42,7 +33,7 @@ jobs:
         mkdir www
         mv index.html www/
 
-    # 5. 安装 Capacitor 时自动匹配最新版，避免版本错位
+    # 4. 安装 Capacitor 时自动匹配最新版，避免版本错位
     - name: Install Capacitor & Assets
       run: |
         npm init -y
@@ -60,7 +51,7 @@ jobs:
       run: |
         npx capacitor-assets generate --android
 
-    # 6. 清理缓存并构建
+    # 5. 清理缓存并构建
     - name: Build APK with Gradle
       run: |
         npx cap sync
