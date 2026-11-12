@@ -384,7 +384,7 @@ private fun FrameNativeApp(
     )
     val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
     val contextMenuReturnProgress by animateFloatAsState(
-        targetValue = if (contextMenuOpen) 0f else 1f,
+        targetValue = if (contextMenuVideo != null && !contextMenuOpen) 1f else 0f,
         animationSpec = tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing),
         label = "library-context-card-return"
     )
