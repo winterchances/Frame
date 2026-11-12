@@ -1,17 +1,25 @@
 package com.frame.cinema
 
+import android.os.Bundle
 import androidx.media3.common.Player
-import androidx.media3.session.CommandButton
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
+import com.google.common.util.concurrent.Futures
 
 /** Owns playback independently of the Activity so audio can continue in the background. */
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
+
+    private val rewindCommand = SessionCommand("com.frame.cinema.REWIND_15", Bundle.EMPTY)
+    private val forwardCommand = SessionCommand("com.frame.cinema.FORWARD_15", Bundle.EMPTY)
+    private val closeCommand = SessionCommand("com.frame.cinema.CLOSE_PLAYBACK", Bundle.EMPTY)
 
     override fun onCreate() {
         super.onCreate()
@@ -19,22 +27,22 @@ class PlaybackService : MediaSessionService() {
         notificationProvider.setSmallIcon(R.drawable.ic_notification)
         setMediaNotificationProvider(notificationProvider)
 
-        val player = ExoPlayer.Builder(this)
-            .setSeekBackIncrementMs(15_000L)
-            .setSeekForwardIncrementMs(15_000L)
-            .build()
+        val player = ExoPlayer.Builder(this).build()
+
         val rewindButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
-            .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+            .setDisplayName("快退 15 秒")
+            .setSessionCommand(rewindCommand)
             .setSlots(CommandButton.SLOT_BACK)
             .build()
         val forwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_15)
-            .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+            .setDisplayName("快进 15 秒")
+            .setSessionCommand(forwardCommand)
             .setSlots(CommandButton.SLOT_FORWARD)
             .build()
         val closeButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
             .setCustomIconResId(R.drawable.ic_media_close)
             .setDisplayName("关闭")
-            .setPlayerCommand(Player.COMMAND_STOP)
+            .setSessionCommand(closeCommand)
             .setSlots(CommandButton.SLOT_OVERFLOW)
             .build()
 
@@ -44,6 +52,13 @@ class PlaybackService : MediaSessionService() {
             closeButton
         )
 
+        val availableSessionCommands =
+            MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                .add(rewindCommand)
+                .add(forwardCommand)
+                .add(closeCommand)
+                .build()
+
         mediaSession = MediaSession.Builder(this, player)
             .setMediaButtonPreferences(mediaButtons)
             .setCallback(object : MediaSession.Callback {
@@ -51,24 +66,51 @@ class PlaybackService : MediaSessionService() {
                     session: MediaSession,
                     controller: MediaSession.ControllerInfo
                 ): MediaSession.ConnectionResult {
-                    val playerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
-                        .buildUpon()
-                        .add(Player.COMMAND_SEEK_BACK)
-                        .add(Player.COMMAND_SEEK_FORWARD)
-                        .add(Player.COMMAND_STOP)
+                    return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                        .setAvailableSessionCommands(availableSessionCommands)
+                        .setAvailablePlayerCommands(
+                            MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
+                        )
+                        .setMediaButtonPreferences(mediaButtons)
                         .build()
+                }
 
-                    if (session.isMediaNotificationController(controller)) {
-                        return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                            .setAvailablePlayerCommands(playerCommands)
-                            .setMediaButtonPreferences(mediaButtons)
-                            .build()
+                override fun onCustomCommand(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo,
+                    customCommand: SessionCommand,
+                    args: Bundle
+                ): com.google.common.util.concurrent.ListenableFuture<SessionResult> {
+                    when (customCommand.customAction) {
+                        rewindCommand.customAction -> {
+                            val currentPosition = player.currentPosition
+                            player.seekTo((currentPosition - 15_000L).coerceAtLeast(0L))
+                        }
+                        forwardCommand.customAction -> {
+                            val currentPosition = player.currentPosition
+                            val targetPosition = currentPosition + 15_000L
+                            val duration = player.duration
+                            player.seekTo(
+                                if (duration != Player.TIME_UNSET) {
+                                    targetPosition.coerceAtMost(duration)
+                                } else {
+                                    targetPosition
+                                }
+                            )
+                        }
+                        closeCommand.customAction -> {
+                            player.stop()
+                            player.clearMediaItems()
+                            stopSelf()
+                        }
+                        else -> return super.onCustomCommand(
+                            session,
+                            controller,
+                            customCommand,
+                            args
+                        )
                     }
-
-                    return MediaSession.ConnectionResult.accept(
-                        MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS,
-                        playerCommands
-                    )
+                    return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                 }
             })
             .build()
