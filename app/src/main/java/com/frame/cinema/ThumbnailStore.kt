@@ -55,7 +55,7 @@ object ThumbnailStore {
 
     fun saveCustomCover(context: Context, source: Uri, videoId: Long): String? {
         return try {
-            val target = File(directory(context), "$videoId.jpg")
+            val target = File(directory(context), "$videoId-custom-${System.currentTimeMillis()}.jpg")
             val input = context.contentResolver.openInputStream(source) ?: return null
             input.use { stream -> target.outputStream().use { output -> stream.copyTo(output) } }
             target.absolutePath
