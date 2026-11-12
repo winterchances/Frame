@@ -2,6 +2,7 @@ package com.frame.cinema
 
 import android.os.Bundle
 import androidx.media3.common.C
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
@@ -32,7 +33,7 @@ class PlaybackService : MediaSessionService() {
         val rewindButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
             .setDisplayName("快退 15 秒")
             .setSessionCommand(rewindCommand)
-            .setSlots(CommandButton.SLOT_BACK)
+            .setSlots(CommandButton.SLOT_BACK_SECONDARY)
             .build()
         val forwardButton = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_15)
             .setDisplayName("快进 15 秒")
@@ -69,7 +70,10 @@ class PlaybackService : MediaSessionService() {
                     return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                         .setAvailableSessionCommands(availableSessionCommands)
                         .setAvailablePlayerCommands(
-                            MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
+                            MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+                                .remove(Player.COMMAND_SEEK_TO_PREVIOUS)
+                                .remove(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                                .build()
                         )
                         .setMediaButtonPreferences(mediaButtons)
                         .build()
