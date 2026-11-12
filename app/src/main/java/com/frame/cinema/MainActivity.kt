@@ -1345,7 +1345,16 @@ private fun HomePage(
                     }
                 }
             }
-            item(key = "home-recent-heading") { SectionHeading("最近添加", recentExpanded) { recentExpanded = !recentExpanded } }
+            item(key = "home-recent-heading") {
+                SectionHeading(
+                    "最近添加",
+                    recentExpanded,
+                    chevronExpandDurationMs = 320,
+                    chevronCollapseDurationMs = 240,
+                    chevronExpandEasing = androidx.compose.animation.core.FastOutSlowInEasing,
+                    chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing
+                ) { recentExpanded = !recentExpanded }
+            }
             item(key = "home-recent-content") {
                 AnimatedVisibility(
                     visible = recentExpanded,
@@ -2101,10 +2110,18 @@ private fun Header(title: String, onSettings: () -> Unit) {
 }
 
 @Composable
-private fun SectionHeading(text: String, expanded: Boolean? = null, onToggle: (() -> Unit)? = null) {
+private fun SectionHeading(
+    text: String,
+    expanded: Boolean? = null,
+    onToggle: (() -> Unit)? = null,
+    chevronExpandDurationMs: Int = 300,
+    chevronCollapseDurationMs: Int = 250,
+    chevronExpandEasing: androidx.compose.animation.core.Easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f),
+    chevronCollapseEasing: androidx.compose.animation.core.Easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
+) {
     val rotation by animateFloatAsState(
         if (expanded == false) -90f else 0f,
-        tween(durationMillis = if (expanded == false) 250 else 300, easing = if (expanded == false) androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f) else androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)),
+        tween(durationMillis = if (expanded == false) chevronCollapseDurationMs else chevronExpandDurationMs, easing = if (expanded == false) chevronCollapseEasing else chevronExpandEasing),
         label = "section-chevron"
     )
     val interactionSource = remember { MutableInteractionSource() }
