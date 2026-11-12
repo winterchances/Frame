@@ -59,7 +59,7 @@ class PlaybackService : MediaSessionService() {
                         .build()
 
                     if (session.isMediaNotificationController(controller)) {
-                        return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
+                        return MediaSession.ConnectionResult.AcceptedResultBuilder()
                             .setAvailablePlayerCommands(playerCommands)
                             .setMediaButtonPreferences(mediaButtons)
                             .build()
