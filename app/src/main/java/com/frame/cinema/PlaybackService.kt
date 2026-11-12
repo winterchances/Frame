@@ -11,11 +11,10 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        setMediaNotificationProvider(
-            DefaultMediaNotificationProvider.Builder(this)
-                .setSmallIcon(R.drawable.ic_notification)
-                .build()
-        )
+        val notificationProvider = DefaultMediaNotificationProvider.Builder(this).build()
+        notificationProvider.setSmallIcon(R.drawable.ic_notification)
+        setMediaNotificationProvider(notificationProvider)
+
         val player = ExoPlayer.Builder(this).build()
         mediaSession = MediaSession.Builder(this, player).build()
     }
