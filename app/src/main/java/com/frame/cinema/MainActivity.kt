@@ -376,6 +376,11 @@ private fun FrameNativeApp(
         animationSpec = tween(if (showClearDataDialog) 300 else 240, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)),
         label = "clear-data-backdrop-progress"
     )
+    val importDialogProgress by animateFloatAsState(
+        targetValue = if (showImportDataDialog) 1f else 0f,
+        animationSpec = tween(if (showImportDataDialog) 300 else 240, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)),
+        label = "import-data-backdrop-progress"
+    )
     val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
     LaunchedEffect(contextMenuOpen) {
         if (!contextMenuOpen && contextMenuVideo != null) {
@@ -384,7 +389,7 @@ private fun FrameNativeApp(
             contextMenuBounds = null
         }
     }
-    val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress), 12.dp * contextMenuProgress)
+    val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
@@ -1171,44 +1176,23 @@ private fun FrameNativeApp(
                 }
             }
         }
-        if (showImportDataDialog) {
-            Box(
-                Modifier.fillMaxSize().zIndex(7f)
-                    .background(Color.Black.copy(alpha = .4f))
-                    .noRippleClickable { showImportDataDialog = false; pendingImportUri = null },
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 28.dp)
-                        .shadow(18.dp, RoundedCornerShape(24.dp))
-                        .clip(RoundedCornerShape(24.dp)).background(Color.White)
-                        .noRippleClickable { }.padding(22.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("导入并覆盖数据？", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MainText)
-                    Text(
-                        "导入会覆盖当前片库中的全部数据，且无法撤销。确定继续吗？",
-                        fontSize = 14.sp, lineHeight = 21.sp, color = MutedText,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 22.dp)
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(
-                            Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp))
-                                .background(Color(0xFFF2F2F4))
-                                .noRippleClickable { showImportDataDialog = false; pendingImportUri = null },
-                            contentAlignment = Alignment.Center
-                        ) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
-                        Box(
-                            Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp))
-                                .background(ThemeTeal)
-                                .noRippleClickable {
-                                    val uri = pendingImportUri
-                                    showImportDataDialog = false
-                                    pendingImportUri = null
-                                    if (uri != null) importBackup(uri)
-                                },
-                            contentAlignment = Alignment.Center
-                        ) { Text("确认导入", color = Color.White, fontWeight = FontWeight.SemiBold) }
+        if (showImportDataDialog || importDialogProgress > 0f) {
+            Box(Modifier.fillMaxSize().zIndex(7f).background(Color.Black.copy(alpha = .4f * importDialogProgress)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) {
+                androidx.compose.animation.AnimatedVisibility(visible = showImportDataDialog,
+                    enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
+                    exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(Color.White).noRippleClickable { }.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("导入并覆盖数据？", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MainText)
+                        Text("导入会覆盖当前片库中的全部数据，且无法撤销。确定继续吗？", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 12.dp, bottom = 22.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF79C9A8)).noRippleClickable {
+                                val uri = pendingImportUri
+                                showImportDataDialog = false
+                                pendingImportUri = null
+                                if (uri != null) importBackup(uri)
+                            }, contentAlignment = Alignment.Center) { Text("确认导入", color = Color.White, fontWeight = FontWeight.SemiBold) }
+                        }
                     }
                 }
             }
