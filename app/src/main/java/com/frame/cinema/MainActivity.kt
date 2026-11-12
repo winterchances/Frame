@@ -335,7 +335,7 @@ private fun FrameNativeApp(
     var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
-    var categories by remember { mutableStateOf(repository.categories()) }
+    var categories by remember { mutableStateOf(repository.categories().let { saved -> listOf("我的最爱") + saved.filterNot { it == "全部分类" || it == "我的最爱" } + "全部分类" }) }
     var status by remember { mutableStateOf("全部") }
     var category by remember { mutableStateOf("全部分类") }
     var compact by remember { mutableStateOf(true) }
@@ -839,7 +839,7 @@ private fun FrameNativeApp(
                                     Modifier.fillMaxWidth().height(50.dp)
                                         .animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         .then(
-                                            if (!isDefault) Modifier.pointerInput(cat) {
+                                            Modifier.pointerInput(cat) {
                                                 detectDragGesturesAfterLongPress(
                                                     onDragEnd = { dragRemainder = 0f },
                                                     onDragCancel = { dragRemainder = 0f }
@@ -855,7 +855,7 @@ private fun FrameNativeApp(
                                                     if (step != 0) {
                                                         val currentCategories = latestCategories.value
                                                         val from = currentCategories.indexOf(cat)
-                                                        val to = (from + step).coerceIn(2, currentCategories.lastIndex)
+                                                        val to = (from + step).coerceIn(0, currentCategories.lastIndex)
                                                         if (from != to) {
                                                             val reordered = currentCategories.toMutableList()
                                                             val moved = reordered.removeAt(from)
@@ -866,19 +866,15 @@ private fun FrameNativeApp(
                                                         dragRemainder = 0f
                                                     }
                                                 }
-                                            } else Modifier
+                                            }
                                         )
                                         .padding(horizontal = 16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        when (cat) {
-                                            "全部分类" -> Icons.Outlined.Lock
-                                            "我的最爱" -> Icons.Outlined.Star
-                                            else -> Icons.Outlined.DragHandle
-                                        },
+                                        Icons.Outlined.DragHandle,
                                         contentDescription = null,
-                                        tint = if (isDefault) Color(0xFF888888) else Color(0xFF999999),
+                                        tint = Color(0xFF999999),
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
