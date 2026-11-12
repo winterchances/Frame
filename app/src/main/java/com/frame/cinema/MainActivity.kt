@@ -331,6 +331,7 @@ private fun FrameNativeApp(
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
+    var contextMenuStartBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
@@ -382,11 +383,17 @@ private fun FrameNativeApp(
         label = "import-data-backdrop-progress"
     )
     val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
+    val contextMenuReturnProgress by animateFloatAsState(
+        targetValue = if (contextMenuOpen) 0f else 1f,
+        animationSpec = tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "library-context-card-return"
+    )
     LaunchedEffect(contextMenuOpen) {
         if (!contextMenuOpen && contextMenuVideo != null) {
-            delay(200)
+            delay(260)
             contextMenuVideo = null
             contextMenuBounds = null
+            contextMenuStartBounds = null
         }
     }
     val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
@@ -597,8 +604,11 @@ private fun FrameNativeApp(
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
-                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuOpen = true; showFab = false },
-                                { selected = it; playVideo(it) }
+                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
+                                { selected = it; playVideo(it) },
+                                contextMenuVideo,
+                                contextMenuReturnProgress,
+                                { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
@@ -1121,9 +1131,17 @@ private fun FrameNativeApp(
             }
         }
 
-        if (contextMenuVideo != null && contextMenuBounds != null) {
+        if (contextMenuVideo != null && contextMenuBounds != null && contextMenuStartBounds != null) {
             val video = contextMenuVideo!!
-            val bounds = contextMenuBounds!!
+            val targetBounds = contextMenuBounds!!
+            val startBounds = contextMenuStartBounds!!
+            val p = contextMenuReturnProgress
+            val bounds = Rect(
+                startBounds.left + (targetBounds.left - startBounds.left) * p,
+                startBounds.top + (targetBounds.top - startBounds.top) * p,
+                startBounds.right + (targetBounds.right - startBounds.right) * p,
+                startBounds.bottom + (targetBounds.bottom - startBounds.bottom) * p
+            )
             BoxWithConstraints(Modifier.fillMaxSize().zIndex(20f)) {
                 val density = LocalDensity.current
                 val cardLeft = with(density) { bounds.left.toDp() }
@@ -1406,7 +1424,8 @@ private fun LibraryPage(
     hazeState: HazeState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
-    onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit
+    onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
+    contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit
 ) {
     val filtered = videos.filter {
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
@@ -1479,7 +1498,12 @@ private fun LibraryPage(
                         verticalAlignment = Alignment.Top
                     ) {
                         rowVideos.forEach { video ->
-                            PosterCard(video, compact, onPlay, { bounds -> onLongVideo(video, bounds) }, Modifier.weight(1f))
+                            PosterCard(
+                                video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
+                                Modifier.weight(1f),
+                                alpha = if (contextMenuVideo?.id == video.id) contextMenuReturnProgress else 1f,
+                                onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
+                            )
                         }
                         repeat(columns - rowVideos.size) {
                             Spacer(Modifier.weight(1f))
@@ -2179,10 +2203,21 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PosterCard(video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: (Rect) -> Unit, modifier: Modifier = Modifier, highlighted: Boolean = false) {
+private fun PosterCard(
+    video: VideoItem, compact: Boolean, onPlay: (VideoItem) -> Unit, onLong: (Rect) -> Unit,
+    modifier: Modifier = Modifier, highlighted: Boolean = false, alpha: Float = 1f,
+    onBoundsChanged: ((Rect) -> Unit)? = null
+) {
     val haptic = LocalHapticFeedback.current
     var cardBounds by remember { mutableStateOf(Rect.Zero) }
-    Column(modifier.onGloballyPositioned { cardBounds = it.boundsInRoot() }.noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })) {
+    Column(
+        modifier.graphicsLayer { this.alpha = alpha }
+            .onGloballyPositioned {
+                cardBounds = it.boundsInRoot()
+                onBoundsChanged?.invoke(cardBounds)
+            }
+            .noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })
+    ) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
