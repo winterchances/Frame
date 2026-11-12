@@ -754,7 +754,7 @@ private fun FrameNativeApp(
                                             color = Color(0xFFAAAAAA),
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium,
-                                            modifier = Modifier.padding(start = 12.dp, vertical = 10.dp)
+                                            modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
                                         )
                                     } else {
                                         Text(
