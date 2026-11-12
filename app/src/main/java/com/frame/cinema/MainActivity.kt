@@ -1621,6 +1621,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                             Modifier.fillMaxWidth()
                                 .background(PageBg)
                                 .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                                .padding(top = if (showTopBar) WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 48.dp else 0.dp)
                         ) {
                             Text(
                                 label,
