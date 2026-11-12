@@ -1065,19 +1065,34 @@ private fun HomePage(
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
-            stickyHeader(key = "home-large-title") {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .zIndex(1f)
-                        .drawBehind {
+    val listState = rememberLazyListState()
+    val collapseFraction by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 1f
+            else (listState.firstVisibleItemScrollOffset / 150f).coerceIn(0f, 1f)
+        }
+    }
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
+        stickyHeader(key = "home-large-title") {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        if (collapseFraction > 0f) {
                             val bleed = 20.dp.toPx()
-                            val shadowHeight = 16.dp.toPx()
-                            drawRect(color = PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
+                            val shadowHeight = 24.dp.toPx()
+                            drawRect(
+                                color = PageBg.copy(alpha = collapseFraction),
+                                topLeft = Offset(-bleed, -100f),
+                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height + 100f)
+                            )
                             drawRect(
                                 brush = Brush.verticalGradient(
-                                    colors = listOf(Color.Black.copy(alpha = 0.06f), Color.Transparent),
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.05f * collapseFraction),
+                                        Color.Black.copy(alpha = 0.02f * collapseFraction),
+                                        Color.Transparent
+                                    ),
                                     startY = size.height,
                                     endY = size.height + shadowHeight
                                 ),
@@ -1085,11 +1100,11 @@ private fun HomePage(
                                 size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
                             )
                         }
-                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                ) {
-                    Header("首页", onSettings)
-                }
+                    }
+            ) {
+                Header("首页", onSettings)
             }
+        }
             item(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
@@ -1367,27 +1382,42 @@ private fun RecordsPage(
     onSort: () -> Unit,
     onEdit: (VideoItem) -> Unit
 ) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
+    val listState = rememberLazyListState()
+    val collapseFraction by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 1f
+            else (listState.firstVisibleItemScrollOffset / 150f).coerceIn(0f, 1f)
+        }
+    }
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         stickyHeader(key = "records-large-title") {
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .zIndex(1f)
                     .drawBehind {
-                        val bleed = 20.dp.toPx()
-                        val shadowHeight = 16.dp.toPx()
-                        drawRect(color = PageBg, topLeft = Offset(-bleed, 0f), size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height))
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.06f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + shadowHeight
-                            ),
-                            topLeft = Offset(-bleed, size.height),
-                            size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
-                        )
+                        if (collapseFraction > 0f) {
+                            val bleed = 20.dp.toPx()
+                            val shadowHeight = 24.dp.toPx()
+                            drawRect(
+                                color = PageBg.copy(alpha = collapseFraction),
+                                topLeft = Offset(-bleed, -100f),
+                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, size.height + 100f)
+                            )
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.05f * collapseFraction),
+                                        Color.Black.copy(alpha = 0.02f * collapseFraction),
+                                        Color.Transparent
+                                    ),
+                                    startY = size.height,
+                                    endY = size.height + shadowHeight
+                                ),
+                                topLeft = Offset(-bleed, size.height),
+                                size = androidx.compose.ui.geometry.Size(size.width + bleed * 2f, shadowHeight)
+                            )
+                        }
                     }
-                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
