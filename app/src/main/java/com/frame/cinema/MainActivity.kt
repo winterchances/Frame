@@ -659,11 +659,11 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(if (contextMenuOpen) -1f else 1f)) {
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(if (contextMenuVideo != null) -1f else 1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomEnd).zIndex(if (contextMenuOpen) -1f else 0f).padding(end = 16.dp, bottom = 16.dp),
+                    Modifier.align(Alignment.BottomEnd).zIndex(if (contextMenuVideo != null) -1f else 0f).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
