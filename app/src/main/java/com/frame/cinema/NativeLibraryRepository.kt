@@ -126,6 +126,7 @@ class NativeLibraryRepository(context: Context) {
         val item = store.allVideos().firstOrNull { it.id == id } ?: return false
         val path = ThumbnailStore.saveCustomCover(app, source, id) ?: return false
         store.upsert(item.copy(thumbPath = path))
+        if (item.thumbPath != path) ThumbnailStore.delete(app, item.thumbPath)
         return true
     }
 
