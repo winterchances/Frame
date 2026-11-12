@@ -493,6 +493,7 @@ private fun FrameNativeApp(
                                 onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
                             )
                             MainPage.RECORDS -> RecordsPage(
+                                hazeState = hazeState,
                                 videos = videos.filter { it.status == "watched" || it.progress >= 100f }
                                     .let { list -> if (recordSortByRating) list.sortedByDescending { it.rating } else list.sortedByDescending { it.lastPlayedAt } }
                                     .filter { recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true) },
@@ -1360,6 +1361,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecordsPage(
+    hazeState: HazeState,
     videos: List<VideoItem>,
     onSearch: () -> Unit,
     onSort: () -> Unit,
