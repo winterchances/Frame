@@ -1147,16 +1147,19 @@ private fun FrameNativeApp(
                 val cardLeft = with(density) { bounds.left.toDp() }
                 val cardTop = with(density) { bounds.top.toDp() }
                 val cardWidth = with(density) { bounds.width.toDp() }
-                val cardBottom = with(density) { bounds.bottom.toDp() }
+                val menuAnchorLeft = with(density) { startBounds.left.toDp() }
+                val menuAnchorTop = with(density) { startBounds.top.toDp() }
+                val menuAnchorWidth = with(density) { startBounds.width.toDp() }
+                val menuAnchorBottom = with(density) { startBounds.bottom.toDp() }
                 val menuWidth = minOf(196.dp, maxWidth - 32.dp)
                 val menuHeight = 42.dp * 6 + 8.dp
-                val menuX = (cardLeft + cardWidth / 2f - menuWidth / 2f)
+                val menuX = (menuAnchorLeft + menuAnchorWidth / 2f - menuWidth / 2f)
                     .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
                 val safeTop = 60.dp
                 val safeBottom = 80.dp
                 val maxMenuY = (maxHeight - menuHeight - safeBottom).coerceAtLeast(safeTop)
-                val menuY = if (cardBottom + menuHeight + safeBottom <= maxHeight) cardBottom + 8.dp
-                    else (cardTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
+                val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
+                    else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
                     video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
