@@ -1349,8 +1349,8 @@ private fun HomePage(
             item(key = "home-recent-content") {
                 AnimatedVisibility(
                     visible = recentExpanded,
-                    enter = androidx.compose.animation.expandVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f))) + fadeIn(tween(300)),
-                    exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
+                    enter = androidx.compose.animation.expandVertically(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeIn(tween(320)),
+                    exit = androidx.compose.animation.shrinkVertically(tween(240, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeOut(tween(240))
                 ) {
                     if (recent.isEmpty()) EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
                     else Column { recent.forEach { video -> VideoRow(video, "${video.date} 添加") { onVideo(video) } } }
