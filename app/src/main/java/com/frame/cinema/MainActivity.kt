@@ -514,7 +514,7 @@ private fun FrameNativeApp(
     }
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black)
+        Modifier.fillMaxSize().background(PageBg)
             .pointerInput(page, sheet, playing, contextMenuVideo) {
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
@@ -544,11 +544,17 @@ private fun FrameNativeApp(
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 if (targetState != null) {
-                    (androidx.compose.animation.scaleIn(initialScale = 0.85f, animationSpec = tween(320)) + fadeIn(tween(320))) togetherWith
-                        (androidx.compose.animation.scaleOut(targetScale = 0.9f, animationSpec = tween(320)) + fadeOut(tween(320)))
+                    (androidx.compose.animation.slideInVertically(
+                        initialOffsetY = { it / 10 },
+                        animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    ) + fadeIn(tween(350))) togetherWith
+                        fadeOut(tween(350))
                 } else {
-                    (androidx.compose.animation.scaleIn(initialScale = 0.9f, animationSpec = tween(250)) + fadeIn(tween(250))) togetherWith
-                        (androidx.compose.animation.scaleOut(targetScale = 0.85f, animationSpec = tween(250)) + fadeOut(tween(250)))
+                    fadeIn(tween(250)) togetherWith
+                        (androidx.compose.animation.slideOutVertically(
+                            targetOffsetY = { it / 10 },
+                            animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                        ) + fadeOut(tween(250)))
                 }
             },
             label = "player-card-transition"
@@ -617,6 +623,42 @@ private fun FrameNativeApp(
                         }
                     }
             }
+
+          } else {
+            NativePlayerOverlay(
+                item = targetPlaying,
+                player = player,
+                speeds = speeds,
+                speedIndex = speedIndex,
+                locked = locked,
+                controlsVisible = controlsVisible,
+                onClose = { closePlayer() },
+                onToggleControls = { controlsVisible = !controlsVisible },
+                onAutoHideControls = { controlsVisible = false },
+                onToggleLock = { locked = !locked; controlsVisible = !locked },
+                onSpeed = {
+                    speedIndex = (speedIndex + 1) % speeds.size
+                },
+                onOrientation = {
+                    isLandscape = !isLandscape
+                    onOrientation(isLandscape)
+                },
+                onEnded = {
+                    controlsVisible = true
+                    playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
+                    refresh()
+                },
+                onProgress = { pos, duration ->
+                    playing?.let { repository.updatePlayback(it.id, pos, duration) }
+                },
+                onWatchTime = { deltaMs ->
+                    playing?.let { repository.recordWatchTime(it.id, deltaMs) }
+                }
+            )
+          }
+        }
+
+        if (playing == null) {
             Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
@@ -684,38 +726,6 @@ private fun FrameNativeApp(
                     Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
                 }
-          } else {
-            NativePlayerOverlay(
-                item = targetPlaying,
-                player = player,
-                speeds = speeds,
-                speedIndex = speedIndex,
-                locked = locked,
-                controlsVisible = controlsVisible,
-                onClose = { closePlayer() },
-                onToggleControls = { controlsVisible = !controlsVisible },
-                onAutoHideControls = { controlsVisible = false },
-                onToggleLock = { locked = !locked; controlsVisible = !locked },
-                onSpeed = {
-                    speedIndex = (speedIndex + 1) % speeds.size
-                },
-                onOrientation = {
-                    isLandscape = !isLandscape
-                    onOrientation(isLandscape)
-                },
-                onEnded = {
-                    controlsVisible = true
-                    playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
-                    refresh()
-                },
-                onProgress = { pos, duration ->
-                    playing?.let { repository.updatePlayback(it.id, pos, duration) }
-                },
-                onWatchTime = { deltaMs ->
-                    playing?.let { repository.recordWatchTime(it.id, deltaMs) }
-                }
-            )
-          }
         }
 
         val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
@@ -1882,12 +1892,15 @@ private fun NativePlayerOverlay(
             }
     ) {
         AndroidView(
-            factory = { ctx -> PlayerView(ctx).apply {
-                this.player = player
-                useController = false
-                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
-                layoutParams = ViewGroup.LayoutParams(-1, -1)
-            } },
+            factory = { ctx ->
+                (android.view.LayoutInflater.from(ctx)
+                    .inflate(R.layout.player_view, null, false) as PlayerView).apply {
+                    this.player = player
+                    useController = false
+                    setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    layoutParams = ViewGroup.LayoutParams(-1, -1)
+                }
+            },
             modifier = Modifier.fillMaxSize(),
             update = { it.player = player }
         )
