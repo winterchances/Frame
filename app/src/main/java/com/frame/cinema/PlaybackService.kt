@@ -1,7 +1,7 @@
 package com.frame.cinema
 
 import android.os.Bundle
-import androidx.media3.common.Player
+import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
@@ -91,7 +91,7 @@ class PlaybackService : MediaSessionService() {
                             val targetPosition = currentPosition + 15_000L
                             val duration = player.duration
                             player.seekTo(
-                                if (duration != Player.TIME_UNSET) {
+                                if (duration != C.TIME_UNSET) {
                                     targetPosition.coerceAtMost(duration)
                                 } else {
                                     targetPosition
