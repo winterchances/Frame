@@ -93,6 +93,17 @@ class NativeLibraryRepository(context: Context) {
 
     fun update(item: VideoItem) = store.upsert(item)
 
+    fun replaceAll(items: List<VideoItem>) {
+        val oldThumbnails = store.allVideos().mapNotNull { it.thumbPath }.toSet()
+        val restored = items.map { item ->
+            item.copy(thumbPath = item.thumbPath?.takeIf { path -> java.io.File(path).isFile })
+        }
+        val retainedThumbnails = restored.mapNotNull { it.thumbPath }.toSet()
+        val restoredCategories = (listOf("全部分类", "我的最爱") + restored.map { it.category }).distinct()
+        store.replaceAll(restored, restoredCategories)
+        (oldThumbnails - retainedThumbnails).forEach { ThumbnailStore.delete(app, it) }
+    }
+
     fun rename(id: Long, name: String) {
         store.allVideos().firstOrNull { it.id == id }?.let {
             store.upsert(it.copy(name = name))

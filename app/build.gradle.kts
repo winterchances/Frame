@@ -38,6 +38,7 @@ dependencies {
     implementation("androidx.media3:media3-session:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
     implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("com.google.code.gson:gson:2.11.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")

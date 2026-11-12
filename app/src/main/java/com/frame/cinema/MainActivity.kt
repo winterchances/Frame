@@ -55,6 +55,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -266,21 +267,19 @@ class MainActivity : ComponentActivity() {
 
     private fun startNativePlayback(item: VideoItem) {
         val controller = player ?: return
-        val drawable = getDrawable(R.drawable.ic_notification)
-        val iconBytes = drawable?.let {
+        val iconBytes = runCatching {
+            val drawable = packageManager.getApplicationIcon(packageName)
             val bitmap = android.graphics.Bitmap.createBitmap(
-                it.intrinsicWidth.coerceAtLeast(1),
-                it.intrinsicHeight.coerceAtLeast(1),
-                android.graphics.Bitmap.Config.ARGB_8888
+                256, 256, android.graphics.Bitmap.Config.ARGB_8888
             )
             val canvas = android.graphics.Canvas(bitmap)
-            it.setBounds(0, 0, bitmap.width, bitmap.height)
-            it.draw(canvas)
+            drawable.setBounds(0, 0, 256, 256)
+            drawable.draw(canvas)
             java.io.ByteArrayOutputStream().use { stream ->
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
                 stream.toByteArray()
             }
-        }
+        }.getOrNull()
         val metadataBuilder = MediaMetadata.Builder()
             .setTitle(item.name)
         if (iconBytes != null) {
@@ -324,6 +323,7 @@ private fun FrameNativeApp(
 ) {
     val context = LocalContext.current
     val hazeState = remember { HazeState() }
+    val homeListState = rememberLazyListState()
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
@@ -364,6 +364,8 @@ private fun FrameNativeApp(
     var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
     var showClearDataDialog by remember { mutableStateOf(false) }
+    var showImportDataDialog by remember { mutableStateOf(false) }
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     val sheetProgress by animateFloatAsState(
         targetValue = if (sheet == SheetType.NONE) 0f else 1f,
         animationSpec = tween(if (sheet == SheetType.NONE) 240 else 340, easing = if (sheet == SheetType.NONE) androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f) else androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f)),
@@ -433,6 +435,59 @@ private fun FrameNativeApp(
         }
         sheet = SheetType.NONE
     }
+    val exportDataLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val json = com.google.gson.Gson().toJson(videos)
+                val output = context.contentResolver.openOutputStream(uri)
+                    ?: throw java.io.IOException("无法打开目标文件")
+                output.bufferedWriter(Charsets.UTF_8).use { it.write(json) }
+                notify("数据导出成功")
+                sheet = SheetType.NONE
+            } catch (_: Exception) {
+                notify("数据导出失败")
+            }
+        }
+    }
+    val importDataLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            pendingImportUri = uri
+            showImportDataDialog = true
+            sheet = SheetType.NONE
+        }
+    }
+
+    fun importBackup(uri: Uri) {
+        try {
+            val json = context.contentResolver.openInputStream(uri)
+                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                ?: throw java.io.IOException("无法读取文件")
+            val imported = try {
+                val type = object : com.google.gson.reflect.TypeToken<List<VideoItem>>() {}.type
+                val parsed: List<VideoItem> = com.google.gson.Gson().fromJson(json, type)
+                    ?: throw com.google.gson.JsonSyntaxException("JSON 内容为空")
+                require(parsed.all {
+                    it.uri.isNotBlank() && it.name.isNotBlank() && it.date.isNotBlank() &&
+                        it.size.length >= 0 && it.status.isNotBlank() && it.category.isNotBlank() &&
+                        it.review.length >= 0 && it.progress.isFinite()
+                })
+                require(parsed.map { it.uri }.distinct().size == parsed.size)
+                parsed
+            } catch (_: Exception) {
+                notify("文件格式错误")
+                return
+            }
+            repository.replaceAll(imported)
+            refresh()
+            notify("数据导入成功，若部分视频无法播放，请重新导入视频源")
+        } catch (_: Exception) {
+            notify("数据导入失败")
+        }
+    }
 
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
     val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
@@ -440,10 +495,11 @@ private fun FrameNativeApp(
         sheetVisibility.targetState = sheet != SheetType.NONE
         if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
-    BackHandler(enabled = contextMenuVideo != null || showClearDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
+    BackHandler(enabled = contextMenuVideo != null || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
             contextMenuVideo != null -> { contextMenuOpen = false }
             showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
+            showImportDataDialog -> { showImportDataDialog = false; pendingImportUri = null }
             sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
             sheet != SheetType.NONE -> sheet = SheetType.NONE
             sheetVisibility.currentState || sheetVisibility.targetState -> Unit
@@ -453,7 +509,7 @@ private fun FrameNativeApp(
     }
 
     Box(
-        Modifier.fillMaxSize().background(PageBg)
+        Modifier.fillMaxSize().background(Color.Black)
             .pointerInput(page, sheet, playing, contextMenuVideo) {
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
@@ -476,9 +532,25 @@ private fun FrameNativeApp(
                 )
             }
     ) {
-        if (playing == null) {
+        androidx.compose.animation.AnimatedContent(
+            targetState = playing,
+            contentKey = { it },
+            modifier = Modifier.fillMaxSize().background(Color.Black),
+            contentAlignment = Alignment.Center,
+            transitionSpec = {
+                if (targetState != null) {
+                    (androidx.compose.animation.scaleIn(initialScale = 0.85f, animationSpec = tween(320)) + fadeIn(tween(320))) togetherWith
+                        (androidx.compose.animation.scaleOut(targetScale = 0.9f, animationSpec = tween(320)) + fadeOut(tween(320)))
+                } else {
+                    (androidx.compose.animation.scaleIn(initialScale = 0.9f, animationSpec = tween(250)) + fadeIn(tween(250))) togetherWith
+                        (androidx.compose.animation.scaleOut(targetScale = 0.85f, animationSpec = tween(250)) + fadeOut(tween(250)))
+                }
+            },
+            label = "player-card-transition"
+        ) { targetPlaying ->
+          if (targetPlaying == null) {
             Box(
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize().background(PageBg)
                     .graphicsLayer {
                         scaleX = 1f - .05f * sheetProgress
                         scaleY = 1f - .05f * sheetProgress
@@ -504,6 +576,7 @@ private fun FrameNativeApp(
                                 videos = videos,
                                 weeklyWatchTimeMs = weeklyWatchTimeMs,
                                 hazeState = hazeState,
+                                listState = homeListState,
                                 onSettings = { sheet = SheetType.SETTINGS },
                                 onVideo = { selected = it; playVideo(it) }
                             )
@@ -606,9 +679,9 @@ private fun FrameNativeApp(
                     Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
                 }
-        } else {
+          } else {
             NativePlayerOverlay(
-                item = playing!!,
+                item = targetPlaying,
                 player = player,
                 speeds = speeds,
                 speedIndex = speedIndex,
@@ -637,6 +710,7 @@ private fun FrameNativeApp(
                     playing?.let { repository.recordWatchTime(it.id, deltaMs) }
                 }
             )
+          }
         }
 
         val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
@@ -698,6 +772,14 @@ private fun FrameNativeApp(
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
                             Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
+                            }
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { exportDataLauncher.launch("Frame-backup.json") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("导出所有数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
+                            }
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { importDataLauncher.launch(arrayOf("application/json")) }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("导入所有数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { showClearDataDialog = true }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1027,20 +1109,22 @@ private fun FrameNativeApp(
         if (contextMenuVideo != null && contextMenuBounds != null) {
             val video = contextMenuVideo!!
             val bounds = contextMenuBounds!!
-            BoxWithConstraints(Modifier.fillMaxSize().zIndex(6f)) {
+            BoxWithConstraints(Modifier.fillMaxSize().zIndex(20f)) {
                 val density = LocalDensity.current
                 val cardLeft = with(density) { bounds.left.toDp() }
                 val cardTop = with(density) { bounds.top.toDp() }
                 val cardWidth = with(density) { bounds.width.toDp() }
                 val cardBottom = with(density) { bounds.bottom.toDp() }
-                val menuWidth = minOf(216.dp, maxWidth - 32.dp)
-                val menuHeight = 300.dp
+                val menuWidth = minOf(196.dp, maxWidth - 32.dp)
+                val menuHeight = 6 * 42.dp + 8.dp
                 val menuX = (cardLeft + cardWidth / 2f - menuWidth / 2f)
                     .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
+                val safeTop = 60.dp
                 val safeBottom = 80.dp
+                val maxMenuY = (maxHeight - menuHeight - safeBottom).coerceAtLeast(safeTop)
                 val menuY = if (cardBottom + menuHeight + safeBottom <= maxHeight) cardBottom + 8.dp
-                    else (cardTop - menuHeight - 8.dp).coerceIn(12.dp, (maxHeight - menuHeight - safeBottom).coerceAtLeast(12.dp))
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .34f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
+                    else (cardTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 PosterCard(
                     video = video, compact = compact, onPlay = { contextMenuOpen = false }, onLong = {},
                     modifier = Modifier.offset(x = cardLeft, y = cardTop).width(cardWidth).zIndex(1f),
@@ -1059,7 +1143,7 @@ private fun FrameNativeApp(
                         .clip(RoundedCornerShape(18.dp))
                         .background(Color.White)
                         .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(18.dp))
-                        .padding(vertical = 6.dp)
+                        .padding(vertical = 4.dp)
                         .zIndex(2f)
                 ) {
                     ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
@@ -1083,6 +1167,48 @@ private fun FrameNativeApp(
                             Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
                             Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFF3B30)).noRippleClickable { repository.clearAll(); refresh(); showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("确认清空", color = Color.White, fontWeight = FontWeight.SemiBold) }
                         }
+                    }
+                }
+            }
+        }
+        if (showImportDataDialog) {
+            Box(
+                Modifier.fillMaxSize().zIndex(7f)
+                    .background(Color.Black.copy(alpha = .4f))
+                    .noRippleClickable { showImportDataDialog = false; pendingImportUri = null },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 28.dp)
+                        .shadow(18.dp, RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(24.dp)).background(Color.White)
+                        .noRippleClickable { }.padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("导入并覆盖数据？", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MainText)
+                    Text(
+                        "导入会覆盖当前片库中的全部数据，且无法撤销。确定继续吗？",
+                        fontSize = 14.sp, lineHeight = 21.sp, color = MutedText,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 22.dp)
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(
+                            Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp))
+                                .background(Color(0xFFF2F2F4))
+                                .noRippleClickable { showImportDataDialog = false; pendingImportUri = null },
+                            contentAlignment = Alignment.Center
+                        ) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
+                        Box(
+                            Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp))
+                                .background(ThemeTeal)
+                                .noRippleClickable {
+                                    val uri = pendingImportUri
+                                    showImportDataDialog = false
+                                    pendingImportUri = null
+                                    if (uri != null) importBackup(uri)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) { Text("确认导入", color = Color.White, fontWeight = FontWeight.SemiBold) }
                     }
                 }
             }
@@ -1140,13 +1266,13 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
 @Composable
 private fun HomePage(
     videos: List<VideoItem>, weeklyWatchTimeMs: Long, hazeState: HazeState,
+    listState: LazyListState,
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(4)
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-    val listState = rememberLazyListState()
     val showTopBar by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 100
@@ -1247,7 +1373,9 @@ private fun HomePage(
             Box(
                 Modifier
                     .fillMaxWidth()
+                    .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .statusBarsPadding()
                     .drawBehind {
                         val shadowHeight = 32.dp.toPx()
                         drawRect(
@@ -1299,6 +1427,7 @@ private fun LibraryPage(
         stickyHeader {
             Column(
                 Modifier.fillMaxWidth()
+                    .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .padding(horizontal = 20.dp)
             ) {
@@ -1389,6 +1518,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 stickyHeader {
                     Box(
                         Modifier.fillMaxWidth()
+                            .background(PageBg)
                             .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     ) {
                         Text(
@@ -1771,6 +1901,7 @@ private fun NativePlayerOverlay(
             factory = { ctx -> PlayerView(ctx).apply {
                 this.player = player
                 useController = false
+                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
                 layoutParams = ViewGroup.LayoutParams(-1, -1)
             } },
             modifier = Modifier.fillMaxSize(),
@@ -2091,8 +2222,8 @@ private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 
 @Composable
 private fun ContextMenuAction(icon: ImageVector, label: String, danger: Boolean = false, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(48.dp).noRippleClickable(onClick).padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(Modifier.fillMaxWidth().height(42.dp).noRippleClickable(onClick).padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Icon(icon, contentDescription = null, tint = if (danger) Color(0xFFFF3B30) else Color(0xFF666666), modifier = Modifier.size(18.dp))
         Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }

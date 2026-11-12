@@ -120,6 +120,36 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         } finally { writableDatabase.endTransaction() }
     }
 
+    @Synchronized fun replaceAll(videos: List<VideoItem>, categories: List<String>) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.delete("videos", null, null)
+            db.delete("watch_time_daily", null, null)
+            db.delete("categories", null, null)
+            videos.forEach { video ->
+                val values = ContentValues().apply {
+                    put("id", video.id); put("uri", video.uri); put("name", video.name)
+                    put("size", video.size); put("date", video.date); put("added_at", video.addedAt)
+                    put("progress", video.progress); put("status", video.status)
+                    put("is_fav", if (video.isFav) 1 else 0); put("category", video.category)
+                    put("bg_index", video.bgIndex); put("review", video.review); put("rating", video.rating)
+                    put("duration_ms", video.durationMs); put("last_played_at", video.lastPlayedAt)
+                    put("thumb_path", video.thumbPath)
+                }
+                db.insertWithOnConflict("videos", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            categories.forEachIndexed { index, name ->
+                db.insert("categories", null, ContentValues().apply {
+                    put("name", name); put("position", index)
+                })
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     @Synchronized fun addWatchTime(videoId: Long, dayKey: String, durationMs: Long) {
         if (durationMs <= 0L) return
         val db = writableDatabase
