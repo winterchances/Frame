@@ -1115,45 +1115,16 @@ private fun HomePage(
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
-    val collapseFraction by remember {
+    val showTopBar by remember {
         derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 1f
-            else (listState.firstVisibleItemScrollOffset / 150f).coerceIn(0f, 1f)
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 100
         }
     }
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
-        stickyHeader(key = "home-large-title") {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .drawBehind {
-                        if (collapseFraction > 0f) {
-                            val bleed = 20.dp.toPx()
-                            val shadowHeight = 24.dp.toPx()
-                            drawRect(
-                                color = PageBg.copy(alpha = collapseFraction),
-                                topLeft = Offset(-bleed, -100f),
-                                size = Size(size.width + bleed * 2f, size.height + 100f)
-                            )
-                            drawRect(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Black.copy(alpha = 0.05f * collapseFraction),
-                                        Color.Black.copy(alpha = 0.02f * collapseFraction),
-                                        Color.Transparent
-                                    ),
-                                    startY = size.height,
-                                    endY = size.height + shadowHeight
-                                ),
-                                topLeft = Offset(-bleed, size.height),
-                                size = Size(size.width + bleed * 2f, shadowHeight)
-                            )
-                        }
-                    }
-            ) {
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
+            item(key = "home-large-title") {
                 Header("首页", onSettings)
             }
-        }
             item(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
@@ -1235,6 +1206,35 @@ private fun HomePage(
             }
             item { Spacer(Modifier.height(20.dp)) }
         }
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = fadeIn(tween(250)) + slideInVertically { -it },
+            exit = fadeOut(tween(250)) + slideOutVertically { -it },
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(PageBg)
+                    .drawBehind {
+                        val shadowHeight = 32.dp.toPx()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
+                                startY = size.height,
+                                endY = size.height + shadowHeight
+                            ),
+                            topLeft = Offset(0f, size.height),
+                            size = Size(size.width, shadowHeight)
+                        )
+                    }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -1432,42 +1432,14 @@ private fun RecordsPage(
     onEdit: (VideoItem) -> Unit
 ) {
     val listState = rememberLazyListState()
-    val collapseFraction by remember {
+    val showTopBar by remember {
         derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 1f
-            else (listState.firstVisibleItemScrollOffset / 150f).coerceIn(0f, 1f)
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 100
         }
     }
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
-        stickyHeader(key = "records-large-title") {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .drawBehind {
-                        if (collapseFraction > 0f) {
-                            val bleed = 20.dp.toPx()
-                            val shadowHeight = 24.dp.toPx()
-                            drawRect(
-                                color = PageBg.copy(alpha = collapseFraction),
-                                topLeft = Offset(-bleed, -100f),
-                                size = Size(size.width + bleed * 2f, size.height + 100f)
-                            )
-                            drawRect(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Black.copy(alpha = 0.05f * collapseFraction),
-                                        Color.Black.copy(alpha = 0.02f * collapseFraction),
-                                        Color.Transparent
-                                    ),
-                                    startY = size.height,
-                                    endY = size.height + shadowHeight
-                                ),
-                                topLeft = Offset(-bleed, size.height),
-                                size = Size(size.width + bleed * 2f, shadowHeight)
-                            )
-                        }
-                    }
-            ) {
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
+            item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -1479,7 +1451,6 @@ private fun RecordsPage(
                     }
                 }
             }
-        }
         item {
             Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
                 Row(
@@ -1577,6 +1548,35 @@ private fun RecordsPage(
             }
         }
         item { Spacer(Modifier.height(20.dp)) }
+        }
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = fadeIn(tween(250)) + slideInVertically { -it },
+            exit = fadeOut(tween(250)) + slideOutVertically { -it },
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(PageBg)
+                    .drawBehind {
+                        val shadowHeight = 32.dp.toPx()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
+                                startY = size.height,
+                                endY = size.height + shadowHeight
+                            ),
+                            topLeft = Offset(0f, size.height),
+                            size = Size(size.width, shadowHeight)
+                        )
+                    }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+            }
+        }
     }
 }
 @Composable
