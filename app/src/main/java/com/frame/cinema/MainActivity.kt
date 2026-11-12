@@ -872,7 +872,7 @@ private fun FrameNativeApp(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
-                                        cat,
+                                        if (cat == "我的最爱") "我的收藏" else cat,
                                         Modifier.weight(1f).padding(start = 12.dp),
                                         color = MainText,
                                         fontSize = 15.sp
@@ -1458,7 +1458,7 @@ private fun LibraryPage(
                             color = if (category == value) ThemeTeal else Color.White,
                             shadowElevation = 0.dp,
                         ) {
-                            val label = when (value) { "全部分类" -> "全部"; "我的最爱" -> "收藏"; else -> value }
+                            val label = when (value) { "全部分类" -> "全部分类"; "我的最爱" -> "收藏"; else -> value }
                             Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                     }
