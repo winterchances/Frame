@@ -1290,7 +1290,7 @@ private fun HomePage(
     var recentExpanded by remember { mutableStateOf(true) }
     val showTopBar by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 100
+            listState.firstVisibleItemIndex > 0
         }
     }
     Box(Modifier.fillMaxSize()) {
@@ -1520,6 +1520,12 @@ private fun LibraryPage(
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
+    val listState = rememberLazyListState()
+    val showTopBar by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0
+        }
+    }
     val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
     val today = dateFormat.format(Date())
@@ -1529,54 +1535,85 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
         "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
     ).filter { it.second.isNotEmpty() }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
-        item {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
+            item(key = "recent-large-title") {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                    ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
+                }
             }
-        }
-        if (recentItems.isEmpty()) {
-            item {
-                EmptyHint("暂无播放记录")
-            }
-        } else {
-            groups.forEach { (label, list) ->
-                stickyHeader {
-                    Box(
-                        Modifier.fillMaxWidth()
-                            .background(PageBg)
-                            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                    ) {
-                        Text(
-                            label,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF666666),
-                            modifier = Modifier.fillMaxWidth()
-                                .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+            if (recentItems.isEmpty()) {
+                item {
+                    EmptyHint("暂无播放记录")
+                }
+            } else {
+                groups.forEach { (label, list) ->
+                    stickyHeader {
+                        Box(
+                            Modifier.fillMaxWidth()
+                                .background(PageBg)
+                                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                        ) {
+                            Text(
+                                label,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF666666),
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+                            )
+                        }
+                    }
+                    item { Spacer(Modifier.height(10.dp)) }
+                    items(list, key = { it.id }) { video ->
+                        RecentHistoryCard(
+                            video,
+                            onClick = { onVideo(video) },
+                            onMore = { onMore(video) },
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
+                    item { Spacer(Modifier.height(3.dp)) }
                 }
-                item { Spacer(Modifier.height(10.dp)) }
-                items(list, key = { it.id }) { video ->
-                    RecentHistoryCard(
-                        video,
-                        onClick = { onVideo(video) },
-                        onMore = { onMore(video) },
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
-                }
-                item { Spacer(Modifier.height(3.dp)) }
+                item { Spacer(Modifier.height(12.dp)) }
             }
-            item { Spacer(Modifier.height(12.dp)) }
+        }
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = fadeIn(tween(250)) + slideInVertically { -it },
+            exit = fadeOut(tween(250)) + slideOutVertically { -it },
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(PageBg)
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                    .statusBarsPadding()
+                    .drawBehind {
+                        val shadowHeight = 32.dp.toPx()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
+                                startY = size.height,
+                                endY = size.height + shadowHeight
+                            ),
+                            topLeft = Offset(0f, size.height),
+                            size = Size(size.width, shadowHeight)
+                        )
+                    }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("最近", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+            }
         }
     }
 }
-
 @Composable
 private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
@@ -1631,7 +1668,7 @@ private fun RecordsPage(
     val listState = rememberLazyListState()
     val showTopBar by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 100
+            listState.firstVisibleItemIndex > 0
         }
     }
     Box(Modifier.fillMaxSize()) {
