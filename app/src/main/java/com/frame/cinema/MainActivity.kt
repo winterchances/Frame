@@ -1039,6 +1039,7 @@ private fun FrameNativeApp(
                             val videoName = videos.firstOrNull { it.id == entry.videoId }?.name ?: "独立感想"
                             SheetAction("$videoName · ${SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt))}") {
                                 openReviewEditor(entry)
+                                parentSheet = SheetType.RECORD_SEARCH
                             }
                         }
                         videos.filter { video ->
@@ -1046,7 +1047,7 @@ private fun FrameNativeApp(
                                 video.name.contains(recordSearch, true) &&
                                 reviewEntries.none { it.videoId == video.id }
                         }.take(20).forEach { video ->
-                            SheetAction(displayVideoName(video.name)) { startNewReview(video) }
+                            SheetAction(displayVideoName(video.name)) { startNewReview(video); parentSheet = SheetType.RECORD_SEARCH }
                         }
                         Spacer(Modifier.height(24.dp))
                     }
@@ -1240,11 +1241,13 @@ private fun FrameNativeApp(
                         SheetHeading("关联到视频")
                         SheetAction("不关联视频") {
                             editReviewVideoId = null
+                            parentSheet = SheetType.NONE
                             sheet = SheetType.NOTE
                         }
                         videos.sortedBy { it.name.lowercase(Locale.getDefault()) }.forEach { video ->
                             SheetAction(displayVideoName(video.name)) {
                                 editReviewVideoId = video.id
+                                parentSheet = SheetType.NONE
                                 sheet = SheetType.NOTE
                             }
                         }
