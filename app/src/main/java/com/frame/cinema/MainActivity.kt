@@ -1391,7 +1391,9 @@ private fun HomePage(
                             durationMillis = 300 + ((recent.size - 1).coerceAtLeast(0) * 60),
                             easing = androidx.compose.animation.core.FastOutSlowInEasing
                         )
-                    ) + fadeOut(tween(600))
+                    ) + fadeOut(
+                        tween(300 + ((recent.size - 1).coerceAtLeast(0) * 60))
+                    )
                 ) {
                     Column(Modifier.fillMaxWidth()) {
                         if (recent.isEmpty()) {
