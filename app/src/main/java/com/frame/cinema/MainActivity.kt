@@ -1557,6 +1557,9 @@ private fun LibraryPage(
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
         }
     }
+    val headerPinned by remember {
+        derivedStateOf { listState.firstVisibleItemIndex >= 1 }
+    }
     val filtered = videos.filter {
         (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
             (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
@@ -1565,89 +1568,110 @@ private fun LibraryPage(
     val gap = if (compact) 10.dp else 15.dp
     Box(Modifier.fillMaxSize().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
-        item {
-            Row(
-                Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                ActionIcon(FrameTagIcon, "分类管理", onCategories)
-                ActionIcon(FrameSortIcon, "排序", onSort)
-                ActionIcon(FrameGridIcon, "布局管理", onGrid)
-            }
-        }
-        stickyHeader {
-            Column(
-                Modifier.fillMaxWidth()
-                    .onGloballyPositioned { onStickyHeaderBoundsChanged(it.boundsInRoot()) }
-                    .background(PageBg)
-                    .statusBarsPadding()
-                    .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(25.dp)
-                ) {
-                    listOf("全部", "在看", "已看").forEach { value ->
-                        Column(Modifier.noRippleClickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
-                            if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
-                        }
-                    }
-                }
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp)
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    categories.forEach { value ->
-                        Surface(
-                            Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .noRippleClickable { onCategory(value) },
-                            shape = CircleShape,
-                            color = if (category == value) ThemeTeal else Color.White,
-                            shadowElevation = 0.dp,
-                        ) {
-                            val label = when (value) { "全部分类" -> "全部分类"; "我的最爱" -> "收藏"; else -> value }
-                            Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                        }
-                    }
-                }
-            }
-        }
-        if (filtered.isEmpty()) {
             item {
-                EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
+                Row(
+                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                    ActionIcon(FrameTagIcon, "分类管理", onCategories)
+                    ActionIcon(FrameSortIcon, "排序", onSort)
+                    ActionIcon(FrameGridIcon, "布局管理", onGrid)
+                }
             }
-        } else {
-            item { Spacer(Modifier.height(5.dp)) }
-            filtered.chunked(columns).forEach { rowVideos ->
-                item {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(gap),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        rowVideos.forEach { video ->
-                            PosterCard(
-                                video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
-                                Modifier.weight(1f),
-                                alpha = 1f,
-                                onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
-                            )
-                        }
-                        repeat(columns - rowVideos.size) {
-                            Spacer(Modifier.weight(1f))
+            stickyHeader {
+                LibraryFilterHeader(
+                    categories = categories, status = status, category = category,
+                    onStatus = onStatus, onCategory = onCategory,
+                    alpha = if (headerPinned) 0f else 1f,
+                    onBoundsChanged = { if (!headerPinned) onStickyHeaderBoundsChanged(it) }
+                )
+            }
+            if (filtered.isEmpty()) {
+                item { EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频") }
+            } else {
+                item { Spacer(Modifier.height(5.dp)) }
+                filtered.chunked(columns).forEach { rowVideos ->
+                    item {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(gap),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            rowVideos.forEach { video ->
+                                PosterCard(
+                                    video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
+                                    Modifier.weight(1f),
+                                    alpha = 1f,
+                                    onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
+                                )
+                            }
+                            repeat(columns - rowVideos.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
+                    item { Spacer(Modifier.height(gap)) }
                 }
-                item { Spacer(Modifier.height(gap)) }
             }
         }
+        if (headerPinned) {
+            LibraryFilterHeader(
+                categories = categories, status = status, category = category,
+                onStatus = onStatus, onCategory = onCategory,
+                alpha = 1f, onBoundsChanged = onStickyHeaderBoundsChanged,
+                modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
+            )
         }
     }
-}@OptIn(ExperimentalFoundationApi::class)
+}
+
+@Composable
+private fun LibraryFilterHeader(
+    categories: List<String>, status: String, category: String,
+    onStatus: (String) -> Unit, onCategory: (String) -> Unit,
+    alpha: Float, onBoundsChanged: (Rect) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier.fillMaxWidth()
+            .graphicsLayer { this.alpha = alpha }
+            .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
+            .background(PageBg)
+            .statusBarsPadding()
+            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(25.dp)
+        ) {
+            listOf("全部", "在看", "已看").forEach { value ->
+                Column(Modifier.noRippleClickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(value, color = if (status == value) MainText else MutedText, fontWeight = if (status == value) FontWeight.Bold else FontWeight.Medium, fontSize = 16.sp)
+                    if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
+                }
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            categories.forEach { value ->
+                Surface(
+                    Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .noRippleClickable { onCategory(value) },
+                    shape = CircleShape,
+                    color = if (category == value) ThemeTeal else Color.White,
+                    shadowElevation = 0.dp,
+                ) {
+                    val label = when (value) { "全部分类" -> "全部分类"; "我的最爱" -> "收藏"; else -> value }
+                    Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     val listState = rememberLazyListState()
@@ -1666,6 +1690,31 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
         "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
     ).filter { it.second.isNotEmpty() }
+    val groupHeaderIndices = remember(groups) {
+        buildList {
+            var index = 1
+            groups.forEach { (_, items) ->
+                add(index)
+                index += items.size + 3
+            }
+        }
+    }
+    val activeGroupIndex by remember {
+        derivedStateOf {
+            groupHeaderIndices.indexOfLast { listState.firstVisibleItemIndex >= it }
+        }
+    }
+    val headerHeightPx = with(LocalDensity.current) { 54.dp.roundToPx() }
+    val nextHeaderOffset by remember {
+        derivedStateOf {
+            val nextIndex = groupHeaderIndices.getOrNull(activeGroupIndex + 1)
+            if (nextIndex == null) Int.MAX_VALUE
+            else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
+        }
+    }
+    val stickyPushOffset = if (activeGroupIndex >= 0 && nextHeaderOffset != Int.MAX_VALUE) {
+        minOf(0, nextHeaderOffset - headerHeightPx)
+    } else 0
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
@@ -1678,27 +1727,11 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 }
             }
             if (recentItems.isEmpty()) {
-                item {
-                    EmptyHint("暂无播放记录")
-                }
+                item { EmptyHint("暂无播放记录") }
             } else {
-                groups.forEach { (label, list) ->
+                groups.forEachIndexed { groupIndex, (label, list) ->
                     stickyHeader {
-                        Box(
-                            Modifier.fillMaxWidth()
-                                .background(PageBg)
-                                .statusBarsPadding()
-                                .padding(top = 10.dp, bottom = 10.dp)
-                        ) {
-                            Text(
-                                label,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF666666),
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
-                            )
-                        }
+                        RecentDateHeader(label, alpha = if (activeGroupIndex == groupIndex) 0f else 1f)
                     }
                     item { Spacer(Modifier.height(10.dp)) }
                     items(list, key = { it.id }) { video ->
@@ -1714,9 +1747,35 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 item { Spacer(Modifier.height(12.dp)) }
             }
         }
+        if (activeGroupIndex >= 0) {
+            Box(
+                Modifier.fillMaxWidth().offset { androidx.compose.ui.unit.IntOffset(0, stickyPushOffset) }
+                    .zIndex(2f)
+            ) {
+                RecentDateHeader(groups[activeGroupIndex].first, alpha = 1f)
+            }
+        }
     }
 }
+
 @Composable
+private fun RecentDateHeader(label: String, alpha: Float) {
+    Box(
+        Modifier.fillMaxWidth().graphicsLayer { this.alpha = alpha }
+            .background(PageBg)
+            .statusBarsPadding()
+            .padding(top = 10.dp, bottom = 10.dp)
+    ) {
+        Text(
+            label,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF666666),
+            modifier = Modifier.fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+        )
+    }
+}@Composable
 private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
