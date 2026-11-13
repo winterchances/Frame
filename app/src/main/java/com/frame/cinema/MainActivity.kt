@@ -1081,7 +1081,7 @@ private fun FrameNativeApp(
                         )
                         val recordQuery = recordSearch.trim()
                         val matchingReviewEntries = if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
-                            val videoName = videos.firstOrNull { it.id == entry.videoId }?.name.orEmpty()
+                            val videoName = videos.firstOrNull { it.id == entry.videoId }?.let { displayVideoName(it.name) }.orEmpty()
                             entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
                         }.take(30)
                         matchingReviewEntries.forEach { entry ->
