@@ -2906,7 +2906,7 @@ private val ChineseNameCollator: Collator by lazy {
 private fun compareNaturalVideoNames(left: String, right: String): Int {
     val leftName = displayVideoName(left)
     val rightName = displayVideoName(right)
-    val tokenRegex = Regex("\\\\d+|\\\\D+")
+    val tokenRegex = Regex("\\d+|\\D+")
     val leftTokens = tokenRegex.findAll(leftName).map { it.value }.toList()
     val rightTokens = tokenRegex.findAll(rightName).map { it.value }.toList()
     for (index in 0 until minOf(leftTokens.size, rightTokens.size)) {
