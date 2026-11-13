@@ -647,8 +647,7 @@ private fun FrameNativeApp(
                                 }
                             )
                         }
-                    }
-            }
+                    }            }
 
           } else {
             NativePlayerOverlay(
@@ -1297,8 +1296,7 @@ private fun FrameNativeApp(
         if (toast.isNotBlank()) {
             Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp), shape = CircleShape, color = Color(0xDD222222)) {
                 Text(toast, color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
-            }
-        }
+            }        }
     }
 }
 
@@ -1366,7 +1364,20 @@ private fun HomePage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
-    Box(Modifier.fillMaxSize()) {
+    val homeHeaderHeightPx = remember { mutableIntStateOf(0) }
+    val homeStatsHeightPx = remember { mutableIntStateOf(0) }
+    val homeGapPx = with(LocalDensity.current) { 25.dp.toPx() }
+    val homeScrollDistancePx = remember {
+        derivedStateOf {
+            when (listState.firstVisibleItemIndex) {
+                0 -> listState.firstVisibleItemScrollOffset.toFloat()
+                1 -> (homeHeaderHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                2 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx
+            }
+        }
+    }
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -1385,13 +1396,19 @@ private fun HomePage(
         }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }) {
+                Box(
+                    Modifier.zIndex(1f)
+                        .onGloballyPositioned { homeHeaderHeightPx.intValue = it.size.height }
+                        .graphicsLayer { alpha = 0f }
+                ) {
                     Header("首页", onSettings)
                 }
             }
             item(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
+                        .onGloballyPositioned { homeStatsHeightPx.intValue = it.size.height }
+                        .graphicsLayer { alpha = 0f }
                         .background(PageBg)
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                         .drawBehind {
@@ -1522,6 +1539,43 @@ private fun HomePage(
             }
             item { Spacer(Modifier.height(20.dp)) }
         }
+
+        Column(
+            Modifier.fillMaxWidth()
+                .graphicsLayer { translationY = -homeScrollDistancePx.value }
+        ) {
+            Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }) {
+                Header("首页", onSettings)
+            }
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(PageBg)
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
+                    .drawBehind {
+                        val bleed = 20.dp.toPx()
+                        drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
+                    }
+            ) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Glass)
+                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
+                }
+            }
+            Spacer(Modifier.height(25.dp))
+        }
+
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -1807,8 +1861,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             Thumbnail(video, Modifier.fillMaxSize())
         }
         Box(Modifier.weight(1f).height(84.dp)) {
-            Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Text(
+            Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {                Text(
                     displayVideoName(video.name),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -1859,7 +1912,20 @@ private fun RecordsPage(
     val watchedCount = remember(videos) { videos.size }
     val totalHours = remember(videos) { videos.sumOf { it.durationMs } / 3600000 }
     val reviewedCount = remember(videos) { videos.count { it.review.isNotBlank() } }
-    Box(Modifier.fillMaxSize()) {
+    val recordsTitleHeightPx = remember { mutableIntStateOf(0) }
+    val recordsStatsHeightPx = remember { mutableIntStateOf(0) }
+    val recordsGapPx = with(LocalDensity.current) { 26.dp.toPx() }
+    val recordsScrollDistancePx = remember {
+        derivedStateOf {
+            when (listState.firstVisibleItemIndex) {
+                0 -> listState.firstVisibleItemScrollOffset.toFloat()
+                1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                2 -> (recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + if (videos.isEmpty()) 0f else recordsGapPx
+            }
+        }
+    }
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -1879,7 +1945,10 @@ private fun RecordsPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().zIndex(1f)
+                        .onGloballyPositioned { recordsTitleHeightPx.intValue = it.size.height }
+                        .graphicsLayer { alpha = 0f }
+                        .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -1890,7 +1959,12 @@ private fun RecordsPage(
                 }
             }
         item {
-            Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .onGloballyPositioned { recordsStatsHeightPx.intValue = it.size.height }
+                    .graphicsLayer { alpha = 0f }
+                    .background(PageBg.copy(alpha = .95f))
+            ) {
                 Row(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
@@ -1987,6 +2061,45 @@ private fun RecordsPage(
         }
         item { Spacer(Modifier.height(20.dp)) }
         }
+
+        Column(
+            Modifier.fillMaxWidth()
+                .graphicsLayer { translationY = -recordsScrollDistancePx.value }
+        ) {
+            Row(
+                Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }
+                    .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                    ActionIcon(FrameSortIcon, "记录排序", onSort)
+                }
+            }
+            Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 10.dp)
+                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Glass)
+                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Stat("已看完", watchedCount.toString(), "部", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("写下感想", reviewedCount.toString(), "篇", Modifier.weight(1f))
+                }
+            }
+            if (videos.isNotEmpty()) Spacer(Modifier.height(26.dp))
+        }
+
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -2197,8 +2310,7 @@ private fun NativePlayerOverlay(
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .8f))))
                         .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 30.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                ) {                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                         Text(formatTime(current), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         PlayerProgressBar(
                             progress = if (duration > 0L) (current.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
