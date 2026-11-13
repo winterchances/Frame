@@ -2587,9 +2587,10 @@ private fun RecordsPage(
                 items(standaloneReviews, key = { "review_${it.id}" }) { entry ->
                     val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
                     val entryHighlight = entry.id == targetReviewId
-                    LaunchedEffect(targetReviewId) {
-                        if (entryHighlight) {
-                            delay(180)
+                    val expanded = expandedStandaloneReviews[entry.id] ?: true
+                    LaunchedEffect(targetReviewId, expanded) {
+                        if (entryHighlight && expanded) {
+                            delay(360)
                             entryBringIntoView.bringIntoView()
                             delay(1500)
                             onTargetHandled()
@@ -2617,11 +2618,37 @@ private fun RecordsPage(
                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
                                 color = Color(0xFF999999), fontSize = 11.sp
                             )
+                            Box(
+                                Modifier.padding(start = 7.dp).size(28.dp)
+                                    .noRippleClickable { expandedStandaloneReviews[entry.id] = !expanded },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                    if (expanded) "收起正文" else "展开正文",
+                                    tint = MutedText,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                         if (entry.rating > 0) {
                             Text("★".repeat(entry.rating.coerceIn(0, 5)), color = Color(0xFFFFB800), fontSize = 13.sp, modifier = Modifier.padding(top = 5.dp))
                         }
-                        Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+                        AnimatedVisibility(
+                            visible = expanded,
+                            enter = expandVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
+                                fadeIn(tween(220)) + slideInVertically(
+                                    initialOffsetY = { it / 8 },
+                                    animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                ),
+                            exit = shrinkVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
+                                fadeOut(tween(220)) + slideOutVertically(
+                                    targetOffsetY = { it / 8 },
+                                    animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                )
+                        ) {
+                            Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+                        }
                     }
                 }
             }
