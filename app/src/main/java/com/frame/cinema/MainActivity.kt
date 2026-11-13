@@ -647,7 +647,8 @@ private fun FrameNativeApp(
                                 }
                             )
                         }
-                    }            }
+                    }
+            }
 
           } else {
             NativePlayerOverlay(
