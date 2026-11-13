@@ -583,9 +583,9 @@ private fun FrameNativeApp(
         sheetVisibility.targetState = sheet != SheetType.NONE
         if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
-    BackHandler(enabled = contextMenuVideo != null || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
+    BackHandler(enabled = contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
-            contextMenuVideo != null -> { contextMenuOpen = false }
+            contextMenuOpen -> { contextMenuOpen = false }
             showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
             showImportDataDialog -> { showImportDataDialog = false; pendingImportUri = null }
             sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
