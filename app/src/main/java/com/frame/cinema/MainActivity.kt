@@ -201,8 +201,11 @@ private val FrameTagIcon: ImageVector = ImageVector.Builder("FrameTag", 24.dp, 2
     }
 }.build()
 private val FrameSortIcon: ImageVector = ImageVector.Builder("FrameSort", 24.dp, 24.dp, 24f, 24f).apply {
-    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(12f, 20f); lineTo(12f, 4f); moveTo(6f, 10f); lineTo(12f, 4f); lineTo(18f, 10f)
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.0f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(7f, 3f); lineTo(7f, 21f)
+        moveTo(3f, 7f); lineTo(7f, 3f); lineTo(11f, 7f)
+        moveTo(17f, 21f); lineTo(17f, 3f)
+        moveTo(13f, 17f); lineTo(17f, 21f); lineTo(21f, 17f)
     }
 }.build()
 private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp, 24.dp, 24f, 24f).apply {
@@ -1764,30 +1767,9 @@ private fun HomePage(
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(6) }
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-    val titleAlphaState = remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 0f
-            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
-        }
-    }
     val showTopBar by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
-        }
-    }
-    val homeHeaderHeightPx = rememberSaveable { mutableIntStateOf(0) }
-    val homeStatsHeightPx = rememberSaveable { mutableIntStateOf(0) }
-    val homeGapPx = with(LocalDensity.current) { 25.dp.toPx() }
-    val homeOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val homeScrollDistancePx = remember {
-        derivedStateOf {
-            when (listState.firstVisibleItemIndex) {
-                0 -> listState.firstVisibleItemScrollOffset.toFloat()
-                1 -> (homeHeaderHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                2 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + listState.firstVisibleItemScrollOffset).toFloat()
-                3 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + homeOffscreenPx).toFloat()
-            }
         }
     }
     Box(Modifier.fillMaxSize().clipToBounds()) {
@@ -1809,19 +1791,13 @@ private fun HomePage(
         }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Box(
-                    Modifier.zIndex(1f)
-                        .onGloballyPositioned { homeHeaderHeightPx.intValue = it.size.height }
-                        .graphicsLayer { alpha = 0f }
-                ) {
+                Box(Modifier.zIndex(1f)) {
                     Header("首页", onSettings)
                 }
             }
             item(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
-                        .onGloballyPositioned { homeStatsHeightPx.intValue = it.size.height }
-                        .graphicsLayer { alpha = 0f }
                         .background(PageBg)
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                         .drawBehind {
@@ -1953,42 +1929,6 @@ private fun HomePage(
             item { Spacer(Modifier.height(20.dp)) }
         }
 
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp)
-                .graphicsLayer { translationY = -homeScrollDistancePx.value }
-        ) {
-            Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }) {
-                Header("首页", onSettings)
-            }
-            Column(
-                Modifier.fillMaxWidth()
-                    .background(PageBg)
-                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
-                    .drawBehind {
-                        val bleed = 20.dp.toPx()
-                        drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
-                    }
-            ) {
-                Row(
-                    Modifier.fillMaxWidth()
-                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Glass)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 10.dp, vertical = 15.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
-                }
-            }
-            Spacer(Modifier.height(25.dp))
-        }
-
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -2056,9 +1996,9 @@ private fun LibraryPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                    ActionIcon(FrameTagIcon, "分类管理", onCategories)
-                    ActionIcon(FrameSortIcon, "排序", onSort)
+                    ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = .5.dp, y = .5.dp))
                     ActionIcon(FrameGridIcon, "布局管理", onGrid)
+                    ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 22.dp)
                 }
             }
             stickyHeader {
@@ -2106,9 +2046,9 @@ private fun LibraryPage(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            ActionIcon(FrameTagIcon, "分类管理", onCategories)
-            ActionIcon(FrameSortIcon, "排序", onSort)
+            ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = .5.dp, y = .5.dp))
             ActionIcon(FrameGridIcon, "布局管理", onGrid)
+            ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 22.dp)
         }
         LibraryFilterHeader(
             categories = categories, status = status, category = category,
@@ -2482,7 +2422,7 @@ private fun RecordsPage(
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                        ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) })
+                        ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 22.dp)
                         ActionIcon(FrameSortIcon, "记录排序", onSort)
                     }
                 }
@@ -2566,13 +2506,13 @@ private fun RecordsPage(
                                     Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    RatingStars(video.rating, 14.dp, onRate = { onRateVideo(video, it) }, spacing = 0.dp)
+                                    RatingStars(video.rating, 14.dp, onRate = { onRateVideo(video, it) }, spacing = 0.dp, modifier = Modifier.offset(x = (-4).dp))
                                     Spacer(Modifier.weight(1f))
                                     Box(
                                         Modifier.size(28.dp).noRippleClickable { onCreate(video) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Outlined.Add, "添加感想", tint = ThemeTeal, modifier = Modifier.size(20.dp))
+                                        Icon(Icons.Outlined.Add, "添加感想", tint = MutedText, modifier = Modifier.size(22.dp))
                                     }
                                     if (entries.isNotEmpty()) {
                                         val chevronRotation by animateFloatAsState(
@@ -2587,7 +2527,7 @@ private fun RecordsPage(
                                             label = "record-video-chevron-" + video.id
                                         )
                                         Box(
-                                            Modifier.padding(start = 7.dp).size(28.dp)
+                                            Modifier.padding(start = 7.dp, end = 6.dp).size(28.dp)
                                                 .noRippleClickable { expandedVideoReviews[video.id] = !expanded },
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -2739,7 +2679,7 @@ private fun RecordsPage(
                 Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) })
+                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 22.dp)
                     ActionIcon(FrameSortIcon, "记录排序", onSort)
                 }
             }
@@ -3329,7 +3269,13 @@ private fun formatClock(ms: Long): String {
 
 
 @Composable
-private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
+private fun ActionIcon(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    iconSize: androidx.compose.ui.unit.Dp = 20.dp,
+    iconModifier: Modifier = Modifier
+) {
     Surface(
         modifier = Modifier.size(36.dp).noRippleClickable(onClick),
         shape = CircleShape,
@@ -3338,7 +3284,7 @@ private fun ActionIcon(icon: ImageVector, description: String, onClick: () -> Un
         
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(icon, description, Modifier.size(20.dp), tint = Color(0xFF333333))
+            Icon(icon, description, iconModifier.size(iconSize), tint = Color(0xFF333333))
         }
     }
 }
@@ -3510,9 +3456,10 @@ private fun RatingStars(
     rating: Int,
     size: androidx.compose.ui.unit.Dp,
     onRate: ((Int) -> Unit)? = null,
-    spacing: androidx.compose.ui.unit.Dp = 2.dp
+    spacing: androidx.compose.ui.unit.Dp = 2.dp,
+    modifier: Modifier = Modifier
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(spacing), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(spacing), verticalAlignment = Alignment.CenterVertically) {
         (1..5).forEach { value ->
             Box(
                 Modifier.size(size + 8.dp).then(
@@ -3560,18 +3507,18 @@ private fun SortOptionAction(
             )
             Box(Modifier.size(36.dp).noRippleClickable(onAscending), contentAlignment = Alignment.Center) {
                 Icon(
-                    Icons.Outlined.ArrowUpward,
+                    FrameSortIcon,
                     "正序",
                     tint = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(19.dp)
                 )
             }
             Box(Modifier.size(36.dp).noRippleClickable(onDescending), contentAlignment = Alignment.Center) {
                 Icon(
-                    Icons.Outlined.ArrowDownward,
+                    FrameSortIcon,
                     "倒序",
                     tint = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(19.dp).rotate(180f)
                 )
             }
         }
