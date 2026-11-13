@@ -1624,11 +1624,25 @@ private fun LibraryPage(
     }
     val columns = if (compact) 3 else 2
     val gap = if (compact) 10.dp else 15.dp
+    val libraryTitleHeightPx = remember { mutableIntStateOf(0) }
+    val libraryOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val libraryTitleScrollDistancePx = remember {
+        derivedStateOf {
+            when (listState.firstVisibleItemIndex) {
+                0 -> listState.firstVisibleItemScrollOffset.toFloat()
+                1 -> (libraryTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> libraryTitleHeightPx.intValue + libraryOffscreenPx
+            }
+        }
+    }
     Box(Modifier.fillMaxSize().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item {
                 Row(
-                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth()
+                        .onGloballyPositioned { libraryTitleHeightPx.intValue = it.size.height }
+                        .graphicsLayer { alpha = 0f }
+                        .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1671,6 +1685,21 @@ private fun LibraryPage(
                     item { Spacer(Modifier.height(gap)) }
                 }
             }
+        }
+        Row(
+            Modifier.fillMaxWidth()
+                .graphicsLayer {
+                    translationY = -libraryTitleScrollDistancePx.value
+                    alpha = titleAlphaState.value
+                }
+                .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+            ActionIcon(FrameTagIcon, "分类管理", onCategories)
+            ActionIcon(FrameSortIcon, "排序", onSort)
+            ActionIcon(FrameGridIcon, "布局管理", onGrid)
         }
         if (headerPinned) {
             LibraryFilterHeader(
@@ -1739,6 +1768,17 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
         }
     }
+    val recentTitleHeightPx = remember { mutableIntStateOf(0) }
+    val recentOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val recentTitleScrollDistancePx = remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex == 0) {
+                listState.firstVisibleItemScrollOffset.toFloat()
+            } else {
+                recentTitleHeightPx.intValue + recentOffscreenPx
+            }
+        }
+    }
     val recentItems = remember(videos) { videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt } }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
     val today = dateFormat.format(Date())
@@ -1776,7 +1816,10 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth()
+                        .onGloballyPositioned { recentTitleHeightPx.intValue = it.size.height }
+                        .graphicsLayer { alpha = 0f }
+                        .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -1807,6 +1850,18 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 }
                 item { Spacer(Modifier.height(12.dp)) }
             }
+        }
+        Row(
+            Modifier.fillMaxWidth()
+                .graphicsLayer {
+                    translationY = -recentTitleScrollDistancePx.value
+                    alpha = titleAlphaState.value
+                }
+                .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+            ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
         }
         if (activeGroupIndex >= 0) {
             Box(
