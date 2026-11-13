@@ -234,7 +234,7 @@ private val MutedText = Color(0xFF888888)
 private val Glass = Color.White.copy(alpha = .85f)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME, RATING, WATCHED }
 
 class MainActivity : ComponentActivity() {
@@ -354,6 +354,7 @@ private fun FrameNativeApp(
     var contextMenuFabBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
+    var reviewEntries by remember { mutableStateOf(repository.reviews()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories().let { saved ->
         val ordered = listOf("我的最爱") + saved.filterNot { it == "全部分类" || it == "我的最爱" } + "全部分类"
@@ -370,6 +371,8 @@ private fun FrameNativeApp(
     var editName by remember { mutableStateOf("") }
     var editReview by remember { mutableStateOf("") }
     var editRating by remember { mutableIntStateOf(0) }
+    var editReviewId by remember { mutableStateOf<Long?>(null) }
+    var editReviewVideoId by remember { mutableStateOf<Long?>(null) }
     var newCategory by remember { mutableStateOf("") }
     var sort by remember { mutableStateOf(SortMode.ADDED) }
     var allowBackground by remember { mutableStateOf(true) }
@@ -427,7 +430,30 @@ private fun FrameNativeApp(
     val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
-    fun refresh() { videos = repository.videos(); categories = repository.categories(); weeklyWatchTimeMs = repository.weeklyWatchTimeMs() }
+    fun refresh() {
+        videos = repository.videos()
+        reviewEntries = repository.reviews()
+        categories = repository.categories()
+        weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
+    }
+    fun startNewReview(video: VideoItem? = null) {
+        selected = video
+        editReviewId = null
+        editReviewVideoId = video?.id
+        editReview = ""
+        editRating = 0
+        parentSheet = SheetType.NONE
+        sheet = SheetType.NOTE
+    }
+    fun openReviewEditor(entry: ReviewEntry) {
+        editReviewId = entry.id
+        editReviewVideoId = entry.videoId
+        selected = videos.firstOrNull { it.id == entry.videoId }
+        editReview = entry.content
+        editRating = entry.rating
+        parentSheet = SheetType.NONE
+        sheet = SheetType.NOTE
+    }
     fun notify(message: String) { toast = message }
     fun playVideo(item: VideoItem) {
         speedIndex = 0
@@ -480,7 +506,7 @@ private fun FrameNativeApp(
     ) { uri ->
         if (uri != null) {
             try {
-                val json = com.google.gson.Gson().toJson(videos)
+                val json = com.google.gson.Gson().toJson(LibraryBackup(videos, repository.reviews()))
                 val output = context.contentResolver.openOutputStream(uri)
                     ?: throw java.io.IOException("无法打开目标文件")
                 output.bufferedWriter(Charsets.UTF_8).use { it.write(json) }
@@ -507,21 +533,29 @@ private fun FrameNativeApp(
                 ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
                 ?: throw java.io.IOException("无法读取文件")
             val imported = try {
-                val type = object : com.google.gson.reflect.TypeToken<List<VideoItem>>() {}.type
-                val parsed: List<VideoItem> = com.google.gson.Gson().fromJson(json, type)
-                    ?: throw com.google.gson.JsonSyntaxException("JSON 内容为空")
-                require(parsed.all {
+                val gson = com.google.gson.Gson()
+                val root = com.google.gson.JsonParser.parseString(json)
+                val backup = if (root.isJsonArray) {
+                    val type = object : com.google.gson.reflect.TypeToken<List<VideoItem>>() {}.type
+                    LibraryBackup(gson.fromJson<List<VideoItem>>(root, type), emptyList())
+                } else {
+                    gson.fromJson(root, LibraryBackup::class.java)
+                        ?: throw com.google.gson.JsonSyntaxException("JSON 内容为空")
+                }
+                require(backup.videos.all {
                     it.uri.isNotBlank() && it.name.isNotBlank() && it.date.isNotBlank() &&
                         it.size.length >= 0 && it.status.isNotBlank() && it.category.isNotBlank() &&
                         it.review.length >= 0 && it.progress.isFinite()
                 })
-                require(parsed.map { it.uri }.distinct().size == parsed.size)
-                parsed
+                require(backup.videos.map { it.uri }.distinct().size == backup.videos.size)
+                val ids = backup.videos.map { it.id }.toSet()
+                require(backup.reviews.all { it.content.isNotBlank() && (it.videoId == null || it.videoId in ids) })
+                backup
             } catch (_: Exception) {
                 notify("文件格式错误")
                 return
             }
-            repository.replaceAll(imported)
+            repository.replaceAll(imported.videos, imported.reviews)
             refresh()
             notify("数据导入成功，若部分视频无法播放，请重新导入视频源")
         } catch (_: Exception) {
@@ -649,16 +683,14 @@ private fun FrameNativeApp(
                             )
                             MainPage.RECORDS -> RecordsPage(
                                 hazeState = hazeState,
-                                videos = videos.filter { it.status == "watched" || it.progress >= 100f }
-                                    .let { list -> if (recordSortByRating) list.sortedByDescending { it.rating } else list.sortedByDescending { it.lastPlayedAt } }
-                                    .filter { recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true) },
+                                videos = videos,
+                                reviews = reviewEntries,
+                                searchQuery = recordSearch,
+                                sortByRating = recordSortByRating,
                                 onSearch = { sheet = SheetType.RECORD_SEARCH },
                                 onSort = { sheet = SheetType.RECORD_SORT },
-                                onEdit = {
-                                    selected = it; editReview = it.review; editRating = it.rating
-                                    parentSheet = SheetType.NONE
-                                    sheet = SheetType.NOTE
-                                }
+                                onCreate = { startNewReview() },
+                                onEdit = { openReviewEditor(it) }
                             )
                         }
                     }
@@ -986,16 +1018,15 @@ private fun FrameNativeApp(
                     SheetType.RECORD_SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("搜索观影记录")
                         BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
-                        videos.filter { (it.status == "watched" || it.progress >= 100f) && (recordSearch.isBlank() || it.name.contains(recordSearch, true) || it.review.contains(recordSearch, true)) }
-                            .take(30).forEach { video ->
-                                SheetAction(displayVideoName(video.name)) {
-                                    selected = video
-                                    editReview = video.review
-                                    editRating = video.rating
-                                    parentSheet = sheet
-                                    sheet = SheetType.NOTE
-                                }
+                        reviewEntries.filter { entry ->
+                            val videoName = videos.firstOrNull { it.id == entry.videoId }?.name.orEmpty()
+                            recordSearch.isBlank() || entry.content.contains(recordSearch, true) || videoName.contains(recordSearch, true)
+                        }.take(40).forEach { entry ->
+                            val videoName = videos.firstOrNull { it.id == entry.videoId }?.name ?: "独立感想"
+                            SheetAction("$videoName · ${SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt))}") {
+                                openReviewEditor(entry)
                             }
+                        }
                         Spacer(Modifier.height(24.dp))
                     }
                     SheetType.RECORD_SORT -> SheetContent("记录排序") {
@@ -1134,15 +1165,67 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("编辑观影记录")
+                        SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
+                        Row(
+                            Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("关联视频", color = MutedText, fontSize = 12.sp)
+                                Text(
+                                    editReviewVideoId?.let { id -> videos.firstOrNull { it.id == id }?.name } ?: "不关联视频",
+                                    color = MainText, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Text("选择", color = ThemeTeal, fontSize = 14.sp, modifier = Modifier.noRippleClickable {
+                                parentSheet = SheetType.NOTE
+                                sheet = SheetType.REVIEW_VIDEO_PICKER
+                            }.padding(8.dp))
+                            if (editReviewVideoId != null) {
+                                Text("取消关联", color = MutedText, fontSize = 12.sp, modifier = Modifier.noRippleClickable {
+                                    editReviewVideoId = null
+                                }.padding(start = 6.dp, end = 4.dp))
+                            }
+                        }
                         Row(Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
                             (1..5).forEach { n ->
-                                Text(if (n <= editRating) "★" else "★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
+                                Text("★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
                         }
                         BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
-                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable { selected?.let { repository.update(it.copy(rating = editRating, review = editReview)) }; refresh(); sheet = SheetType.NONE }.padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
+                            if (editReview.isBlank()) {
+                                notify("先写下一些感想再保存")
+                            } else {
+                                val entryId = editReviewId
+                                if (entryId == null) repository.addReview(editReviewVideoId, editReview, editRating)
+                                else repository.updateReview(entryId, editReviewVideoId, editReview, editRating)
+                                refresh()
+                                sheet = SheetType.NONE
+                            }
+                        }.padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                             Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        if (editReviewId != null) {
+                            Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 13.sp, modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 14.dp).noRippleClickable {
+                                editReviewId?.let { repository.deleteReview(it) }
+                                refresh()
+                                sheet = SheetType.NONE
+                            }.padding(8.dp))
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+                    SheetType.REVIEW_VIDEO_PICKER -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                        SheetHeading("关联到视频")
+                        SheetAction("不关联视频") {
+                            editReviewVideoId = null
+                            sheet = SheetType.NOTE
+                        }
+                        videos.sortedBy { it.name.lowercase(Locale.getDefault()) }.forEach { video ->
+                            SheetAction(displayVideoName(video.name)) {
+                                editReviewVideoId = video.id
+                                sheet = SheetType.NOTE
+                            }
                         }
                         Spacer(Modifier.height(24.dp))
                     }
@@ -1181,7 +1264,7 @@ private fun FrameNativeApp(
                 val menuAnchorWidth = with(density) { startBounds.width.toDp() }
                 val menuAnchorBottom = with(density) { startBounds.bottom.toDp() }
                 val menuWidth = minOf(196.dp, maxWidth - 32.dp)
-                val menuHeight = 42.dp * 6 + 8.dp
+                val menuHeight = 42.dp * 7 + 8.dp
                 val menuX = (menuAnchorLeft + menuAnchorWidth / 2f - menuWidth / 2f)
                     .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
                 val safeTop = 60.dp
@@ -1263,6 +1346,7 @@ private fun FrameNativeApp(
                         .zIndex(2f)
                 ) {
                     ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
+                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video) }
                     ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
                     ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
                     ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
