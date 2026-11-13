@@ -27,7 +27,10 @@ class PlaybackService : MediaSessionService() {
         notificationProvider.setSmallIcon(R.drawable.ic_notification)
         setMediaNotificationProvider(notificationProvider)
 
-        val player = ExoPlayer.Builder(this).build()
+        val player = ExoPlayer.Builder(this)
+            .setAudioAttributes(androidx.media3.common.AudioAttributes.DEFAULT, true)
+            .setHandleAudioBecomingNoisy(true)
+            .build()
 
         val rewindButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
             .setDisplayName("快退 15 秒")
