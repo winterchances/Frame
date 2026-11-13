@@ -1613,9 +1613,6 @@ private fun LibraryPage(
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
         }
     }
-    val headerPinned by remember {
-        derivedStateOf { listState.firstVisibleItemIndex >= 1 }
-    }
     val filtered = remember(videos, status, category) {
         videos.filter {
             (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
