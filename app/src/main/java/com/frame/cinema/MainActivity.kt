@@ -1297,7 +1297,7 @@ private fun FrameNativeApp(
                         SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
                         if (editReviewId == null && selected == null) {
                             val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
