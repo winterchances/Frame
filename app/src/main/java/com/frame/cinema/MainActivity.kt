@@ -689,8 +689,7 @@ private fun FrameNativeApp(
                     BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)
-                        .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() },
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -742,6 +741,7 @@ private fun FrameNativeApp(
                 }
                 Box(
                     Modifier.size(56.dp)
+                        .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
                         .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
@@ -1197,6 +1197,26 @@ private fun FrameNativeApp(
                                     )
                                 }
                             }
+                            fun clearRootRoundRect(rect: Rect, radius: Float) {
+                                drawRoundRect(
+                                    color = Color.Transparent,
+                                    topLeft = Offset(rect.left - bounds.left, rect.top - bounds.top),
+                                    size = Size(rect.width, rect.height),
+                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
+                                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
+                                )
+                            }
+                            fun clearRootCircle(rect: Rect) {
+                                drawCircle(
+                                    color = Color.Transparent,
+                                    radius = minOf(rect.width, rect.height) / 2f,
+                                    center = Offset(
+                                        rect.center.x - bounds.left,
+                                        rect.center.y - bounds.top
+                                    ),
+                                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
+                                )
+                            }
                             val viewport = contextMenuViewportBounds
                             if (viewport != null) {
                                 if (bounds.top < viewport.top) clearRootRect(Rect(bounds.left, bounds.top, bounds.right, viewport.top))
@@ -1205,8 +1225,8 @@ private fun FrameNativeApp(
                                 if (bounds.right > viewport.right) clearRootRect(Rect(viewport.right, bounds.top, bounds.right, bounds.bottom))
                             }
                             contextMenuStickyHeaderBounds?.let { clearRootRect(it) }
-                            contextMenuNavigationBounds?.let { clearRootRect(it) }
-                            contextMenuFabBounds?.let { clearRootRect(it) }
+                            contextMenuNavigationBounds?.let { clearRootRoundRect(it, 28.dp.toPx()) }
+                            contextMenuFabBounds?.let { clearRootCircle(it) }
                         },
                     content = { PosterCardVisual(video, compact) }
                 )
