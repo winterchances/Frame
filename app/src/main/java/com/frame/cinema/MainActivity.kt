@@ -673,11 +673,12 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
+            Box(Modifier.fillMaxSize().blur(12.dp * contextMenuProgress)) {
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomEnd).zIndex(if (contextMenuVideo != null) -1f else 0f).padding(end = 16.dp, bottom = 16.dp),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -1295,6 +1296,22 @@ private fun HomePage(
         }
     }
     Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .background(PageBg)
+                    .statusBarsPadding()
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
+            }
+        }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
                 Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlpha }) {
@@ -1442,7 +1459,6 @@ private fun HomePage(
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
@@ -1691,6 +1707,22 @@ private fun RecordsPage(
         }
     }
     Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = showTopBar,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .background(PageBg)
+                    .statusBarsPadding()
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
+            }
+        }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
@@ -1810,7 +1842,6 @@ private fun RecordsPage(
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
