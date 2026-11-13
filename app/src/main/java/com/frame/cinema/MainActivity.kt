@@ -1494,7 +1494,7 @@ private fun LibraryPage(
                 Modifier.fillMaxWidth()
                     .background(PageBg)
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp, top = 10.dp, bottom = 10.dp)
+                    .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
