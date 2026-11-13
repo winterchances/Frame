@@ -105,6 +105,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     CASE WHEN last_played_at > 0 THEN last_played_at ELSE added_at END
                 FROM videos WHERE TRIM(review) <> ''
             """.trimIndent())
+            db.execSQL("UPDATE videos SET review = '' WHERE TRIM(review) <> ''")
         }
     }
 
@@ -169,7 +170,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("size", video.size); put("date", video.date); put("added_at", video.addedAt)
                     put("progress", video.progress); put("status", video.status)
                     put("is_fav", if (video.isFav) 1 else 0); put("category", video.category)
-                    put("bg_index", video.bgIndex); put("review", video.review); put("rating", video.rating)
+                    put("bg_index", video.bgIndex); put("review", ""); put("rating", video.rating)
                     put("duration_ms", video.durationMs); put("last_played_at", video.lastPlayedAt)
                     put("thumb_path", video.thumbPath)
                 }
