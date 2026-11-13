@@ -1656,8 +1656,8 @@ private fun LibraryPage(
                 LibraryFilterHeader(
                     categories = categories, status = status, category = category,
                     onStatus = onStatus, onCategory = onCategory,
-                    alpha = if (headerPinned) 0f else 1f,
-                    onBoundsChanged = { if (!headerPinned) onStickyHeaderBoundsChanged(it) }
+                    alpha = 0f,
+                    onBoundsChanged = {}
                 )
             }
             if (filtered.isEmpty()) {
@@ -1701,14 +1701,17 @@ private fun LibraryPage(
             ActionIcon(FrameSortIcon, "排序", onSort)
             ActionIcon(FrameGridIcon, "布局管理", onGrid)
         }
-        if (headerPinned) {
-            LibraryFilterHeader(
-                categories = categories, status = status, category = category,
-                onStatus = onStatus, onCategory = onCategory,
-                alpha = 1f, onBoundsChanged = onStickyHeaderBoundsChanged,
-                modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
-            )
-        }
+        LibraryFilterHeader(
+            categories = categories, status = status, category = category,
+            onStatus = onStatus, onCategory = onCategory,
+            alpha = 1f, onBoundsChanged = onStickyHeaderBoundsChanged,
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
+                .graphicsLayer {
+                    translationY = if (listState.firstVisibleItemIndex == 0) {
+                        (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
+                    } else 0f
+                }
+        )
     }
 }
 
