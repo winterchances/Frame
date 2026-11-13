@@ -1048,27 +1048,160 @@ private fun FrameNativeApp(
                         }
                         Spacer(Modifier.height(20.dp))
                     }
-                    SheetType.RECORD_SEARCH -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("搜索观影记录")
-                        BasicTextField(recordSearch, { recordSearch = it }, Modifier.fillMaxWidth().onFocusChanged { sheetKeyboardUp = it.isFocused }.background(Color.White, RoundedCornerShape(14.dp)).padding(15.dp), singleLine = true, decorationBox = { inner -> if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想", color = MutedText); inner() })
-                        reviewEntries.filter { entry ->
+                    SheetType.RECORD_SEARCH -> Column(
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .animateContentSize(
+                                tween(320, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))
+                            )
+                    ) {
+                        SheetHeading("搜索")
+                        BasicTextField(
+                            recordSearch,
+                            { recordSearch = it },
+                            Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                                .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                .padding(15.dp),
+                            singleLine = true,
+                            decorationBox = { inner ->
+                                if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想...", color = MutedText, fontSize = 15.sp)
+                                inner()
+                            },
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, color = MainText)
+                        )
+                        val recordQuery = recordSearch.trim()
+                        val matchingReviewEntries = if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
                             val videoName = videos.firstOrNull { it.id == entry.videoId }?.name.orEmpty()
-                            recordSearch.isBlank() || entry.content.contains(recordSearch, true) || videoName.contains(recordSearch, true)
-                        }.take(40).forEach { entry ->
-                            val videoName = videos.firstOrNull { it.id == entry.videoId }?.name ?: "独立感想"
-                            SheetAction("$videoName · ${SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt))}") {
-                                openReviewEditor(entry)
-                                parentSheet = SheetType.RECORD_SEARCH
+                            entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
+                        }.take(30)
+                        val matchingVideosWithoutReviews = if (recordQuery.isBlank()) emptyList() else videos.filter { video ->
+                            (video.status == "watched" || video.progress >= 100f) &&
+                                displayVideoName(video.name).contains(recordQuery, true) &&
+                                reviewEntries.none { it.videoId == video.id }
+                        }.take((30 - matchingReviewEntries.size).coerceAtLeast(0))
+                        matchingReviewEntries.forEach { entry ->
+                            key("review_search_${entry.id}") {
+                                val video = videos.firstOrNull { it.id == entry.videoId }
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = fadeIn(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) +
+                                        androidx.compose.animation.slideInVertically(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) { it / 10 }
+                                ) {
+                                    Surface(
+                                        Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .noRippleClickable {
+                                                openReviewEditor(entry)
+                                                parentSheet = SheetType.RECORD_SEARCH
+                                            },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color.White,
+                                        shadowElevation = 0.dp
+                                    ) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                Modifier.size(width = 84.dp, height = 58.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(if (video != null) PosterBrush(video.bgIndex) else Color(0xFFF1F4F4)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (video != null) Thumbnail(video, Modifier.fillMaxSize())
+                                                else Text("感想", color = ThemeTeal, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                            }
+                                            Column(Modifier.weight(1f)) {
+                                                Text(
+                                                    video?.let { displayVideoName(it.name) } ?: "独立感想",
+                                                    color = MainText,
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    lineHeight = 21.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                                    color = MutedText,
+                                                    fontSize = 11.sp,
+                                                    modifier = Modifier.padding(top = 2.dp)
+                                                )
+                                                if (entry.content.isNotBlank()) {
+                                                    Text(
+                                                        entry.content,
+                                                        color = Color(0xFF777777),
+                                                        fontSize = 12.sp,
+                                                        lineHeight = 17.sp,
+                                                        maxLines = 2,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.padding(top = 3.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        videos.filter { video ->
-                            (video.status == "watched" || video.progress >= 100f) &&
-                                video.name.contains(recordSearch, true) &&
-                                reviewEntries.none { it.videoId == video.id }
-                        }.take(20).forEach { video ->
-                            SheetAction(displayVideoName(video.name)) { startNewReview(video); parentSheet = SheetType.RECORD_SEARCH }
+                        matchingVideosWithoutReviews.forEach { video ->
+                            key("video_search_${video.id}") {
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = fadeIn(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) +
+                                        androidx.compose.animation.slideInVertically(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) { it / 10 }
+                                ) {
+                                    Surface(
+                                        Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .noRippleClickable {
+                                                startNewReview(video)
+                                                parentSheet = SheetType.RECORD_SEARCH
+                                            },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color.White,
+                                        shadowElevation = 0.dp
+                                    ) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                Modifier.size(width = 84.dp, height = 58.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(PosterBrush(video.bgIndex))
+                                            ) { Thumbnail(video, Modifier.fillMaxSize()) }
+                                            Column(Modifier.weight(1f)) {
+                                                Text(
+                                                    displayVideoName(video.name),
+                                                    color = MainText,
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    lineHeight = 21.sp,
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    "尚未写下感想 · 点击新增",
+                                                    color = MutedText,
+                                                    fontSize = 12.sp,
+                                                    modifier = Modifier.padding(top = 4.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        Spacer(Modifier.height(24.dp))
+                        Spacer(Modifier.height(12.dp))
                     }
                     SheetType.RECORD_SORT -> SheetContent("记录排序") {
                         SheetAction("按看完时间正序") { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
