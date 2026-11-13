@@ -682,11 +682,17 @@ private fun FrameNativeApp(
                             )
                             MainPage.LIBRARY -> LibraryPage(
                                 hazeState = hazeState,
-                                (if (sort == SortMode.NAME) {
-                                    videos.sortedWith { a, b -> compareNaturalVideoNames(a.name, b.name).takeIf { it != 0 } ?: b.addedAt.compareTo(a.addedAt) }
-                                } else {
-                                    videos.sortedBy { it.addedAt }
-                                }).let { ordered -> if (sortDirection == SortDirection.DESCENDING) ordered.reversed() else ordered }, categories, status, category, compact,
+                                videos.sortedWith { a, b ->
+                                    val primary = when (sort) {
+                                        SortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
+                                        SortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
+                                    }
+                                    val directed = if (sortDirection == SortDirection.ASCENDING) primary else -primary
+                                    if (directed != 0) directed else {
+                                        val addedComparison = a.addedAt.compareTo(b.addedAt)
+                                        if (addedComparison != 0) addedComparison else a.id.compareTo(b.id)
+                                    }
+                                }, categories, status, category, compact,
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
@@ -906,8 +912,8 @@ private fun FrameNativeApp(
                     SheetType.SORT -> SheetContent("视频排序") {
                         SheetAction("按添加时间正序") { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
                         SheetAction("按添加时间倒序") { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称正序") { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称倒序") { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        SheetAction("按名称正序（拼音及数字）") { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
+                        SheetAction("按名称倒序（拼音及数字）") { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                     }
                     SheetType.GRID -> SheetContent("视图模式") {
                         SheetAction("2列大图（舒适）") { compact = false; sheet = SheetType.NONE }
@@ -1069,8 +1075,8 @@ private fun FrameNativeApp(
                         SheetAction("按看完时间倒序") { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                         SheetAction("按评分正序") { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
                         SheetAction("按评分倒序") { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称正序") { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称倒序") { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        SheetAction("按名称正序（拼音及数字）") { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
+                        SheetAction("按名称倒序（拼音及数字）") { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                     }
                     SheetType.SEARCH -> Column(
                         Modifier.fillMaxWidth()
@@ -2124,15 +2130,21 @@ private fun RecordsPage(
             (completed || entries.isNotEmpty()) &&
                 (searchQuery.isBlank() || video.name.contains(searchQuery, true) ||
                     entries.any { it.content.contains(searchQuery, true) })
-        }.let { list ->
-            val ordered = when (sortMode) {
-                RecordSortMode.NAME -> list.sortedWith { a, b -> compareNaturalVideoNames(a.name, b.name).takeIf { it != 0 } ?: b.addedAt.compareTo(a.addedAt) }
-                RecordSortMode.RATING -> list.sortedBy { video ->
-                    reviewsByVideo[video.id]?.maxOfOrNull { it.rating } ?: video.rating
+        }.sortedWith { a, b ->
+            val primary = when (sortMode) {
+                RecordSortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
+                RecordSortMode.RATING -> {
+                    val aRating = reviewsByVideo[a.id]?.maxOfOrNull { it.rating } ?: a.rating
+                    val bRating = reviewsByVideo[b.id]?.maxOfOrNull { it.rating } ?: b.rating
+                    aRating.compareTo(bRating)
                 }
-                RecordSortMode.WATCHED -> list.sortedBy { it.lastPlayedAt }
+                RecordSortMode.WATCHED -> a.lastPlayedAt.compareTo(b.lastPlayedAt)
             }
-            if (sortDirection == SortDirection.DESCENDING) ordered.reversed() else ordered
+            val directed = if (sortDirection == SortDirection.ASCENDING) primary else -primary
+            if (directed != 0) directed else {
+                val addedComparison = a.addedAt.compareTo(b.addedAt)
+                if (addedComparison != 0) addedComparison else a.id.compareTo(b.id)
+            }
         }
     }
     val standaloneReviews = remember(reviews, searchQuery) {
