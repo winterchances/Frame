@@ -1312,7 +1312,7 @@ private fun HomePage(
                 Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
                 Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlpha }) {
                     Header("首页", onSettings)
@@ -1723,7 +1723,7 @@ private fun RecordsPage(
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
