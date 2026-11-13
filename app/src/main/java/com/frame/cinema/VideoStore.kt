@@ -68,6 +68,13 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         )
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
         db.execSQL("CREATE TABLE watch_time_daily (video_id INTEGER NOT NULL, day_key TEXT NOT NULL, duration_ms INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(video_id, day_key))")
+        db.execSQL("""CREATE TABLE reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            video_id INTEGER,
+            content TEXT NOT NULL,
+            rating INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL
+        )""".trimIndent())
         listOf("全部分类", "我的最爱").forEachIndexed { index, name ->
             val values = ContentValues().apply { put("name", name); put("position", index) }
             db.insert("categories", null, values)
