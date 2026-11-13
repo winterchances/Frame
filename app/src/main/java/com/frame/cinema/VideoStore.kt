@@ -10,6 +10,19 @@ import android.net.Uri
  * Persistent native counterpart of the original myCinemaDB / myCinemaCats stores.
  * URI grants are persisted by MainActivity; all user-visible library state lives here.
  */
+data class ReviewEntry(
+    val id: Long,
+    val videoId: Long?,
+    val content: String,
+    val rating: Int = 0,
+    val createdAt: Long
+)
+
+data class LibraryBackup(
+    val videos: List<VideoItem>,
+    val reviews: List<ReviewEntry>
+)
+
 data class VideoItem(
     val id: Long,
     val uri: String,
@@ -31,7 +44,7 @@ data class VideoItem(
     val contentUri: Uri get() = Uri.parse(uri)
 }
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 3) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 4) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -70,6 +83,21 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             db.execSQL("CREATE TABLE watch_time_daily (video_id INTEGER NOT NULL, day_key TEXT NOT NULL, duration_ms INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(video_id, day_key))")
             db.execSQL("INSERT INTO watch_time_daily(video_id, day_key, duration_ms) SELECT -1, day_key, duration_ms FROM watch_time_daily_v2")
             db.execSQL("DROP TABLE watch_time_daily_v2")
+        }
+        if (oldVersion < 4) {
+            db.execSQL("""CREATE TABLE reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                video_id INTEGER,
+                content TEXT NOT NULL,
+                rating INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL
+            )""".trimIndent())
+            db.execSQL("""
+                INSERT INTO reviews(video_id, content, rating, created_at)
+                SELECT id, review, rating,
+                    CASE WHEN last_played_at > 0 THEN last_played_at ELSE added_at END
+                FROM videos WHERE TRIM(review) <> ''
+            """.trimIndent())
         }
     }
 
@@ -120,12 +148,13 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         } finally { writableDatabase.endTransaction() }
     }
 
-    @Synchronized fun replaceAll(videos: List<VideoItem>, categories: List<String>) {
+    @Synchronized fun replaceAll(videos: List<VideoItem>, categories: List<String>, reviews: List<ReviewEntry>? = null) {
         val db = writableDatabase
         db.beginTransaction()
         try {
             db.delete("videos", null, null)
             db.delete("watch_time_daily", null, null)
+            db.delete("reviews", null, null)
             db.delete("categories", null, null)
             videos.forEach { video ->
                 val values = ContentValues().apply {
@@ -144,10 +173,65 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("name", name); put("position", index)
                 })
             }
+            val restoredReviews = reviews ?: videos.filter { it.review.isNotBlank() }.map {
+                ReviewEntry(0L, it.id, it.review, it.rating, it.lastPlayedAt.takeIf { time -> time > 0L } ?: it.addedAt)
+            }
+            restoredReviews.forEach { review ->
+                val values = ContentValues().apply {
+                    if (review.id > 0L) put("id", review.id)
+                    if (review.videoId == null) putNull("video_id") else put("video_id", review.videoId)
+                    put("content", review.content)
+                    put("rating", review.rating.coerceIn(0, 5))
+                    put("created_at", review.createdAt)
+                }
+                db.insertWithOnConflict("reviews", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            }
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
         }
+    }
+
+    @Synchronized fun allReviews(): List<ReviewEntry> = readableDatabase.rawQuery(
+        "SELECT id, video_id, content, rating, created_at FROM reviews ORDER BY created_at DESC, id DESC", null
+    ).use { cursor ->
+        buildList {
+            while (cursor.moveToNext()) {
+                val videoIdIndex = cursor.getColumnIndexOrThrow("video_id")
+                add(
+                    ReviewEntry(
+                        id = cursor.getLong(cursor.getColumnIndexOrThrow("id")),
+                        videoId = if (cursor.isNull(videoIdIndex)) null else cursor.getLong(videoIdIndex),
+                        content = cursor.getString(cursor.getColumnIndexOrThrow("content")),
+                        rating = cursor.getInt(cursor.getColumnIndexOrThrow("rating")),
+                        createdAt = cursor.getLong(cursor.getColumnIndexOrThrow("created_at"))
+                    )
+                )
+            }
+        }
+    }
+
+    @Synchronized fun addReview(videoId: Long?, content: String, rating: Int, createdAt: Long): Long {
+        val values = ContentValues().apply {
+            if (videoId == null) putNull("video_id") else put("video_id", videoId)
+            put("content", content)
+            put("rating", rating.coerceIn(0, 5))
+            put("created_at", createdAt)
+        }
+        return writableDatabase.insert("reviews", null, values)
+    }
+
+    @Synchronized fun updateReview(id: Long, videoId: Long?, content: String, rating: Int) {
+        val values = ContentValues().apply {
+            if (videoId == null) putNull("video_id") else put("video_id", videoId)
+            put("content", content)
+            put("rating", rating.coerceIn(0, 5))
+        }
+        writableDatabase.update("reviews", values, "id=?", arrayOf(id.toString()))
+    }
+
+    @Synchronized fun deleteReview(id: Long) {
+        writableDatabase.delete("reviews", "id=?", arrayOf(id.toString()))
     }
 
     @Synchronized fun addWatchTime(videoId: Long, dayKey: String, durationMs: Long) {
@@ -188,8 +272,22 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.delete("watch_time_daily", null, null)
     }
 
-    @Synchronized fun delete(id: Long) { writableDatabase.delete("videos", "id=?", arrayOf(id.toString())) }
-    @Synchronized fun clear() { writableDatabase.delete("videos", null, null) }
+    @Synchronized fun delete(id: Long) {
+        writableDatabase.beginTransaction()
+        try {
+            writableDatabase.delete("reviews", "video_id=?", arrayOf(id.toString()))
+            writableDatabase.delete("videos", "id=?", arrayOf(id.toString()))
+            writableDatabase.setTransactionSuccessful()
+        } finally { writableDatabase.endTransaction() }
+    }
+    @Synchronized fun clear() {
+        writableDatabase.beginTransaction()
+        try {
+            writableDatabase.delete("reviews", null, null)
+            writableDatabase.delete("videos", null, null)
+            writableDatabase.setTransactionSuccessful()
+        } finally { writableDatabase.endTransaction() }
+    }
 
     @Synchronized fun categories(): List<String> = readableDatabase.rawQuery(
         "SELECT name FROM categories ORDER BY position", null
