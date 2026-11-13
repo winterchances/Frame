@@ -1915,13 +1915,14 @@ private fun RecordsPage(
     val recordsTitleHeightPx = remember { mutableIntStateOf(0) }
     val recordsStatsHeightPx = remember { mutableIntStateOf(0) }
     val recordsGapPx = with(LocalDensity.current) { 26.dp.toPx() }
+    val recordsOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val recordsScrollDistancePx = remember {
         derivedStateOf {
             when (listState.firstVisibleItemIndex) {
                 0 -> listState.firstVisibleItemScrollOffset.toFloat()
                 1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
                 2 -> (recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + recordsGapPx + with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + recordsGapPx + recordsOffscreenPx
             }
         }
     }
