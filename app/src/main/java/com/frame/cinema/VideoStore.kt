@@ -44,7 +44,7 @@ data class VideoItem(
     val contentUri: Uri get() = Uri.parse(uri)
 }
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 4) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 5) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -107,6 +107,22 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             """.trimIndent())
             db.execSQL("UPDATE videos SET review = '' WHERE TRIM(review) <> ''")
         }
+        if (oldVersion < 5) {
+            db.execSQL("""
+                UPDATE videos
+                SET rating = COALESCE(
+                    (
+                        SELECT rating FROM reviews
+                        WHERE reviews.video_id = videos.id AND reviews.rating > 0
+                        ORDER BY created_at ASC, id ASC
+                        LIMIT 1
+                    ),
+                    rating
+                )
+                WHERE rating = 0
+            """.trimIndent())
+            db.execSQL("UPDATE reviews SET rating = 0 WHERE rating <> 0")
+        }
     }
 
     @Synchronized fun allVideos(): List<VideoItem> = readableDatabase.rawQuery(
@@ -164,13 +180,28 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             db.delete("watch_time_daily", null, null)
             db.delete("reviews", null, null)
             db.delete("categories", null, null)
-            videos.forEach { video ->
+
+            val restoredReviews = reviews ?: videos.filter { it.review.isNotBlank() }.map {
+                ReviewEntry(0L, it.id, it.review, it.rating, it.lastPlayedAt.takeIf { time -> time > 0L } ?: it.addedAt)
+            }
+            val legacyRatings = restoredReviews
+                .filter { it.videoId != null && it.rating > 0 }
+                .groupBy { it.videoId!! }
+                .mapValues { (_, entries) ->
+                    entries.minWithOrNull(compareBy<ReviewEntry> { it.createdAt }.thenBy { it.id })?.rating ?: 0
+                }
+            val normalizedVideos = videos.map { video ->
+                if (video.rating > 0) video else video.copy(rating = legacyRatings[video.id] ?: 0)
+            }
+
+            normalizedVideos.forEach { video ->
                 val values = ContentValues().apply {
                     put("id", video.id); put("uri", video.uri); put("name", video.name)
                     put("size", video.size); put("date", video.date); put("added_at", video.addedAt)
                     put("progress", video.progress); put("status", video.status)
                     put("is_fav", if (video.isFav) 1 else 0); put("category", video.category)
-                    put("bg_index", video.bgIndex); put("review", ""); put("rating", video.rating)
+                    put("bg_index", video.bgIndex); put("review", "")
+                    put("rating", video.rating.coerceIn(0, 5))
                     put("duration_ms", video.durationMs); put("last_played_at", video.lastPlayedAt)
                     put("thumb_path", video.thumbPath)
                 }
@@ -181,15 +212,12 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("name", name); put("position", index)
                 })
             }
-            val restoredReviews = reviews ?: videos.filter { it.review.isNotBlank() }.map {
-                ReviewEntry(0L, it.id, it.review, it.rating, it.lastPlayedAt.takeIf { time -> time > 0L } ?: it.addedAt)
-            }
             restoredReviews.forEach { review ->
                 val values = ContentValues().apply {
                     if (review.id > 0L) put("id", review.id)
                     if (review.videoId == null) putNull("video_id") else put("video_id", review.videoId)
                     put("content", review.content)
-                    put("rating", review.rating.coerceIn(0, 5))
+                    put("rating", 0)
                     put("created_at", review.createdAt)
                 }
                 db.insertWithOnConflict("reviews", null, values, SQLiteDatabase.CONFLICT_REPLACE)

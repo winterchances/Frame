@@ -32,13 +32,22 @@ class NativeLibraryRepository(context: Context) {
 
     fun addReview(videoId: Long?, content: String, rating: Int) {
         val text = content.trim()
-        if (text.isNotEmpty()) store.addReview(videoId, text, rating, System.currentTimeMillis())
+        if (text.isNotEmpty()) {
+            store.addReview(videoId, text, 0, System.currentTimeMillis())
+            if (videoId != null && rating > 0) updateVideoRating(videoId, rating)
+        }
     }
 
     fun updateReview(id: Long, videoId: Long?, content: String, rating: Int) {
         val text = content.trim()
-        if (text.isNotEmpty()) store.updateReview(id, videoId, text, rating)
+        if (text.isNotEmpty()) store.updateReview(id, videoId, text, 0)
         else store.deleteReview(id)
+    }
+
+    fun updateVideoRating(id: Long, rating: Int) {
+        store.allVideos().firstOrNull { it.id == id }?.let { video ->
+            store.upsert(video.copy(rating = rating.coerceIn(0, 5)))
+        }
     }
 
     fun deleteReview(id: Long) = store.deleteReview(id)

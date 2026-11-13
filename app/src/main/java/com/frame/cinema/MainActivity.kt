@@ -238,11 +238,49 @@ private val ThemeTeal = Color(0xFF7FB5B1)
 private val MutedText = Color(0xFF888888)
 private val Glass = Color.White.copy(alpha = .85f)
 
+private fun buildFrameStarIcon(name: String, filled: Boolean): ImageVector =
+    ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
+        path(
+            fill = if (filled) SolidColor(ThemeTeal) else null,
+            stroke = SolidColor(ThemeTeal),
+            strokeLineWidth = 1.35f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round
+        ) {
+            moveTo(12f, 2.6f)
+            curveTo(12.35f, 2.6f, 12.58f, 2.82f, 12.74f, 3.16f)
+            lineTo(15.05f, 8.12f)
+            curveTo(15.18f, 8.38f, 15.42f, 8.56f, 15.71f, 8.6f)
+            lineTo(21.18f, 9.39f)
+            curveTo(21.58f, 9.45f, 21.74f, 9.94f, 21.45f, 10.23f)
+            lineTo(17.49f, 14.09f)
+            curveTo(17.28f, 14.29f, 17.19f, 14.57f, 17.24f, 14.85f)
+            lineTo(18.18f, 20.28f)
+            curveTo(18.25f, 20.68f, 17.83f, 20.98f, 17.47f, 20.79f)
+            lineTo(12.58f, 18.22f)
+            curveTo(12.32f, 18.08f, 12.02f, 18.08f, 11.76f, 18.22f)
+            lineTo(6.87f, 20.79f)
+            curveTo(6.51f, 20.98f, 6.09f, 20.68f, 6.16f, 20.28f)
+            lineTo(7.1f, 14.85f)
+            curveTo(7.15f, 14.57f, 7.06f, 14.29f, 6.85f, 14.09f)
+            lineTo(2.89f, 10.23f)
+            curveTo(2.6f, 9.94f, 2.76f, 9.45f, 3.16f, 9.39f)
+            lineTo(8.63f, 8.6f)
+            curveTo(8.92f, 8.56f, 9.16f, 8.38f, 9.29f, 8.12f)
+            lineTo(11.6f, 3.16f)
+            curveTo(11.76f, 2.82f, 11.99f, 2.6f, 12f, 2.6f)
+            close()
+        }
+    }.build()
+
+private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
+private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
+
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
-private enum class RecordSortMode { WATCHED, RATING, NAME }
+private enum class RecordSortMode { ADDED, NAME, WATCHED, RATING }
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -479,7 +517,7 @@ private fun FrameNativeApp(
         editReviewId = null
         editReviewVideoId = video?.id
         editReview = ""
-        editRating = 0
+        editRating = video?.rating ?: 0
         parentSheet = SheetType.NONE
         sheet = SheetType.NOTE
     }
@@ -488,7 +526,7 @@ private fun FrameNativeApp(
         editReviewVideoId = entry.videoId
         selected = videos.firstOrNull { it.id == entry.videoId }
         editReview = entry.content
-        editRating = entry.rating
+        editRating = 0
         parentSheet = SheetType.NONE
         sheet = SheetType.NOTE
     }
@@ -754,6 +792,7 @@ private fun FrameNativeApp(
                                 onSort = { sheet = SheetType.RECORD_SORT },
                                 onCreate = { startNewReview(it) },
                                 onEdit = { openReviewEditor(it) },
+                                onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
                                 onTargetHandled = { targetReviewId = null }
                             )
                         }
@@ -943,10 +982,16 @@ private fun FrameNativeApp(
                         Spacer(Modifier.height(10.dp))
                     }
                     SheetType.SORT -> SheetContent("视频排序") {
-                        SheetAction("按添加时间正序") { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按添加时间倒序") { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称正序（拼音及数字）") { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称倒序（拼音及数字）") { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        SortOptionAction(
+                            "按添加时间", sort == SortMode.ADDED, sortDirection,
+                            onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                            onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        )
+                        SortOptionAction(
+                            "按名称", sort == SortMode.NAME, sortDirection,
+                            onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                            onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        )
                     }
                     SheetType.GRID -> SheetContent("视图模式") {
                         SheetAction("2列大图（舒适）") { compact = false; sheet = SheetType.NONE }
@@ -1182,12 +1227,26 @@ private fun FrameNativeApp(
                         Spacer(Modifier.height(12.dp))
                     }
                     SheetType.RECORD_SORT -> SheetContent("记录排序") {
-                        SheetAction("按看完时间正序") { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按看完时间倒序") { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        SheetAction("按评分正序") { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按评分倒序") { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称正序（拼音及数字）") { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE }
-                        SheetAction("按名称倒序（拼音及数字）") { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        SortOptionAction(
+                            "按添加时间", recordSortMode == RecordSortMode.ADDED, recordSortDirection,
+                            onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                            onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        )
+                        SortOptionAction(
+                            "按名称", recordSortMode == RecordSortMode.NAME, recordSortDirection,
+                            onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                            onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        )
+                        SortOptionAction(
+                            "按看完时间", recordSortMode == RecordSortMode.WATCHED, recordSortDirection,
+                            onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                            onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        )
+                        SortOptionAction(
+                            "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
+                            onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                            onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                        )
                     }
                     SheetType.SEARCH -> Column(
                         Modifier.fillMaxWidth()
@@ -1322,14 +1381,16 @@ private fun FrameNativeApp(
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
+                        val canSetVideoRating = editReviewId == null &&
+                            editReviewVideoId != null &&
+                            reviewEntries.none { it.videoId == editReviewVideoId }
                         if (editReviewId == null && selected == null) {
                             val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (editReviewVideoId != null) Color(0xFFE5F5F0) else Color.White)
-                                        .border(1.dp, if (editReviewVideoId != null) Color(0xFFB9E5D8) else Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                        .background(if (editReviewVideoId != null) ThemeTeal else Color.White)
                                         .noRippleClickable {
                                             reviewVideoSearch = ""
                                             parentSheet = SheetType.NOTE
@@ -1339,7 +1400,7 @@ private fun FrameNativeApp(
                                 ) {
                                     Text(
                                         linkedVideo?.let { displayVideoName(it.name) } ?: "关联视频",
-                                        color = if (editReviewVideoId != null) ThemeTeal else MainText,
+                                        color = if (editReviewVideoId != null) Color.White else MainText,
                                         fontSize = 14.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
@@ -1350,19 +1411,22 @@ private fun FrameNativeApp(
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (editReviewVideoId == null) Color(0xFFE5F5F0) else Color.White)
-                                        .border(1.dp, if (editReviewVideoId == null) Color(0xFFB9E5D8) else Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
-                                        .noRippleClickable { editReviewVideoId = null },
+                                        .background(if (editReviewVideoId == null) ThemeTeal else Color.White)
+                                        .noRippleClickable { editReviewVideoId = null; editRating = 0 },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("不关联视频", color = if (editReviewVideoId == null) ThemeTeal else MainText, fontSize = 14.sp)
+                                    Text("不关联视频", color = if (editReviewVideoId == null) Color.White else MainText, fontSize = 14.sp)
                                 }
                             }
                             Spacer(Modifier.height(16.dp))
                         }
-                        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-                            (1..5).forEach { n ->
-                                Text("★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
+                        if (canSetVideoRating) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RatingStars(editRating, 30.dp, onRate = { editRating = it }, spacing = 5.dp)
                             }
                         }
                         BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
@@ -1371,12 +1435,15 @@ private fun FrameNativeApp(
                                 notify("先写下一些感想再保存")
                             } else {
                                 val entryId = editReviewId
-                                if (entryId == null) repository.addReview(editReviewVideoId, editReview, editRating)
-                                else repository.updateReview(entryId, editReviewVideoId, editReview, editRating)
+                                if (entryId == null) {
+                                    repository.addReview(editReviewVideoId, editReview, if (canSetVideoRating) editRating else 0)
+                                } else {
+                                    repository.updateReview(entryId, editReviewVideoId, editReview, 0)
+                                }
                                 refresh()
                                 sheet = SheetType.NONE
                             }
-                        }.padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                        }, contentAlignment = Alignment.Center) {
                             Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         }
                         if (editReviewId != null) {
@@ -1384,7 +1451,6 @@ private fun FrameNativeApp(
                                 Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp)
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(Color.White)
-                                    .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                                     .noRippleClickable {
                                         editReviewId?.let { repository.deleteReview(it) }
                                         refresh()
@@ -1436,6 +1502,7 @@ private fun FrameNativeApp(
                                             .clip(RoundedCornerShape(16.dp))
                                             .noRippleClickable {
                                                 editReviewVideoId = video.id
+                                                 editRating = video.rating
                                                 reviewVideoSearch = ""
                                                 parentSheet = SheetType.NONE
                                                 sheet = SheetType.NOTE
@@ -2299,6 +2366,7 @@ private fun RecordsPage(
     onSort: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
+    onRateVideo: (VideoItem, Int) -> Unit,
     onTargetHandled: () -> Unit
 ) {
     val listState = rememberLazyListState()
@@ -2328,15 +2396,18 @@ private fun RecordsPage(
             completed || entries.isNotEmpty()
         }.sortedWith { a, b ->
             val primary = when (sortMode) {
+                RecordSortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
                 RecordSortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
-                RecordSortMode.RATING -> {
-                    val aRating = reviewsByVideo[a.id]?.maxOfOrNull { it.rating } ?: a.rating
-                    val bRating = reviewsByVideo[b.id]?.maxOfOrNull { it.rating } ?: b.rating
-                    aRating.compareTo(bRating)
-                }
+                RecordSortMode.RATING -> a.rating.compareTo(b.rating)
                 RecordSortMode.WATCHED -> a.lastPlayedAt.compareTo(b.lastPlayedAt)
             }
-            val directed = if (sortDirection == SortDirection.ASCENDING) primary else -primary
+            val directed = if (sortMode == RecordSortMode.RATING && (a.rating == 0 || b.rating == 0)) {
+                when {
+                    a.rating == 0 && b.rating > 0 -> 1
+                    a.rating > 0 && b.rating == 0 -> -1
+                    else -> 0
+                }
+            } else if (sortDirection == SortDirection.ASCENDING) primary else -primary
             if (directed != 0) directed else {
                 val addedComparison = a.addedAt.compareTo(b.addedAt)
                 if (addedComparison != 0) addedComparison else a.id.compareTo(b.id)
@@ -2488,36 +2559,37 @@ private fun RecordsPage(
                                     if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
                                     fontSize = 12.sp, color = Color(0xFF999999)
                                 )
-                                val rating = entries.firstOrNull()?.rating ?: video.rating
                                 Row(
                                     Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        "★".repeat(rating.coerceIn(0, 5)) + "☆".repeat(5 - rating.coerceIn(0, 5)),
-                                        color = if (rating > 0) Color(0xFFFFB800) else Color(0xFFE0E0E0),
-                                        fontSize = 14.sp,
-                                        letterSpacing = 2.sp
-                                    )
+                                    RatingStars(video.rating, 14.dp, onRate = { onRateVideo(video, it) }, spacing = 0.dp)
                                     Spacer(Modifier.weight(1f))
-                                    Text(
-                                        "＋ 添加感想",
-                                        color = ThemeTeal,
-                                        fontSize = 12.sp,
-                                        maxLines = 1,
-                                        modifier = Modifier.noRippleClickable { onCreate(video) }
-                                    )
+                                    Box(
+                                        Modifier.size(28.dp).noRippleClickable { onCreate(video) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Outlined.Add, "添加感想", tint = ThemeTeal, modifier = Modifier.size(20.dp))
+                                    }
                                     if (entries.isNotEmpty()) {
+                                        val chevronRotation by animateFloatAsState(
+                                            targetValue = if (expanded) 0f else -90f,
+                                            animationSpec = tween(
+                                                durationMillis = if (expanded) 320 else 240,
+                                                easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                            ),
+                                            label = "record-video-chevron-" + video.id
+                                        )
                                         Box(
                                             Modifier.padding(start = 7.dp).size(28.dp)
                                                 .noRippleClickable { expandedVideoReviews[video.id] = !expanded },
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                                Icons.Outlined.ExpandMore,
                                                 if (expanded) "收起感想" else "展开感想",
                                                 tint = MutedText,
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.rotate(chevronRotation).size(20.dp)
                                             )
                                         }
                                     }
@@ -2574,9 +2646,6 @@ private fun RecordsPage(
                                             color = Color(0xFF999999), fontSize = 11.sp,
                                             modifier = Modifier.weight(1f)
                                         )
-                                        if (entry.rating > 0) {
-                                            Text("★".repeat(entry.rating.coerceIn(0, 5)), color = Color(0xFFFFB800), fontSize = 12.sp)
-                                        }
                                     }
                                     Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 5.dp))
                                 }
@@ -2630,9 +2699,6 @@ private fun RecordsPage(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                        }
-                        if (entry.rating > 0) {
-                            Text("★".repeat(entry.rating.coerceIn(0, 5)), color = Color(0xFFFFB800), fontSize = 13.sp, modifier = Modifier.padding(top = 5.dp))
                         }
                         AnimatedVisibility(
                             visible = expanded,
@@ -3434,6 +3500,79 @@ private fun ContextMenuAction(icon: ImageVector, label: String, danger: Boolean 
 }
 
 @Composable
+private fun RatingStars(
+    rating: Int,
+    size: androidx.compose.ui.unit.Dp,
+    onRate: ((Int) -> Unit)? = null,
+    spacing: androidx.compose.ui.unit.Dp = 2.dp
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(spacing), verticalAlignment = Alignment.CenterVertically) {
+        (1..5).forEach { value ->
+            Box(
+                Modifier.size(size + 8.dp).then(
+                    if (onRate != null) Modifier.noRippleClickable { onRate(value) } else Modifier
+                ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (value <= rating.coerceIn(0, 5)) FrameStarFilledIcon else FrameStarOutlineIcon,
+                    contentDescription = "评分 $value 星",
+                    tint = ThemeTeal,
+                    modifier = Modifier.size(size)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SortOptionAction(
+    label: String,
+    selected: Boolean,
+    direction: SortDirection,
+    onAscending: () -> Unit,
+    onDescending: () -> Unit
+) {
+    Surface(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+            .clip(RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            Modifier.fillMaxWidth().height(54.dp).padding(start = 18.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                Modifier.weight(1f),
+                color = MainText,
+                fontSize = 15.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+            )
+            Box(Modifier.size(36.dp).noRippleClickable(onAscending), contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Outlined.ArrowUpward,
+                    "正序",
+                    tint = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Box(Modifier.size(36.dp).noRippleClickable(onDescending), contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Outlined.ArrowDownward,
+                    "倒序",
+                    tint = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SheetContent(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         SheetHeading(title); content()
@@ -3447,7 +3586,7 @@ private fun SheetHeading(title: String) {
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
         color = MainText,
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 25.dp)
     )
 }
