@@ -1297,7 +1297,7 @@ private fun HomePage(
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Box(Modifier.graphicsLayer { alpha = titleAlpha }) {
+                Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlpha }) {
                     Header("首页", onSettings)
                 }
             }
@@ -1381,48 +1381,52 @@ private fun HomePage(
                 )
             }
             item(key = "home-recent-content") {
-                AnimatedVisibility(
-                    visible = recentExpanded,
-                    enter = expandVertically(
-                        tween(200, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                    ) + fadeIn(tween(150)),
-                    exit = shrinkVertically(
-                        tween(
-                            durationMillis = 300 + ((recent.size - 1).coerceAtLeast(0) * 60),
-                            easing = androidx.compose.animation.core.FastOutSlowInEasing
-                        )
-                    ) + fadeOut(
-                        tween(300 + ((recent.size - 1).coerceAtLeast(0) * 60))
-                    )
-                ) {
-                    Column(Modifier.fillMaxWidth()) {
-                        if (recent.isEmpty()) {
+                Column(Modifier.fillMaxWidth()) {
+                    if (recent.isEmpty()) {
+                        AnimatedVisibility(
+                            visible = recentExpanded,
+                            enter = expandVertically(tween(300)) + fadeIn(tween(220)),
+                            exit = shrinkVertically(tween(300)) + fadeOut(tween(220))
+                        ) {
                             EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
-                        } else {
-                            val cardOffsetPx = with(LocalDensity.current) { 24.dp.toPx() }
-                            recent.forEachIndexed { index, video ->
-                                val cardProgress = remember(video.id) {
-                                    androidx.compose.animation.core.Animatable(0f)
-                                }
-                                LaunchedEffect(recentExpanded, index, recent.size) {
-                                    val delayMs = if (recentExpanded) index * 60 else (recent.size - index - 1) * 60
-                                    if (delayMs > 0) delay(delayMs.toLong())
-                                    cardProgress.animateTo(
-                                        targetValue = if (recentExpanded) 1f else 0f,
+                        }
+                    } else {
+                        recent.forEachIndexed { index, video ->
+                            val collapseDelay = (recent.size - index - 1) * 60
+                            AnimatedVisibility(
+                                visible = recentExpanded,
+                                enter = expandVertically(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        delayMillis = index * 60,
+                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                    )
+                                ) + fadeIn(tween(durationMillis = 220, delayMillis = index * 60)) +
+                                    slideInVertically(
+                                        initialOffsetY = { it / 8 },
                                         animationSpec = tween(
                                             durationMillis = 300,
+                                            delayMillis = index * 60,
+                                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                        )
+                                    ),
+                                exit = shrinkVertically(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        delayMillis = collapseDelay,
+                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                    )
+                                ) + fadeOut(tween(durationMillis = 220, delayMillis = collapseDelay)) +
+                                    slideOutVertically(
+                                        targetOffsetY = { it / 8 },
+                                        animationSpec = tween(
+                                            durationMillis = 300,
+                                            delayMillis = collapseDelay,
                                             easing = androidx.compose.animation.core.FastOutSlowInEasing
                                         )
                                     )
-                                }
-                                Box(
-                                    Modifier.graphicsLayer {
-                                        alpha = cardProgress.value
-                                        translationY = (1f - cardProgress.value) * cardOffsetPx
-                                    }
-                                ) {
-                                    VideoRow(video, "${video.date} 添加") { onVideo(video) }
-                                }
+                            ) {
+                                VideoRow(video, "${video.date} 添加") { onVideo(video) }
                             }
                         }
                     }
@@ -1490,7 +1494,7 @@ private fun LibraryPage(
                 Modifier.fillMaxWidth()
                     .background(PageBg)
                     .statusBarsPadding()
-                    .padding(top = 10.dp, bottom = 10.dp)
+                    .padding(horizontal = 20.dp, top = 10.dp, bottom = 10.dp)
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
@@ -1690,7 +1694,7 @@ private fun RecordsPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
