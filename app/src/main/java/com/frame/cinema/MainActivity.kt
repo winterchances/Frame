@@ -683,7 +683,7 @@ private fun FrameNativeApp(
                             MainPage.LIBRARY -> LibraryPage(
                                 hazeState = hazeState,
                                 (if (sort == SortMode.NAME) {
-                                    videos.sortedWith { a, b -> compareNaturalVideoNames(a.name, b.name) }
+                                    videos.sortedWith { a, b -> compareNaturalVideoNames(a.name, b.name).takeIf { it != 0 } ?: b.addedAt.compareTo(a.addedAt) }
                                 } else {
                                     videos.sortedBy { it.addedAt }
                                 }).let { ordered -> if (sortDirection == SortDirection.DESCENDING) ordered.reversed() else ordered }, categories, status, category, compact,
@@ -2126,7 +2126,7 @@ private fun RecordsPage(
                     entries.any { it.content.contains(searchQuery, true) })
         }.let { list ->
             val ordered = when (sortMode) {
-                RecordSortMode.NAME -> list.sortedWith { a, b -> compareNaturalVideoNames(a.name, b.name) }
+                RecordSortMode.NAME -> list.sortedWith { a, b -> compareNaturalVideoNames(a.name, b.name).takeIf { it != 0 } ?: b.addedAt.compareTo(a.addedAt) }
                 RecordSortMode.RATING -> list.sortedBy { video ->
                     reviewsByVideo[video.id]?.maxOfOrNull { it.rating } ?: video.rating
                 }
