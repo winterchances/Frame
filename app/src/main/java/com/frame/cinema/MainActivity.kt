@@ -2289,11 +2289,11 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(FrameTimelineClockIcon, null, tint = Color(0xFF888888), modifier = Modifier.size(12.dp))
-                        Text(formatClock(video.durationMs), fontSize = 12.sp, lineHeight = 14.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                        Text(formatClock(video.durationMs), fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(FrameTimelinePlayIcon, null, tint = Color(0xFF888888), modifier = Modifier.size(12.dp))
-                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 12.sp, lineHeight = 14.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true, style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                     }
                 }
             }
