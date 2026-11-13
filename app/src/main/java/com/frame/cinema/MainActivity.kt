@@ -2450,6 +2450,7 @@ private fun RecordsPage(
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
                     val entries = reviewsByVideo[video.id].orEmpty().sortedByDescending { it.createdAt }
                     val completed = video.status == "watched" || video.progress >= 100f
+                    val expanded = expandedVideoReviews[video.id] ?: true
                     Column(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
@@ -2488,50 +2489,77 @@ private fun RecordsPage(
                                     fontSize = 12.sp, color = Color(0xFF999999)
                                 )
                                 val rating = entries.firstOrNull()?.rating ?: video.rating
-                                Text(
-                                    "★".repeat(rating.coerceIn(0, 5)) + "☆".repeat(5 - rating.coerceIn(0, 5)),
-                                    color = if (rating > 0) Color(0xFFFFB800) else Color(0xFFE0E0E0),
-                                    fontSize = 14.sp,
-                                    letterSpacing = 2.sp
-                                )
-                            }
-                        }
-                        if (entries.isEmpty()) {
-                            Row(
-                                Modifier.fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFF9F9FB))
-                                    .noRippleClickable { onCreate(video) }
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(Modifier.width(3.dp).height(20.dp).clip(CircleShape).background(Color(0xFFE0E0E0)))
-                                Text(
-                                    "点击添加你的观影感想...",
-                                    color = Color(0xFFB0B0B0),
-                                    fontSize = 13.sp,
-                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                                    modifier = Modifier.weight(1f).padding(start = 12.dp)
-                                )
-                                Icon(Icons.Outlined.Add, null, tint = MutedText, modifier = Modifier.size(18.dp))
-                            }
-                        } else {
-                            entries.forEach { entry ->
-                                val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
-                                val entryHighlight = entry.id == targetReviewId
-                                LaunchedEffect(targetReviewId) {
-                                    if (entryHighlight) {
-                                        delay(180)
-                                        entryBringIntoView.bringIntoView()
-                                        delay(1500)
-                                        onTargetHandled()
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "★".repeat(rating.coerceIn(0, 5)) + "☆".repeat(5 - rating.coerceIn(0, 5)),
+                                        color = if (rating > 0) Color(0xFFFFB800) else Color(0xFFE0E0E0),
+                                        fontSize = 14.sp,
+                                        letterSpacing = 2.sp
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Text(
+                                        "＋ 添加感想",
+                                        color = ThemeTeal,
+                                        fontSize = 12.sp,
+                                        maxLines = 1,
+                                        modifier = Modifier.noRippleClickable { onCreate(video) }
+                                    )
+                                    if (entries.isNotEmpty()) {
+                                        Box(
+                                            Modifier.padding(start = 7.dp).size(28.dp)
+                                                .noRippleClickable { expandedVideoReviews[video.id] = !expanded },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                                if (expanded) "收起感想" else "展开感想",
+                                                tint = MutedText,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                 }
-                                val entryBackground by androidx.compose.animation.animateColorAsState(
-                                    if (entryHighlight) Color(0xFFDDF3EC) else Color(0xFFF9F9FB),
-                                    animationSpec = tween(420),
-                                    label = "record-review-highlight-${entry.id}"
-                                )
+                            }
+                        }
+                        entries.forEachIndexed { index, entry ->
+                            val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
+                            val entryHighlight = entry.id == targetReviewId
+                            val expandDelay = index * 60
+                            val collapseDelay = (entries.size - index - 1) * 60
+                            LaunchedEffect(targetReviewId, expanded) {
+                                if (entryHighlight && expanded) {
+                                    delay(360 + expandDelay.toLong())
+                                    entryBringIntoView.bringIntoView()
+                                    delay(1500)
+                                    onTargetHandled()
+                                }
+                            }
+                            val entryBackground by androidx.compose.animation.animateColorAsState(
+                                if (entryHighlight) Color(0xFFDDF3EC) else Color(0xFFF9F9FB),
+                                animationSpec = tween(420),
+                                label = "record-review-highlight-${entry.id}"
+                            )
+                            AnimatedVisibility(
+                                visible = expanded,
+                                enter = expandVertically(
+                                    animationSpec = tween(300, delayMillis = expandDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                ) + fadeIn(tween(220, delayMillis = expandDelay)) +
+                                    slideInVertically(
+                                        initialOffsetY = { it / 8 },
+                                        animationSpec = tween(300, delayMillis = expandDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                    ),
+                                exit = shrinkVertically(
+                                    animationSpec = tween(300, delayMillis = collapseDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                ) + fadeOut(tween(220, delayMillis = collapseDelay)) +
+                                    slideOutVertically(
+                                        targetOffsetY = { it / 8 },
+                                        animationSpec = tween(300, delayMillis = collapseDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                    ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 Column(
                                     Modifier.fillMaxWidth().padding(bottom = 8.dp)
                                         .bringIntoViewRequester(entryBringIntoView)
@@ -2553,12 +2581,6 @@ private fun RecordsPage(
                                     Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 5.dp))
                                 }
                             }
-                            Text(
-                                "＋ 添加感想",
-                                color = ThemeTeal,
-                                fontSize = 12.sp,
-                                modifier = Modifier.align(Alignment.End).noRippleClickable { onCreate(video) }.padding(top = 2.dp, end = 2.dp)
-                            )
                         }
                     }
                 }
