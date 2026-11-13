@@ -1699,13 +1699,13 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
             }
         }
     }
-    val activeGroupIndex by remember {
+    val activeGroupIndex by remember(groupHeaderIndices) {
         derivedStateOf {
             groupHeaderIndices.indexOfLast { listState.firstVisibleItemIndex >= it }
         }
     }
     var headerHeightPx by remember { mutableIntStateOf(0) }
-    val nextHeaderOffset by remember {
+    val nextHeaderOffset by remember(activeGroupIndex, groupHeaderIndices) {
         derivedStateOf {
             val nextIndex = groupHeaderIndices.getOrNull(activeGroupIndex + 1)
             if (nextIndex == null) Int.MAX_VALUE
@@ -1784,7 +1784,9 @@ private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int)
                 .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
         )
     }
-}@Composable
+}
+
+@Composable
 private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
