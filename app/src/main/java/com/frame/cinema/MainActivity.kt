@@ -537,7 +537,21 @@ private fun FrameNativeApp(
                 val root = com.google.gson.JsonParser.parseString(json)
                 val backup = if (root.isJsonArray) {
                     val type = object : com.google.gson.reflect.TypeToken<List<VideoItem>>() {}.type
-                    LibraryBackup(gson.fromJson<List<VideoItem>>(root, type), emptyList())
+                    run {
+                        val legacyVideos = gson.fromJson<List<VideoItem>>(root, type)
+                        LibraryBackup(
+                            legacyVideos,
+                            legacyVideos.filter { it.review.isNotBlank() }.map {
+                                ReviewEntry(
+                                    id = 0L,
+                                    videoId = it.id,
+                                    content = it.review,
+                                    rating = it.rating,
+                                    createdAt = it.lastPlayedAt.takeIf { time -> time > 0L } ?: it.addedAt
+                                )
+                            }
+                        )
+                    }
                 } else {
                     gson.fromJson(root, LibraryBackup::class.java)
                         ?: throw com.google.gson.JsonSyntaxException("JSON 内容为空")
@@ -1026,6 +1040,13 @@ private fun FrameNativeApp(
                             SheetAction("$videoName · ${SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt))}") {
                                 openReviewEditor(entry)
                             }
+                        }
+                        videos.filter { video ->
+                            (video.status == "watched" || video.progress >= 100f) &&
+                                video.name.contains(recordSearch, true) &&
+                                reviewEntries.none { it.videoId == video.id }
+                        }.take(20).forEach { video ->
+                            SheetAction(displayVideoName(video.name)) { startNewReview(video) }
                         }
                         Spacer(Modifier.height(24.dp))
                     }
