@@ -764,8 +764,8 @@ private fun FrameNativeApp(
             modifier = Modifier.zIndex(4f)
         ) {
             Box(
-                Modifier.fillMaxSize().zIndex(2f).blur(8.dp * clearDialogProgress)
-                    .background(Color.Black.copy(alpha = .4f * (1f - clearDialogProgress)))
+                Modifier.fillMaxSize().zIndex(2f).blur(8.dp * maxOf(clearDialogProgress, importDialogProgress))
+                    .background(Color.Black.copy(alpha = .4f * (1f - maxOf(clearDialogProgress, importDialogProgress))))
                     .clickable(
                         indication = null,
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -824,7 +824,7 @@ private fun FrameNativeApp(
                                 Text("导入所有数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
-                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { showClearDataDialog = true }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
                         }
@@ -1173,7 +1173,7 @@ private fun FrameNativeApp(
                 val maxMenuY = (maxHeight - menuHeight - safeBottom).coerceAtLeast(safeTop)
                 val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
                     else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .4f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 Box(
                     Modifier.offset(x = cardLeft, y = cardTop)
                         .width(cardWidth)
