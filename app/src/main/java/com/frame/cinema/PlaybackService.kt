@@ -1,5 +1,7 @@
 package com.frame.cinema
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.os.Bundle
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -62,7 +64,19 @@ class PlaybackService : MediaSessionService() {
                 .add(closeCommand)
                 .build()
 
+        val openPlayerIntent = Intent(this, MainActivity::class.java).apply {
+            action = MainActivity.ACTION_OPEN_PLAYER
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val sessionActivity = PendingIntent.getActivity(
+            this,
+            1001,
+            openPlayerIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         mediaSession = MediaSession.Builder(this, player)
+            .setSessionActivity(sessionActivity)
             .setMediaButtonPreferences(mediaButtons)
             .setCallback(object : MediaSession.Callback {
                 override fun onConnect(
