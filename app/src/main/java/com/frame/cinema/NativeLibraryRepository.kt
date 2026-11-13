@@ -27,7 +27,21 @@ class NativeLibraryRepository(context: Context) {
     private val thumbnailExecutor = Executors.newSingleThreadExecutor()
 
     fun videos(): List<VideoItem> = store.allVideos()
+    fun reviews(): List<ReviewEntry> = store.allReviews()
     fun categories(): List<String> = store.categories()
+
+    fun addReview(videoId: Long?, content: String, rating: Int) {
+        val text = content.trim()
+        if (text.isNotEmpty()) store.addReview(videoId, text, rating, System.currentTimeMillis())
+    }
+
+    fun updateReview(id: Long, videoId: Long?, content: String, rating: Int) {
+        val text = content.trim()
+        if (text.isNotEmpty()) store.updateReview(id, videoId, text, rating)
+        else store.deleteReview(id)
+    }
+
+    fun deleteReview(id: Long) = store.deleteReview(id)
 
     fun importUris(uris: List<Uri>, onMetadataReady: () -> Unit = {}): Int {
         var added = 0
@@ -93,14 +107,14 @@ class NativeLibraryRepository(context: Context) {
 
     fun update(item: VideoItem) = store.upsert(item)
 
-    fun replaceAll(items: List<VideoItem>) {
+    fun replaceAll(items: List<VideoItem>, reviews: List<ReviewEntry>? = null) {
         val oldThumbnails = store.allVideos().mapNotNull { it.thumbPath }.toSet()
         val restored = items.map { item ->
             item.copy(thumbPath = item.thumbPath?.takeIf { path -> java.io.File(path).isFile })
         }
         val retainedThumbnails = restored.mapNotNull { it.thumbPath }.toSet()
         val restoredCategories = (listOf("全部分类", "我的最爱") + restored.map { it.category }).distinct()
-        store.replaceAll(restored, restoredCategories)
+        store.replaceAll(restored, restoredCategories, reviews)
         (oldThumbnails - retainedThumbnails).forEach { ThumbnailStore.delete(app, it) }
     }
 
