@@ -1562,6 +1562,18 @@ private fun LibraryPage(
                     .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .statusBarsPadding()
+                    .drawBehind {
+                        val shadowHeight = 32.dp.toPx()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
+                                startY = size.height,
+                                endY = size.height + shadowHeight
+                            ),
+                            topLeft = Offset(0f, size.height),
+                            size = Size(size.width, shadowHeight)
+                        )
+                    }
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -1659,18 +1671,6 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                     .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .statusBarsPadding()
-                    .drawBehind {
-                        val shadowHeight = 32.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + shadowHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, shadowHeight)
-                        )
-                    }
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
