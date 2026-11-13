@@ -34,6 +34,8 @@ import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeIn
@@ -371,6 +373,8 @@ private fun FrameNativeApp(
     var showFab by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var recordSearch by remember { mutableStateOf("") }
+    var reviewVideoSearch by remember { mutableStateOf("") }
+    var targetReviewId by remember { mutableStateOf<Long?>(null) }
     var recordSortMode by remember { mutableStateOf(RecordSortMode.WATCHED) }
     var recordSortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
     var editName by remember { mutableStateOf("") }
@@ -715,13 +719,15 @@ private fun FrameNativeApp(
                                 hazeState = hazeState,
                                 videos = videos,
                                 reviews = reviewEntries,
-                                searchQuery = recordSearch,
+                                targetReviewId = targetReviewId,
                                 sortMode = recordSortMode,
                                 sortDirection = recordSortDirection,
                                 onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
                                 onSort = { sheet = SheetType.RECORD_SORT },
                                 onCreate = { startNewReview() },
-                                onEdit = { openReviewEditor(it) }
+                                onEdit = { openReviewEditor(it) },
+                                onLocateReview = { targetReviewId = it },
+                                onTargetHandled = { targetReviewId = null }
                             )
                         }
                     }
@@ -1078,11 +1084,6 @@ private fun FrameNativeApp(
                             val videoName = videos.firstOrNull { it.id == entry.videoId }?.name.orEmpty()
                             entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
                         }.take(30)
-                        val matchingVideosWithoutReviews = if (recordQuery.isBlank()) emptyList() else videos.filter { video ->
-                            (video.status == "watched" || video.progress >= 100f) &&
-                                displayVideoName(video.name).contains(recordQuery, true) &&
-                                reviewEntries.none { it.videoId == video.id }
-                        }.take((30 - matchingReviewEntries.size).coerceAtLeast(0))
                         matchingReviewEntries.forEach { entry ->
                             key("review_search_${entry.id}") {
                                 val video = videos.firstOrNull { it.id == entry.videoId }
@@ -1096,8 +1097,9 @@ private fun FrameNativeApp(
                                             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                             .clip(RoundedCornerShape(16.dp))
                                             .noRippleClickable {
-                                                openReviewEditor(entry)
-                                                parentSheet = SheetType.RECORD_SEARCH
+                                                targetReviewId = entry.id
+                                                recordSearch = ""
+                                                sheet = SheetType.NONE
                                             },
                                         shape = RoundedCornerShape(16.dp),
                                         color = Color.White,
@@ -1144,57 +1146,6 @@ private fun FrameNativeApp(
                                                         modifier = Modifier.padding(top = 3.dp)
                                                     )
                                                 }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        matchingVideosWithoutReviews.forEach { video ->
-                            key("video_search_${video.id}") {
-                                AnimatedVisibility(
-                                    visible = true,
-                                    enter = fadeIn(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) +
-                                        androidx.compose.animation.slideInVertically(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) { it / 10 }
-                                ) {
-                                    Surface(
-                                        Modifier.fillMaxWidth().padding(top = 12.dp)
-                                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .noRippleClickable {
-                                                startNewReview(video)
-                                                parentSheet = SheetType.RECORD_SEARCH
-                                            },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = Color.White,
-                                        shadowElevation = 0.dp
-                                    ) {
-                                        Row(
-                                            Modifier.fillMaxWidth().padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            Box(
-                                                Modifier.size(width = 84.dp, height = 58.dp)
-                                                    .clip(RoundedCornerShape(10.dp))
-                                                    .background(PosterBrush(video.bgIndex))
-                                            ) { Thumbnail(video, Modifier.fillMaxSize()) }
-                                            Column(Modifier.weight(1f)) {
-                                                Text(
-                                                    displayVideoName(video.name),
-                                                    color = MainText,
-                                                    fontSize = 15.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    lineHeight = 21.sp,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    "尚未写下感想 · 点击新增",
-                                                    color = MutedText,
-                                                    fontSize = 12.sp,
-                                                    modifier = Modifier.padding(top = 4.dp)
-                                                )
                                             }
                                         }
                                     }
@@ -1344,28 +1295,45 @@ private fun FrameNativeApp(
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
-                        Row(
-                            Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text("关联视频", color = MutedText, fontSize = 12.sp)
-                                Text(
-                                    editReviewVideoId?.let { id -> videos.firstOrNull { it.id == id }?.name } ?: "不关联视频",
-                                    color = MainText, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
-                                )
+                        if (editReviewId == null && selected == null) {
+                            val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(
+                                    Modifier.weight(1f).height(48.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (editReviewVideoId != null) Color(0xFFE5F5F0) else Color.White)
+                                        .border(1.dp, if (editReviewVideoId != null) Color(0xFFB9E5D8) else Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                        .noRippleClickable {
+                                            reviewVideoSearch = ""
+                                            parentSheet = SheetType.NOTE
+                                            sheet = SheetType.REVIEW_VIDEO_PICKER
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        linkedVideo?.let { displayVideoName(it.name) } ?: "关联视频",
+                                        color = if (editReviewVideoId != null) ThemeTeal else MainText,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
+                                    )
+                                }
+                                Box(
+                                    Modifier.weight(1f).height(48.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (editReviewVideoId == null) Color(0xFFE5F5F0) else Color.White)
+                                        .border(1.dp, if (editReviewVideoId == null) Color(0xFFB9E5D8) else Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                        .noRippleClickable { editReviewVideoId = null },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("不关联视频", color = if (editReviewVideoId == null) ThemeTeal else MainText, fontSize = 14.sp)
+                                }
                             }
-                            Text("选择", color = ThemeTeal, fontSize = 14.sp, modifier = Modifier.noRippleClickable {
-                                parentSheet = SheetType.NOTE
-                                sheet = SheetType.REVIEW_VIDEO_PICKER
-                            }.padding(8.dp))
-                            if (editReviewVideoId != null) {
-                                Text("取消关联", color = MutedText, fontSize = 12.sp, modifier = Modifier.noRippleClickable {
-                                    editReviewVideoId = null
-                                }.padding(start = 6.dp, end = 4.dp))
-                            }
+                            Spacer(Modifier.height(16.dp))
                         }
-                        Row(Modifier.fillMaxWidth().padding(bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
                             (1..5).forEach { n ->
                                 Text("★", color = if (n <= editRating) Color(0xFFFFB800) else Color(0xFFE0E0E0), fontSize = 32.sp, modifier = Modifier.noRippleClickable { editRating = n })
                             }
@@ -1393,18 +1361,76 @@ private fun FrameNativeApp(
                         }
                         Spacer(Modifier.height(24.dp))
                     }
-                    SheetType.REVIEW_VIDEO_PICKER -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                        SheetHeading("关联到视频")
-                        SheetAction("不关联视频") {
-                            editReviewVideoId = null
-                            parentSheet = SheetType.NONE
-                            sheet = SheetType.NOTE
-                        }
-                        videos.sortedBy { it.name.lowercase(Locale.getDefault()) }.forEach { video ->
-                            SheetAction(displayVideoName(video.name)) {
-                                editReviewVideoId = video.id
-                                parentSheet = SheetType.NONE
-                                sheet = SheetType.NOTE
+                    SheetType.REVIEW_VIDEO_PICKER -> Column(
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+                            .animateContentSize(tween(320, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)))
+                    ) {
+                        SheetHeading("关联到")
+                        BasicTextField(
+                            reviewVideoSearch,
+                            { reviewVideoSearch = it },
+                            Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                                .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                .padding(15.dp),
+                            singleLine = true,
+                            decorationBox = { inner ->
+                                if (reviewVideoSearch.isEmpty()) Text("搜索要关联的视频...", color = MutedText, fontSize = 15.sp)
+                                inner()
+                            },
+                            textStyle = TextStyle(fontSize = 15.sp, color = MainText)
+                        )
+                        val query = reviewVideoSearch.trim()
+                        val matchingVideos = if (query.isBlank()) emptyList() else videos.filter {
+                            displayVideoName(it.name).contains(query, true)
+                        }.take(30)
+                        matchingVideos.forEach { video ->
+                            key("review_link_${video.id}") {
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = fadeIn(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) +
+                                        slideInVertically(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) { it / 10 }
+                                ) {
+                                    Surface(
+                                        Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .noRippleClickable {
+                                                editReviewVideoId = video.id
+                                                reviewVideoSearch = ""
+                                                parentSheet = SheetType.NONE
+                                                sheet = SheetType.NOTE
+                                            },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color.White,
+                                        shadowElevation = 0.dp
+                                    ) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                Modifier.size(width = 84.dp, height = 58.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(PosterBrush(video.bgIndex))
+                                            ) { Thumbnail(video, Modifier.fillMaxSize()) }
+                                            Text(
+                                                displayVideoName(video.name),
+                                                color = MainText,
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                lineHeight = 21.sp,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                         Spacer(Modifier.height(24.dp))
@@ -2230,13 +2256,15 @@ private fun RecordsPage(
     hazeState: HazeState,
     videos: List<VideoItem>,
     reviews: List<ReviewEntry>,
-    searchQuery: String,
+    targetReviewId: Long?,
     sortMode: RecordSortMode,
     sortDirection: SortDirection,
     onSearch: () -> Unit,
     onSort: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
-    onEdit: (ReviewEntry) -> Unit
+    onEdit: (ReviewEntry) -> Unit,
+    onLocateReview: (Long) -> Unit,
+    onTargetHandled: () -> Unit
 ) {
     val listState = rememberLazyListState()
     val titleAlphaState = remember {
@@ -2256,13 +2284,11 @@ private fun RecordsPage(
     val reviewsByVideo = remember(reviews) {
         reviews.filter { it.videoId != null }.groupBy { it.videoId!! }
     }
-    val displayVideos = remember(videos, reviews, searchQuery, sortMode, sortDirection) {
+    val displayVideos = remember(videos, reviews, sortMode, sortDirection) {
         videos.filter { video ->
             val completed = video.status == "watched" || video.progress >= 100f
             val entries = reviews.filter { it.videoId == video.id }
-            (completed || entries.isNotEmpty()) &&
-                (searchQuery.isBlank() || video.name.contains(searchQuery, true) ||
-                    entries.any { it.content.contains(searchQuery, true) })
+            completed || entries.isNotEmpty()
         }.sortedWith { a, b ->
             val primary = when (sortMode) {
                 RecordSortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
@@ -2280,11 +2306,20 @@ private fun RecordsPage(
             }
         }
     }
-    val standaloneReviews = remember(reviews, searchQuery) {
-        reviews.filter { it.videoId == null && (searchQuery.isBlank() || it.content.contains(searchQuery, true)) }
-            .sortedByDescending { it.createdAt }
+    val standaloneReviews = remember(reviews) {
+        reviews.filter { it.videoId == null }.sortedByDescending { it.createdAt }
     }
     val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
+    LaunchedEffect(targetReviewId, displayVideos, standaloneReviews) {
+        val targetId = targetReviewId ?: return@LaunchedEffect
+        val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
+        if (videoIndex >= 0) listState.animateScrollToItem(3 + videoIndex)
+        else {
+            val standaloneIndex = standaloneReviews.indexOfFirst { it.id == targetId }
+            if (standaloneIndex >= 0) listState.animateScrollToItem(3 + displayVideos.size + standaloneIndex)
+            else onTargetHandled()
+        }
+    }
     val watchedCount = completedVideos.size
     val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
     val reviewedCount = reviews.size
@@ -2441,10 +2476,26 @@ private fun RecordsPage(
                             }
                         } else {
                             entries.forEach { entry ->
+                                val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
+                                val entryHighlight = entry.id == targetReviewId
+                                LaunchedEffect(targetReviewId) {
+                                    if (entryHighlight) {
+                                        delay(180)
+                                        entryBringIntoView.bringIntoView()
+                                        delay(1500)
+                                        onTargetHandled()
+                                    }
+                                }
+                                val entryBackground by androidx.compose.animation.animateColorAsState(
+                                    if (entryHighlight) Color(0xFFDDF3EC) else Color(0xFFF9F9FB),
+                                    animationSpec = tween(420),
+                                    label = "record-review-highlight-${entry.id}"
+                                )
                                 Column(
                                     Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                        .bringIntoViewRequester(entryBringIntoView)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFFF9F9FB))
+                                        .background(entryBackground)
                                         .noRippleClickable { onEdit(entry) }
                                         .padding(12.dp)
                                 ) {
@@ -2471,13 +2522,29 @@ private fun RecordsPage(
                     }
                 }
                 items(standaloneReviews, key = { "review_${it.id}" }) { entry ->
+                    val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
+                    val entryHighlight = entry.id == targetReviewId
+                    LaunchedEffect(targetReviewId) {
+                        if (entryHighlight) {
+                            delay(180)
+                            entryBringIntoView.bringIntoView()
+                            delay(1500)
+                            onTargetHandled()
+                        }
+                    }
+                    val entryBackground by androidx.compose.animation.animateColorAsState(
+                        if (entryHighlight) Color(0xFFDDF3EC) else Color.White,
+                        animationSpec = tween(420),
+                        label = "standalone-review-highlight-${entry.id}"
+                    )
                     Column(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 16.dp)
                             .shadow(6.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color.White)
+                            .bringIntoViewRequester(entryBringIntoView)
+                            .background(entryBackground)
                             .noRippleClickable { onEdit(entry) }
                             .padding(16.dp)
                     ) {
