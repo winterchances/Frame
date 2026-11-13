@@ -1562,18 +1562,6 @@ private fun LibraryPage(
                     .background(PageBg)
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                     .statusBarsPadding()
-                    .drawBehind {
-                        val shadowHeight = 32.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.02f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + shadowHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, shadowHeight)
-                        )
-                    }
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -1621,6 +1609,19 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                             Modifier.fillMaxWidth()
                                 .background(PageBg)
                                 .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                                .drawBehind {
+                                    val shadowHeight = 24.dp.toPx()
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.025f)),
+                                            startY = size.height - shadowHeight,
+                                            endY = size.height
+                                        ),
+                                        topLeft = Offset(0f, size.height - shadowHeight),
+                                        size = Size(size.width, shadowHeight)
+                                    )
+                                }
+                                .padding(top = if (showTopBar) WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 46.dp else 0.dp)
                         ) {
                             Text(
                                 label,
