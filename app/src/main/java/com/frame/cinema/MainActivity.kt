@@ -2578,8 +2578,11 @@ private fun RecordsPage(
                                         val chevronRotation by animateFloatAsState(
                                             targetValue = if (expanded) 0f else -90f,
                                             animationSpec = tween(
-                                                durationMillis = if (expanded) 320 else 240,
-                                                easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                                durationMillis = if (expanded) 300 else 250,
+                                                easing = if (expanded)
+                                                    androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)
+                                                else
+                                                    androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
                                             ),
                                             label = "record-video-chevron-" + video.id
                                         )
