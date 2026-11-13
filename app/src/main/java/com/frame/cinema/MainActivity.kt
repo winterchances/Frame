@@ -1283,15 +1283,23 @@ private fun HomePage(
     val recent = videos.sortedByDescending { it.addedAt }.take(6)
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
+    val titleAlpha by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+        }
+    }
     val showTopBar by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Header("首页", onSettings)
+                Box(Modifier.graphicsLayer { alpha = titleAlpha }) {
+                    Header("首页", onSettings)
+                }
             }
             item(key = "home-stat-panel") {
                 Column(
@@ -1376,37 +1384,40 @@ private fun HomePage(
                 AnimatedVisibility(
                     visible = recentExpanded,
                     enter = expandVertically(
-                        tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                    ) + fadeIn(tween(250)),
+                        tween(200, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    ) + fadeIn(tween(150)),
                     exit = shrinkVertically(
-                        tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                    ) + fadeOut(tween(200))
+                        tween(
+                            durationMillis = 300 + ((recent.size - 1).coerceAtLeast(0) * 60),
+                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                        )
+                    ) + fadeOut(tween(600))
                 ) {
                     Column(Modifier.fillMaxWidth()) {
                         if (recent.isEmpty()) {
                             EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
                         } else {
+                            val cardOffsetPx = with(LocalDensity.current) { 24.dp.toPx() }
                             recent.forEachIndexed { index, video ->
-                                AnimatedVisibility(
-                                    visible = recentExpanded,
-                                    enter = fadeIn(tween(200, delayMillis = index * 40)) +
-                                        slideInVertically(
-                                            animationSpec = tween(
-                                                200,
-                                                delayMillis = index * 40,
-                                                easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                            ),
-                                            initialOffsetY = { it / 4 }
-                                        ),
-                                    exit = fadeOut(
-                                        tween(150, delayMillis = (recent.size - index - 1) * 30)
-                                    ) + slideOutVertically(
+                                val cardProgress = remember(video.id) {
+                                    androidx.compose.animation.core.Animatable(0f)
+                                }
+                                LaunchedEffect(recentExpanded, index, recent.size) {
+                                    val delayMs = if (recentExpanded) index * 60 else (recent.size - index - 1) * 60
+                                    if (delayMs > 0) delay(delayMs.toLong())
+                                    cardProgress.animateTo(
+                                        targetValue = if (recentExpanded) 1f else 0f,
                                         animationSpec = tween(
-                                            150,
-                                            delayMillis = (recent.size - index - 1) * 30
-                                        ),
-                                        targetOffsetY = { it / 6 }
+                                            durationMillis = 300,
+                                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                        )
                                     )
+                                }
+                                Box(
+                                    Modifier.graphicsLayer {
+                                        alpha = cardProgress.value
+                                        translationY = (1f - cardProgress.value) * cardOffsetPx
+                                    }
                                 ) {
                                     VideoRow(video, "${video.date} 添加") { onVideo(video) }
                                 }
@@ -1419,34 +1430,15 @@ private fun HomePage(
         }
         AnimatedVisibility(
             visible = showTopBar,
-            enter = fadeIn(tween(250)) + slideInVertically { -it },
-            exit = fadeOut(tween(250)) + slideOutVertically { -it },
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tints = emptyList(),
-                            blurRadius = 20.dp,
-                            noiseFactor = 0f
-                        )
-                    )
-                    .drawBehind {
-                        val fogHeight = 40.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(PageBg, PageBg.copy(alpha = 0.8f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + fogHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, fogHeight)
-                        )
-                    }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .background(PageBg)
+                    .statusBarsPadding()
+                    .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
@@ -1465,9 +1457,10 @@ private fun LibraryPage(
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit
 ) {
     val listState = rememberLazyListState()
-    val showTopBar by remember {
+    val titleAlpha by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
         }
     }
     val filtered = videos.filter {
@@ -1480,7 +1473,7 @@ private fun LibraryPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
         item {
             Row(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1493,28 +1486,9 @@ private fun LibraryPage(
         stickyHeader {
             Column(
                 Modifier.fillMaxWidth()
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tints = emptyList(),
-                            blurRadius = 20.dp,
-                            noiseFactor = 0f
-                        )
-                    )
-                    .drawBehind {
-                        val fogHeight = 40.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(PageBg, PageBg.copy(alpha = 0.8f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + fogHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, fogHeight)
-                        )
-                    }
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .background(PageBg)
+                    .statusBarsPadding()
+                    .padding(top = 10.dp, bottom = 10.dp)
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
@@ -1577,49 +1551,15 @@ private fun LibraryPage(
             }
         }
         }
-        AnimatedVisibility(
-            visible = showTopBar,
-            enter = fadeIn(tween(250)) + slideInVertically { -it },
-            exit = fadeOut(tween(250)) + slideOutVertically { -it },
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tints = emptyList(),
-                            blurRadius = 20.dp,
-                            noiseFactor = 0f
-                        )
-                    )
-                    .drawBehind {
-                        val fogHeight = 40.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(PageBg, PageBg.copy(alpha = 0.8f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + fogHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, fogHeight)
-                        )
-                    }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("片库", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
-            }
-        }
     }
 }@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     val listState = rememberLazyListState()
-    val showTopBar by remember {
+    val titleAlpha by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
         }
     }
     val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
@@ -1635,7 +1575,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -1651,28 +1591,9 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                     stickyHeader {
                         Box(
                             Modifier.fillMaxWidth()
-                                .hazeEffect(
-                                    state = hazeState,
-                                    style = HazeStyle(
-                                        backgroundColor = Color.Transparent,
-                                        tints = emptyList(),
-                                        blurRadius = 20.dp,
-                                        noiseFactor = 0f
-                                    )
-                                )
-                                .drawBehind {
-                                    val fogHeight = 40.dp.toPx()
-                                    drawRect(
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(PageBg, PageBg.copy(alpha = 0.8f), Color.Transparent),
-                                            startY = size.height,
-                                            endY = size.height + fogHeight
-                                        ),
-                                        topLeft = Offset(0f, size.height),
-                                        size = Size(size.width, fogHeight)
-                                    )
-                                }
-                                .padding(vertical = 12.dp)
+                                .background(PageBg)
+                                .statusBarsPadding()
+                                .padding(top = 10.dp, bottom = 10.dp)
                         ) {
                             Text(
                                 label,
@@ -1696,41 +1617,6 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                     item { Spacer(Modifier.height(3.dp)) }
                 }
                 item { Spacer(Modifier.height(12.dp)) }
-            }
-        }
-        AnimatedVisibility(
-            visible = showTopBar,
-            enter = fadeIn(tween(250)) + slideInVertically { -it },
-            exit = fadeOut(tween(250)) + slideOutVertically { -it },
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tints = emptyList(),
-                            blurRadius = 20.dp,
-                            noiseFactor = 0f
-                        )
-                    )
-                    .drawBehind {
-                        val fogHeight = 40.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(PageBg, PageBg.copy(alpha = 0.8f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + fogHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, fogHeight)
-                        )
-                    }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("最近", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
             }
         }
     }
@@ -1787,16 +1673,22 @@ private fun RecordsPage(
     onEdit: (VideoItem) -> Unit
 ) {
     val listState = rememberLazyListState()
+    val titleAlpha by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+        }
+    }
     val showTopBar by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -1906,34 +1798,15 @@ private fun RecordsPage(
         }
         AnimatedVisibility(
             visible = showTopBar,
-            enter = fadeIn(tween(250)) + slideInVertically { -it },
-            exit = fadeOut(tween(250)) + slideOutVertically { -it },
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .hazeEffect(
-                        state = hazeState,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tints = emptyList(),
-                            blurRadius = 20.dp,
-                            noiseFactor = 0f
-                        )
-                    )
-                    .drawBehind {
-                        val fogHeight = 40.dp.toPx()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(PageBg, PageBg.copy(alpha = 0.8f), Color.Transparent),
-                                startY = size.height,
-                                endY = size.height + fogHeight
-                            ),
-                            topLeft = Offset(0f, size.height),
-                            size = Size(size.width, fogHeight)
-                        )
-                    }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .background(PageBg)
+                    .statusBarsPadding()
+                    .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
