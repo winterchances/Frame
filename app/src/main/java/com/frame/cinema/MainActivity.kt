@@ -43,6 +43,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -332,6 +333,10 @@ private fun FrameNativeApp(
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuStartBounds by remember { mutableStateOf<Rect?>(null) }
+    var contextMenuViewportBounds by remember { mutableStateOf<Rect?>(null) }
+    var contextMenuStickyHeaderBounds by remember { mutableStateOf<Rect?>(null) }
+    var contextMenuNavigationBounds by remember { mutableStateOf<Rect?>(null) }
+    var contextMenuFabBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
@@ -398,6 +403,10 @@ private fun FrameNativeApp(
             contextMenuVideo = null
             contextMenuBounds = null
             contextMenuStartBounds = null
+            contextMenuViewportBounds = null
+            contextMenuStickyHeaderBounds = null
+            contextMenuNavigationBounds = null
+            contextMenuFabBounds = null
         }
     }
     val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
@@ -612,7 +621,9 @@ private fun FrameNativeApp(
                                 { selected = it; playVideo(it) },
                                 contextMenuVideo,
                                 contextMenuReturnProgress,
-                                { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds }
+                                { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds },
+                                { viewport -> contextMenuViewportBounds = viewport },
+                                { header -> contextMenuStickyHeaderBounds = header }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
@@ -675,10 +686,11 @@ private fun FrameNativeApp(
         if (playing == null) {
             Box(Modifier.fillMaxSize().blur(12.dp * contextMenuProgress)) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
-                    BottomPillNavigation(page, hazeState, backdropBlur) { page = it; showFab = false }
+                    BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)
+                        .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -1162,6 +1174,44 @@ private fun FrameNativeApp(
                 val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
                     else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .55f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
+                Box(
+                    Modifier.offset(x = cardLeft, y = cardTop)
+                        .width(cardWidth)
+                        .graphicsLayer {
+                            alpha = contextMenuProgress
+                            compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                        }
+                        .drawWithContent {
+                            drawContent()
+                            fun clearRootRect(rect: Rect) {
+                                val left = maxOf(rect.left, bounds.left)
+                                val top = maxOf(rect.top, bounds.top)
+                                val right = minOf(rect.right, bounds.right)
+                                val bottom = minOf(rect.bottom, bounds.bottom)
+                                if (right > left && bottom > top) {
+                                    drawRect(
+                                        color = Color.Transparent,
+                                        topLeft = Offset(left - bounds.left, top - bounds.top),
+                                        size = Size(right - left, bottom - top),
+                                        blendMode = androidx.compose.ui.graphics.BlendMode.Clear
+                                    )
+                                }
+                            }
+                            val viewport = contextMenuViewportBounds
+                            if (viewport != null) {
+                                if (bounds.top < viewport.top) clearRootRect(Rect(bounds.left, bounds.top, bounds.right, viewport.top))
+                                if (bounds.bottom > viewport.bottom) clearRootRect(Rect(bounds.left, viewport.bottom, bounds.right, bounds.bottom))
+                                if (bounds.left < viewport.left) clearRootRect(Rect(bounds.left, bounds.top, viewport.left, bounds.bottom))
+                                if (bounds.right > viewport.right) clearRootRect(Rect(viewport.right, bounds.top, bounds.right, bounds.bottom))
+                            } else {
+                                clearRootRect(bounds)
+                            }
+                            contextMenuStickyHeaderBounds?.let { clearRootRect(it) }
+                            contextMenuNavigationBounds?.let { clearRootRect(it) }
+                            contextMenuFabBounds?.let { clearRootRect(it) }
+                        },
+                    content = { PosterCardVisual(video, compact) }
+                )
                 Column(
                     Modifier.offset(x = menuX, y = menuY).width(menuWidth)
                         .graphicsLayer {
@@ -1233,7 +1283,7 @@ private fun FrameNativeApp(
 }
 
 @Composable
-private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onSelect: (MainPage) -> Unit) {
+private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onBoundsChanged: ((Rect) -> Unit)? = null, onSelect: (MainPage) -> Unit) {
     val entries = listOf(
         MainPage.HOME to FrameHomeIcon,
         MainPage.LIBRARY to FrameLibraryIcon,
@@ -1242,6 +1292,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
     )
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
+            .onGloballyPositioned { onBoundsChanged?.invoke(it.boundsInRoot()) }
             .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
             .height(56.dp)
             .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
@@ -1476,7 +1527,8 @@ private fun LibraryPage(
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
-    contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit
+    contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
+    onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit
 ) {
     val listState = rememberLazyListState()
     val titleAlpha by remember {
@@ -1491,7 +1543,7 @@ private fun LibraryPage(
     }
     val columns = if (compact) 3 else 2
     val gap = if (compact) 10.dp else 15.dp
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
         item {
             Row(
@@ -1508,6 +1560,7 @@ private fun LibraryPage(
         stickyHeader {
             Column(
                 Modifier.fillMaxWidth()
+                    .onGloballyPositioned { onStickyHeaderBoundsChanged(it.boundsInRoot()) }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
@@ -2296,6 +2349,13 @@ private fun PosterCard(
             }
             .noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })
     ) {
+        PosterCardVisual(video, compact, highlighted)
+    }
+}
+
+@Composable
+private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Boolean = false) {
+    Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
