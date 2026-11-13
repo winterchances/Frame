@@ -412,6 +412,10 @@ private fun FrameNativeApp(
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
     var isLandscape by remember { mutableStateOf(false) }
+    var speedIndex by remember { mutableIntStateOf(0) }
+    val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
+    var controlsVisible by remember { mutableStateOf(true) }
+    var locked by remember { mutableStateOf(false) }
     LaunchedEffect(openPlayerRequest) {
         if (openPlayerRequest > 0) {
             val mediaId = player.currentMediaItem?.mediaId
@@ -424,10 +428,6 @@ private fun FrameNativeApp(
             }
         }
     }
-    var speedIndex by remember { mutableIntStateOf(0) }
-    val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
-    var controlsVisible by remember { mutableStateOf(true) }
-    var locked by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showImportDataDialog by remember { mutableStateOf(false) }
