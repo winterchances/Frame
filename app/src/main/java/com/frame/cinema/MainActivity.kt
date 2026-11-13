@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1373,8 +1374,9 @@ private fun HomePage(
             when (listState.firstVisibleItemIndex) {
                 0 -> listState.firstVisibleItemScrollOffset.toFloat()
                 1 -> (homeHeaderHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                2 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx
+                2 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + listState.firstVisibleItemScrollOffset).toFloat()
+                3 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }).toFloat()
             }
         }
     }
@@ -1977,8 +1979,9 @@ private fun RecordsPage(
             when (listState.firstVisibleItemIndex) {
                 0 -> listState.firstVisibleItemScrollOffset.toFloat()
                 1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                2 -> (recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + recordsGapPx + recordsOffscreenPx
+                2 -> (recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue +
+                    (if (videos.isEmpty()) 0f else recordsGapPx) + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + recordsOffscreenPx
             }
         }
     }
@@ -2187,6 +2190,7 @@ private fun NativePlayerOverlay(
     var playbackEnded by remember(item.id) { mutableStateOf(player.playbackState == Player.STATE_ENDED) }
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
+    var isSeeking by remember { mutableStateOf(false) }
     var brightnessMask by remember { mutableFloatStateOf(0f) }
     var volume by remember { mutableFloatStateOf(player.volume) }
     var unlockVisible by remember { mutableStateOf(false) }
@@ -2200,10 +2204,38 @@ private fun NativePlayerOverlay(
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(value: Boolean) { isPlaying = value }
+            override fun onIsPlayingChanged(value: Boolean) {
+                isPlaying = value
+                Log.d("FramePlayback", "isPlaying=$value playWhenReady=${player.playWhenReady}")
+            }
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                Log.d("FramePlayback", "playWhenReady=$playWhenReady reason=$reason")
+            }
+            override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+                Log.d("FramePlayback", "suppressionReason=$playbackSuppressionReason")
+            }
             override fun onPlaybackStateChanged(state: Int) {
                 playbackEnded = state == Player.STATE_ENDED
+                Log.d("FramePlayback", "state=$state position=${player.currentPosition} duration=${player.duration}")
                 if (state == Player.STATE_ENDED) onEnded()
+            }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                Log.e("FramePlayback", "Playback error code=${error.errorCodeName}: ${error.message}", error)
+                centerMessage = "播放失败"
+            }
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                    current = newPosition.positionMs.coerceAtLeast(0L)
+                    isSeeking = false
+                }
+                Log.d("FramePlayback", "positionDiscontinuity reason=$reason from=${oldPosition.positionMs} to=${newPosition.positionMs}")
+            }
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                Log.d("FramePlayback", "mediaItemTransition reason=$reason item=${mediaItem?.mediaId}")
             }
         }
         player.addListener(listener)
@@ -2214,7 +2246,7 @@ private fun NativePlayerOverlay(
         var previousTick = SystemClock.elapsedRealtime()
         var wasPlaying = player.isPlaying
         while (true) {
-            current = player.currentPosition.coerceAtLeast(0L)
+            if (!isSeeking) current = player.currentPosition.coerceAtLeast(0L)
             if (player.duration > 0L) duration = player.duration
             val now = System.currentTimeMillis()
             val elapsedNow = SystemClock.elapsedRealtime()
@@ -2223,7 +2255,7 @@ private fun NativePlayerOverlay(
             if (playingNow && wasPlaying) onWatchTime(elapsed)
             wasPlaying = playingNow
             previousTick = elapsedNow
-            if (now - lastPersistedAt >= 5000L && player.playbackState != Player.STATE_ENDED) {
+            if (!isSeeking && now - lastPersistedAt >= 5000L && player.playbackState != Player.STATE_ENDED) {
                 onProgress(current, duration)
                 lastPersistedAt = now
             }
@@ -2289,17 +2321,22 @@ private fun NativePlayerOverlay(
                             dragStartVolume = player.volume
                             dragStartBrightness = brightnessMask
                             dragMode = when {
+                                start.y > size.height * .78f -> "none"
                                 start.x < size.width / 3f -> "brightness"
                                 start.x > size.width * 2f / 3f -> "volume"
                                 else -> "progress"
                             }
+                            if (dragMode == "progress") isSeeking = true
                         }
                     },
                     onDragEnd = {
                         if (dragMode == "progress") player.seekTo(current)
                         dragMode = "none"
                     },
-                    onDragCancel = { dragMode = "none" },
+                    onDragCancel = {
+                        if (dragMode == "progress") isSeeking = false
+                        dragMode = "none"
+                    },
                     onDrag = { change, _ ->
                         if (!locked && dragMode != "none") {
                             change.consume()
@@ -2373,7 +2410,11 @@ private fun NativePlayerOverlay(
                         PlayerProgressBar(
                             progress = if (duration > 0L) (current.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
                             modifier = Modifier.weight(1f),
+                            onSeekStart = { isSeeking = true },
                             onSeek = { fraction ->
+                                current = (duration * fraction).toLong().coerceIn(0L, duration.coerceAtLeast(0L))
+                            },
+                            onSeekEnd = { fraction ->
                                 current = (duration * fraction).toLong().coerceIn(0L, duration.coerceAtLeast(0L))
                                 player.seekTo(current)
                             }
@@ -2453,14 +2494,35 @@ private fun PlayerIconButton(icon: ImageVector, description: String, onClick: ()
 }
 
 @Composable
-private fun PlayerProgressBar(progress: Float, modifier: Modifier = Modifier, onSeek: (Float) -> Unit) {
+private fun PlayerProgressBar(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    onSeekStart: () -> Unit,
+    onSeek: (Float) -> Unit,
+    onSeekEnd: (Float) -> Unit
+) {
+    var dragFraction by remember { mutableFloatStateOf(progress) }
     BoxWithConstraints(
         modifier.height(30.dp).pointerInput(Unit) {
-            detectTapGestures { offset -> onSeek((offset.x / size.width).coerceIn(0f, 1f)) }
+            detectTapGestures {
+                val fraction = (it.x / size.width).coerceIn(0f, 1f)
+                onSeek(fraction)
+                onSeekEnd(fraction)
+            }
         }.pointerInput(Unit) {
             detectDragGestures(
-                onDragStart = { onSeek((it.x / size.width).coerceIn(0f, 1f)) },
-                onDrag = { change, _ -> change.consume(); onSeek((change.position.x / size.width).coerceIn(0f, 1f)) }
+                onDragStart = {
+                    onSeekStart()
+                    dragFraction = (it.x / size.width).coerceIn(0f, 1f)
+                    onSeek(dragFraction)
+                },
+                onDragEnd = { onSeekEnd(dragFraction) },
+                onDragCancel = { onSeekEnd(dragFraction) },
+                onDrag = { change, _ ->
+                    change.consume()
+                    dragFraction = (change.position.x / size.width).coerceIn(0f, 1f)
+                    onSeek(dragFraction)
+                }
             )
         },
         contentAlignment = Alignment.CenterStart
