@@ -126,6 +126,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -726,7 +727,6 @@ private fun FrameNativeApp(
                                 onSort = { sheet = SheetType.RECORD_SORT },
                                 onCreate = { startNewReview() },
                                 onEdit = { openReviewEditor(it) },
-                                onLocateReview = { targetReviewId = it },
                                 onTargetHandled = { targetReviewId = null }
                             )
                         }
@@ -2263,7 +2263,6 @@ private fun RecordsPage(
     onSort: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
-    onLocateReview: (Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
     val listState = rememberLazyListState()
