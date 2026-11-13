@@ -1350,7 +1350,7 @@ private fun HomePage(
     listState: LazyListState,
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
-    val continuing = remember(videos) { videos.filter { it.progress >= 1f && it.progress < 100f }.take(4) }
+    val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.take(4) }
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(6) }
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
@@ -1463,8 +1463,8 @@ private fun HomePage(
                                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, .4f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .8f)))))
                                     Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
                                         Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                        Spacer(Modifier.height(6.dp))
-                                        Text("已看 ${video.progress.toInt()}%", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                                        Spacer(Modifier.height(2.dp))
+                                        Text("播放至 ${formatTime((video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong())}", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                                         Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
                                             Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
                                         }
