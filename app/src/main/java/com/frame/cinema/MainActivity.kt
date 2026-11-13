@@ -754,6 +754,7 @@ private fun FrameNativeApp(
                 }
                 }
         }
+        }
 
         val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
 
