@@ -1704,7 +1704,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
             groupHeaderIndices.indexOfLast { listState.firstVisibleItemIndex >= it }
         }
     }
-    val headerHeightPx = with(LocalDensity.current) { 54.dp.roundToPx() }
+    var headerHeightPx by remember { mutableIntStateOf(0) }
     val nextHeaderOffset by remember {
         derivedStateOf {
             val nextIndex = groupHeaderIndices.getOrNull(activeGroupIndex + 1)
@@ -1731,7 +1731,11 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
             } else {
                 groups.forEachIndexed { groupIndex, (label, list) ->
                     stickyHeader {
-                        RecentDateHeader(label, alpha = if (activeGroupIndex == groupIndex) 0f else 1f)
+                        RecentDateHeader(
+                            label,
+                            alpha = if (activeGroupIndex == groupIndex) 0f else 1f,
+                            onHeightChanged = { headerHeightPx = it }
+                        )
                     }
                     item { Spacer(Modifier.height(10.dp)) }
                     items(list, key = { it.id }) { video ->
@@ -1752,16 +1756,21 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                 Modifier.fillMaxWidth().offset { androidx.compose.ui.unit.IntOffset(0, stickyPushOffset) }
                     .zIndex(2f)
             ) {
-                RecentDateHeader(groups[activeGroupIndex].first, alpha = 1f)
+                RecentDateHeader(
+                    groups[activeGroupIndex].first,
+                    alpha = 1f,
+                    onHeightChanged = { headerHeightPx = it }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun RecentDateHeader(label: String, alpha: Float) {
+private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int) -> Unit) {
     Box(
         Modifier.fillMaxWidth().graphicsLayer { this.alpha = alpha }
+            .onGloballyPositioned { onHeightChanged(it.size.height) }
             .background(PageBg)
             .statusBarsPadding()
             .padding(top = 10.dp, bottom = 10.dp)
