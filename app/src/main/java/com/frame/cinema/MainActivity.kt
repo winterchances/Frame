@@ -1111,7 +1111,7 @@ private fun FrameNativeApp(
                                             Box(
                                                 Modifier.size(width = 84.dp, height = 58.dp)
                                                     .clip(RoundedCornerShape(10.dp))
-                                                    .background(if (video != null) PosterBrush(video.bgIndex) else Color(0xFFF1F4F4)),
+                                                    .background(if (video != null) PosterBrush(video.bgIndex) else Brush.linearGradient(listOf(Color(0xFFF1F4F4), Color(0xFFF1F4F4)))),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 if (video != null) Thumbnail(video, Modifier.fillMaxSize())
