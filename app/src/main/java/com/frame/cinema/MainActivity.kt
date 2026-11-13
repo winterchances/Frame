@@ -1635,7 +1635,7 @@ private fun LibraryPage(
             }
         }
     }
-    Box(Modifier.fillMaxSize().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
+    Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item {
                 Row(
@@ -1812,7 +1812,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
             else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
         }
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
