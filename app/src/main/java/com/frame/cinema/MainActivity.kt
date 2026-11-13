@@ -718,7 +718,7 @@ private fun FrameNativeApp(
                                 searchQuery = recordSearch,
                                 sortMode = recordSortMode,
                                 sortDirection = recordSortDirection,
-                                onSearch = { sheet = SheetType.RECORD_SEARCH },
+                                onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
                                 onSort = { sheet = SheetType.RECORD_SORT },
                                 onCreate = { startNewReview() },
                                 onEdit = { openReviewEditor(it) }
