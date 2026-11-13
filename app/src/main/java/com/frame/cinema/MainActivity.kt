@@ -1350,11 +1350,11 @@ private fun HomePage(
     listState: LazyListState,
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
-    val continuing = videos.filter { it.progress >= 1f && it.progress < 100f }.take(4)
-    val recent = videos.sortedByDescending { it.addedAt }.take(6)
+    val continuing = remember(videos) { videos.filter { it.progress >= 1f && it.progress < 100f }.take(4) }
+    val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(6) }
     var continueExpanded by remember { mutableStateOf(true) }
     var recentExpanded by remember { mutableStateOf(true) }
-    val titleAlpha by remember {
+    val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
@@ -1384,7 +1384,7 @@ private fun HomePage(
         }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlpha }) {
+                Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }) {
                     Header("首页", onSettings)
                 }
             }
@@ -1551,7 +1551,7 @@ private fun LibraryPage(
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit
 ) {
     val listState = rememberLazyListState()
-    val titleAlpha by remember {
+    val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
@@ -1560,9 +1560,11 @@ private fun LibraryPage(
     val headerPinned by remember {
         derivedStateOf { listState.firstVisibleItemIndex >= 1 }
     }
-    val filtered = videos.filter {
-        (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
-            (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
+    val filtered = remember(videos, status, category) {
+        videos.filter {
+            (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
+                (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
+        }
     }
     val columns = if (compact) 3 else 2
     val gap = if (compact) 10.dp else 15.dp
@@ -1570,7 +1572,7 @@ private fun LibraryPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item {
                 Row(
-                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1675,21 +1677,23 @@ private fun LibraryFilterHeader(
 @Composable
 private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     val listState = rememberLazyListState()
-    val titleAlpha by remember {
+    val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
         }
     }
-    val recentItems = videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt }
+    val recentItems = remember(videos) { videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt } }
     val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
     val today = dateFormat.format(Date())
     val yesterday = dateFormat.format(Date(System.currentTimeMillis() - 86400000L))
-    val groups = listOf(
-        "今天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == today },
-        "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
-        "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
-    ).filter { it.second.isNotEmpty() }
+    val groups = remember(recentItems, today, yesterday) {
+        listOf(
+            "今天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == today },
+            "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
+            "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
+        ).filter { it.second.isNotEmpty() }
+    }
     val groupHeaderIndices = remember(groups) {
         buildList {
             var index = 1
@@ -1705,21 +1709,18 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         }
     }
     var headerHeightPx by remember { mutableIntStateOf(0) }
-    val nextHeaderOffset by remember(activeGroupIndex, groupHeaderIndices) {
+    val nextHeaderOffsetState = remember(activeGroupIndex, groupHeaderIndices) {
         derivedStateOf {
             val nextIndex = groupHeaderIndices.getOrNull(activeGroupIndex + 1)
             if (nextIndex == null) Int.MAX_VALUE
             else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
         }
     }
-    val stickyPushOffset = if (activeGroupIndex >= 0 && nextHeaderOffset != Int.MAX_VALUE) {
-        minOf(0, nextHeaderOffset - headerHeightPx)
-    } else 0
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -1753,8 +1754,13 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         }
         if (activeGroupIndex >= 0) {
             Box(
-                Modifier.fillMaxWidth().offset { androidx.compose.ui.unit.IntOffset(0, stickyPushOffset) }
-                    .zIndex(2f)
+                Modifier.fillMaxWidth().offset {
+                    val nextOffset = nextHeaderOffsetState.value
+                    val pushOffset = if (activeGroupIndex >= 0 && nextOffset != Int.MAX_VALUE) {
+                        minOf(0, nextOffset - headerHeightPx)
+                    } else 0
+                    androidx.compose.ui.unit.IntOffset(0, pushOffset)
+                }.zIndex(2f)
             ) {
                 RecentDateHeader(
                     groups[activeGroupIndex].first,
@@ -1838,7 +1844,7 @@ private fun RecordsPage(
     onEdit: (VideoItem) -> Unit
 ) {
     val listState = rememberLazyListState()
-    val titleAlpha by remember {
+    val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
             else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
@@ -1849,6 +1855,9 @@ private fun RecordsPage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val watchedCount = remember(videos) { videos.size }
+    val totalHours = remember(videos) { videos.sumOf { it.durationMs } / 3600000 }
+    val reviewedCount = remember(videos) { videos.count { it.review.isNotBlank() } }
     Box(Modifier.fillMaxSize()) {
         AnimatedVisibility(
             visible = showTopBar,
@@ -1869,7 +1878,7 @@ private fun RecordsPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlpha }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -1893,11 +1902,11 @@ private fun RecordsPage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Stat("已看完", videos.size.toString(), "部", Modifier.weight(1f))
+                    Stat("已看完", watchedCount.toString(), "部", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("累计时长", (videos.sumOf { it.durationMs } / 3600000).toString(), "h", Modifier.weight(1f))
+                    Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("写下感想", videos.count { it.review.isNotBlank() }.toString(), "篇", Modifier.weight(1f))
+                    Stat("写下感想", reviewedCount.toString(), "篇", Modifier.weight(1f))
                 }
             }
         }
