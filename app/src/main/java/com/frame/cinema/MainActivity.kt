@@ -1541,7 +1541,7 @@ private fun HomePage(
         }
 
         Column(
-            Modifier.fillMaxWidth()
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp)
                 .graphicsLayer { translationY = -homeScrollDistancePx.value }
         ) {
             Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }) {
@@ -1921,7 +1921,7 @@ private fun RecordsPage(
                 0 -> listState.firstVisibleItemScrollOffset.toFloat()
                 1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
                 2 -> (recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + if (videos.isEmpty()) 0f else recordsGapPx
+                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + recordsGapPx + with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
             }
         }
     }
@@ -2310,7 +2310,8 @@ private fun NativePlayerOverlay(
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .8f))))
                         .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 30.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                         Text(formatTime(current), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         PlayerProgressBar(
                             progress = if (duration > 0L) (current.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f,
