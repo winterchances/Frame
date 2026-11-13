@@ -245,13 +245,19 @@ private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { WATCHED, RATING, NAME }
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val ACTION_OPEN_PLAYER = "com.frame.cinema.OPEN_PLAYER"
+    }
+
     private var player: Player? = null
     private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
     private lateinit var repository: NativeLibraryRepository
     private var backgroundPlaybackAllowed = true
+    private val openPlayerRequest = mutableIntStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.action == ACTION_OPEN_PLAYER) openPlayerRequest.intValue++
         window.statusBarColor = android.graphics.Color.WHITE
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
         repository = NativeLibraryRepository(this)
@@ -267,6 +273,7 @@ class MainActivity : ComponentActivity() {
                             FrameNativeApp(
                                 repository = repository,
                                 player = controller,
+                                openPlayerRequest = openPlayerRequest.intValue,
                                 onPlay = { item -> startNativePlayback(item) },
                                 onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
                                 onOrientation = { requested ->
@@ -286,6 +293,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }, java.util.concurrent.Executor { command -> command.run() })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action == ACTION_OPEN_PLAYER) openPlayerRequest.intValue++
     }
 
     private fun startNativePlayback(item: VideoItem) {
@@ -309,6 +322,7 @@ class MainActivity : ComponentActivity() {
             metadataBuilder.setArtworkData(iconBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
         }
         val mediaItem = MediaItem.Builder()
+            .setMediaId(item.id.toString())
             .setUri(item.contentUri)
             .setMediaMetadata(metadataBuilder.build())
             .build()
@@ -338,6 +352,7 @@ class MainActivity : ComponentActivity() {
 private fun FrameNativeApp(
     repository: NativeLibraryRepository,
     player: Player,
+    openPlayerRequest: Int,
     onPlay: (VideoItem) -> Unit,
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
@@ -397,6 +412,18 @@ private fun FrameNativeApp(
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
     var isLandscape by remember { mutableStateOf(false) }
+    LaunchedEffect(openPlayerRequest) {
+        if (openPlayerRequest > 0) {
+            val mediaId = player.currentMediaItem?.mediaId
+            val currentVideo = mediaId?.let { id -> repository.videos().firstOrNull { it.id.toString() == id } }
+            if (currentVideo != null) {
+                playing = currentVideo
+                controlsVisible = true
+                locked = false
+                onSystemBarsVisible(false)
+            }
+        }
+    }
     var speedIndex by remember { mutableIntStateOf(0) }
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
     var controlsVisible by remember { mutableStateOf(true) }
@@ -1339,7 +1366,7 @@ private fun FrameNativeApp(
                             }
                         }
                         BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
-                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
+                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
                             } else {
@@ -1353,11 +1380,20 @@ private fun FrameNativeApp(
                             Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         }
                         if (editReviewId != null) {
-                            Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 13.sp, modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 14.dp).noRippleClickable {
-                                editReviewId?.let { repository.deleteReview(it) }
-                                refresh()
-                                sheet = SheetType.NONE
-                            }.padding(8.dp))
+                            Box(
+                                Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.White)
+                                    .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                    .noRippleClickable {
+                                        editReviewId?.let { repository.deleteReview(it) }
+                                        refresh()
+                                        sheet = SheetType.NONE
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            }
                         }
                         Spacer(Modifier.height(24.dp))
                     }
@@ -2266,6 +2302,8 @@ private fun RecordsPage(
     onTargetHandled: () -> Unit
 ) {
     val listState = rememberLazyListState()
+    val expandedVideoReviews = remember { mutableStateMapOf<Long, Boolean>() }
+    val expandedStandaloneReviews = remember { mutableStateMapOf<Long, Boolean>() }
     val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
@@ -2312,11 +2350,15 @@ private fun RecordsPage(
     LaunchedEffect(targetReviewId, displayVideos, standaloneReviews) {
         val targetId = targetReviewId ?: return@LaunchedEffect
         val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
-        if (videoIndex >= 0) listState.animateScrollToItem(3 + videoIndex)
-        else {
+        if (videoIndex >= 0) {
+            expandedVideoReviews[displayVideos[videoIndex].id] = true
+            listState.animateScrollToItem(3 + videoIndex)
+        } else {
             val standaloneIndex = standaloneReviews.indexOfFirst { it.id == targetId }
-            if (standaloneIndex >= 0) listState.animateScrollToItem(3 + displayVideos.size + standaloneIndex)
-            else onTargetHandled()
+            if (standaloneIndex >= 0) {
+                expandedStandaloneReviews[targetId] = true
+                listState.animateScrollToItem(3 + displayVideos.size + standaloneIndex)
+            } else onTargetHandled()
         }
     }
     val watchedCount = completedVideos.size
