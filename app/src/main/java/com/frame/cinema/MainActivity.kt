@@ -1529,6 +1529,7 @@ private fun HomePage(
         ) {
             Box(
                 Modifier.fillMaxWidth()
+                    .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
@@ -1914,6 +1915,7 @@ private fun RecordsPage(
         ) {
             Box(
                 Modifier.fillMaxWidth()
+                    .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
