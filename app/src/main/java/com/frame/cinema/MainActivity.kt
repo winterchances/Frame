@@ -1369,6 +1369,7 @@ private fun HomePage(
     val homeHeaderHeightPx = remember { mutableIntStateOf(0) }
     val homeStatsHeightPx = remember { mutableIntStateOf(0) }
     val homeGapPx = with(LocalDensity.current) { 25.dp.toPx() }
+    val homeOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val homeScrollDistancePx = remember {
         derivedStateOf {
             when (listState.firstVisibleItemIndex) {
@@ -1376,7 +1377,7 @@ private fun HomePage(
                 1 -> (homeHeaderHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
                 2 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + listState.firstVisibleItemScrollOffset).toFloat()
                 3 -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }).toFloat()
+                else -> (homeHeaderHeightPx.intValue + homeStatsHeightPx.intValue + homeGapPx + homeOffscreenPx).toFloat()
             }
         }
     }
@@ -1974,7 +1975,7 @@ private fun RecordsPage(
     val recordsStatsHeightPx = remember { mutableIntStateOf(0) }
     val recordsGapPx = with(LocalDensity.current) { 26.dp.toPx() }
     val recordsOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val recordsScrollDistancePx = remember {
+    val recordsScrollDistancePx = remember(videos.isNotEmpty()) {
         derivedStateOf {
             when (listState.firstVisibleItemIndex) {
                 0 -> listState.firstVisibleItemScrollOffset.toFloat()
