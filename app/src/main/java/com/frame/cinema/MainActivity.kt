@@ -79,6 +79,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
@@ -684,7 +685,7 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
-            Box(Modifier.fillMaxSize().blur(12.dp * contextMenuProgress)) {
+            Box(Modifier.fillMaxSize().blur(12.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress))) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
                 }
@@ -1382,7 +1383,7 @@ private fun HomePage(
                 Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
                 Box(Modifier.zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }) {
                     Header("首页", onSettings)
@@ -1569,7 +1570,7 @@ private fun LibraryPage(
     val columns = if (compact) 3 else 2
     val gap = if (compact) 10.dp else 15.dp
     Box(Modifier.fillMaxSize().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item {
                 Row(
                     Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
@@ -1717,7 +1718,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
         }
     }
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
                     Modifier.fillMaxWidth().graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
@@ -1875,7 +1876,7 @@ private fun RecordsPage(
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }.padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
