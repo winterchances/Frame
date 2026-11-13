@@ -92,6 +92,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1774,8 +1775,8 @@ private fun HomePage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
-    val homeHeaderHeightPx = remember { mutableIntStateOf(0) }
-    val homeStatsHeightPx = remember { mutableIntStateOf(0) }
+    val homeHeaderHeightPx = rememberSaveable { mutableIntStateOf(0) }
+    val homeStatsHeightPx = rememberSaveable { mutableIntStateOf(0) }
     val homeGapPx = with(LocalDensity.current) { 25.dp.toPx() }
     val homeOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val homeScrollDistancePx = remember {
