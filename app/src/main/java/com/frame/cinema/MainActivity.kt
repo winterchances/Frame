@@ -208,6 +208,13 @@ private val FrameSortIcon: ImageVector = ImageVector.Builder("FrameSort", 24.dp,
         moveTo(13f, 17f); lineTo(17f, 21f); lineTo(21f, 17f)
     }
 }.build()
+
+private val FrameSortDirectionIcon: ImageVector = ImageVector.Builder("FrameSortDirection", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(12f, 20f); lineTo(12f, 4f)
+        moveTo(6f, 10f); lineTo(12f, 4f); lineTo(18f, 10f)
+    }
+}.build()
 private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(3f, 3f); lineTo(10f, 3f); lineTo(10f, 10f); lineTo(3f, 10f); close()
@@ -1996,9 +2003,9 @@ private fun LibraryPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                    ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = .5.dp, y = .5.dp))
+                    ActionIcon(FrameTagIcon, "分类管理", onCategories)
                     ActionIcon(FrameGridIcon, "布局管理", onGrid)
-                    ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 22.dp)
+                    ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
                 }
             }
             stickyHeader {
@@ -2046,9 +2053,9 @@ private fun LibraryPage(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = .5.dp, y = .5.dp))
+            ActionIcon(FrameTagIcon, "分类管理", onCategories)
             ActionIcon(FrameGridIcon, "布局管理", onGrid)
-            ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 22.dp)
+            ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
         }
         LibraryFilterHeader(
             categories = categories, status = status, category = category,
@@ -2282,11 +2289,11 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(FrameTimelineClockIcon, null, tint = Color(0xFF888888), modifier = Modifier.size(12.dp))
-                        Text(formatClock(video.durationMs), fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                        Text(formatClock(video.durationMs), fontSize = 12.sp, lineHeight = 14.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false)))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         Icon(FrameTimelinePlayIcon, null, tint = Color(0xFF888888), modifier = Modifier.size(12.dp))
-                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                        Text("${formatClock(playedMs)} · ${watchedDate}", fontSize = 12.sp, lineHeight = 14.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true, style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false)))
                     }
                 }
             }
@@ -2422,8 +2429,8 @@ private fun RecordsPage(
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                        ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 22.dp)
-                        ActionIcon(FrameSortIcon, "记录排序", onSort)
+                        ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
+                        ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
                     }
                 }
             }
@@ -2512,7 +2519,7 @@ private fun RecordsPage(
                                         Modifier.size(28.dp).noRippleClickable { onCreate(video) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Outlined.Add, "添加感想", tint = MutedText, modifier = Modifier.size(22.dp))
+                                        Icon(Icons.Outlined.Add, "添加感想", tint = MutedText, modifier = Modifier.size(18.dp))
                                     }
                                     if (entries.isNotEmpty()) {
                                         val chevronRotation by animateFloatAsState(
@@ -2527,7 +2534,7 @@ private fun RecordsPage(
                                             label = "record-video-chevron-" + video.id
                                         )
                                         Box(
-                                            Modifier.padding(start = 7.dp, end = 6.dp).size(28.dp)
+                                            Modifier.padding(start = 7.dp).size(28.dp)
                                                 .noRippleClickable { expandedVideoReviews[video.id] = !expanded },
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -2679,8 +2686,8 @@ private fun RecordsPage(
                 Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 22.dp)
-                    ActionIcon(FrameSortIcon, "记录排序", onSort)
+                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
+                    ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
                 }
             }
             Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
@@ -3507,7 +3514,7 @@ private fun SortOptionAction(
             )
             Box(Modifier.size(36.dp).noRippleClickable(onAscending), contentAlignment = Alignment.Center) {
                 Icon(
-                    FrameSortIcon,
+                    FrameSortDirectionIcon,
                     "正序",
                     tint = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
                     modifier = Modifier.size(19.dp)
@@ -3515,7 +3522,7 @@ private fun SortOptionAction(
             }
             Box(Modifier.size(36.dp).noRippleClickable(onDescending), contentAlignment = Alignment.Center) {
                 Icon(
-                    FrameSortIcon,
+                    FrameSortDirectionIcon,
                     "倒序",
                     tint = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
                     modifier = Modifier.size(19.dp).rotate(180f)
