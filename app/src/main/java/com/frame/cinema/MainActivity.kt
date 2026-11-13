@@ -1,5 +1,18 @@
 package com.frame.cinema
 
+import android.Manifest
+import android.content.ContentValues
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.media.MediaScannerConnection
+import android.os.Build
+import android.os.Environment
+import android.view.TextureView
+import android.widget.Toast
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.app.Activity
 import android.content.Intent
 import android.content.ComponentName
@@ -2187,6 +2200,54 @@ private fun NativePlayerOverlay(
     onProgress: (Long, Long) -> Unit,
     onWatchTime: (Long) -> Unit
 ) {
+    val context = LocalContext.current
+    val screenshotScope = rememberCoroutineScope()
+    var videoTextureView by remember(item.id) { mutableStateOf<TextureView?>(null) }
+    var pendingScreenshot by remember(item.id) { mutableStateOf<Bitmap?>(null) }
+
+    fun saveCapturedScreenshot(bitmap: Bitmap) {
+        screenshotScope.launch {
+            val saved = runCatching { saveVideoScreenshot(context, bitmap) }.getOrDefault(false)
+            bitmap.recycle()
+            Toast.makeText(context, if (saved) "截图已保存到图片/影匣" else "截图保存失败", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val screenshotPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val bitmap = pendingScreenshot
+        pendingScreenshot = null
+        if (granted && bitmap != null) {
+            saveCapturedScreenshot(bitmap)
+        } else {
+            bitmap?.recycle()
+            Toast.makeText(context, "需要存储权限才能保存截图", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun captureVideoFrame() {
+        val texture = videoTextureView
+        if (texture == null || !texture.isAvailable) {
+            Toast.makeText(context, "当前视频画面暂不可截图", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val bitmap = runCatching { texture.getBitmap() }.getOrNull()
+        if (bitmap == null) {
+            Toast.makeText(context, "获取视频画面失败，请稍后重试", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingScreenshot?.recycle()
+            pendingScreenshot = bitmap
+            screenshotPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else {
+            saveCapturedScreenshot(bitmap)
+        }
+    }
+
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     var playbackEnded by remember(item.id) { mutableStateOf(player.playbackState == Player.STATE_ENDED) }
     var current by remember { mutableLongStateOf(0L) }
@@ -2372,10 +2433,14 @@ private fun NativePlayerOverlay(
                     useController = false
                     setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
                     layoutParams = ViewGroup.LayoutParams(-1, -1)
+                    videoTextureView = findVideoTextureView(this)
                 }
             },
             modifier = Modifier.fillMaxSize(),
-            update = { it.player = player }
+            update = {
+                it.player = player
+                videoTextureView = findVideoTextureView(it)
+            }
         )
         if (brightnessMask > 0f) {
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = brightnessMask)))
@@ -2456,6 +2521,14 @@ private fun NativePlayerOverlay(
             }
         }
         AnimatedVisibility(
+            visible = controlsVisible && !locked,
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 20.dp),
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            PlayerIconButton(Icons.Outlined.PhotoCamera, "截图", ::captureVideoFrame)
+        }
+        AnimatedVisibility(
             visible = locked && unlockVisible,
             enter = fadeIn(tween(300)),
             exit = fadeOut(tween(300))
@@ -2481,6 +2554,68 @@ private fun NativePlayerOverlay(
         }
     }
 }
+
+private fun findVideoTextureView(view: android.view.View): TextureView? {
+    if (view is TextureView) return view
+    if (view is ViewGroup) {
+        for (index in 0 until view.childCount) {
+            findVideoTextureView(view.getChildAt(index))?.let { return it }
+        }
+    }
+    return null
+}
+
+private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap: Bitmap): Boolean =
+    withContext(Dispatchers.IO) {
+        val fileName = "影匣_${SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())}.jpg"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(
+                    android.provider.MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/影匣"
+                )
+                put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+            }
+            val resolver = context.contentResolver
+            val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: return@withContext false
+            val written = runCatching {
+                resolver.openOutputStream(uri)?.use { output ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
+                } ?: false
+            }.getOrDefault(false)
+            if (written) {
+                val completed = ContentValues().apply {
+                    put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+                }
+                resolver.update(uri, completed, null, null)
+                true
+            } else {
+                resolver.delete(uri, null, null)
+                false
+            }
+        } else {
+            val directory = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                "影匣"
+            )
+            if (!directory.exists() && !directory.mkdirs()) return@withContext false
+            val file = File(directory, fileName)
+            val written = runCatching {
+                java.io.FileOutputStream(file).use { output ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
+                }
+            }.getOrDefault(false)
+            if (written) {
+                MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf("image/jpeg"), null)
+            } else {
+                file.delete()
+            }
+            written
+        }
+    }
 
 @Composable
 private fun PlayerIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
