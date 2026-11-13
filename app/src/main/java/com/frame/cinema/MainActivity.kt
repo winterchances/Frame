@@ -1203,8 +1203,6 @@ private fun FrameNativeApp(
                                 if (bounds.bottom > viewport.bottom) clearRootRect(Rect(bounds.left, viewport.bottom, bounds.right, bounds.bottom))
                                 if (bounds.left < viewport.left) clearRootRect(Rect(bounds.left, bounds.top, viewport.left, bounds.bottom))
                                 if (bounds.right > viewport.right) clearRootRect(Rect(viewport.right, bounds.top, bounds.right, bounds.bottom))
-                            } else {
-                                clearRootRect(bounds)
                             }
                             contextMenuStickyHeaderBounds?.let { clearRootRect(it) }
                             contextMenuNavigationBounds?.let { clearRootRect(it) }
