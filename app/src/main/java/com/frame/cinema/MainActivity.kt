@@ -1998,7 +1998,7 @@ private fun LibraryPage(
                     Modifier.fillMaxWidth()
                         .onGloballyPositioned { libraryTitleHeightPx.intValue = it.size.height }
                         .graphicsLayer { alpha = 0f }
-                        .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -2048,7 +2048,7 @@ private fun LibraryPage(
                     translationY = -libraryTitleScrollDistancePx.value
                     alpha = titleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2178,7 +2178,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                     Modifier.fillMaxWidth()
                         .onGloballyPositioned { recentTitleHeightPx.intValue = it.size.height }
                         .graphicsLayer { alpha = 0f }
-                        .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -2216,7 +2216,7 @@ private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (
                     translationY = -recentTitleScrollDistancePx.value
                     alpha = titleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -2423,7 +2423,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth().zIndex(1f)
                         .onGloballyPositioned { recordsTitleHeightPx.intValue = it.size.height }
                         .graphicsLayer { alpha = 0f }
-                        .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -2680,7 +2680,7 @@ private fun RecordsPage(
         ) {
             Row(
                 Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }
-                    .padding(start = 20.dp, end = 20.dp, top = 60.dp, bottom = 15.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -3298,7 +3298,7 @@ private fun ActionIcon(
 
 @Composable
 private fun Header(title: String, onSettings: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 60.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
         Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText)
