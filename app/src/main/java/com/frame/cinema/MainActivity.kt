@@ -1433,6 +1433,8 @@ private fun FrameNativeApp(
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
+                            } else if (canSetVideoRating && editRating == 0) {
+                                notify("请先为视频评分")
                             } else {
                                 val entryId = editReviewId
                                 if (entryId == null) {
@@ -1444,7 +1446,7 @@ private fun FrameNativeApp(
                                 sheet = SheetType.NONE
                             }
                         }, contentAlignment = Alignment.Center) {
-                            Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            Text("保存记录", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                         }
                         if (editReviewId != null) {
                             Box(
@@ -1458,7 +1460,7 @@ private fun FrameNativeApp(
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                             }
                         }
                         Spacer(Modifier.height(24.dp))
@@ -1502,7 +1504,7 @@ private fun FrameNativeApp(
                                             .clip(RoundedCornerShape(16.dp))
                                             .noRippleClickable {
                                                 editReviewVideoId = video.id
-                                                 editRating = video.rating
+                                                editRating = video.rating
                                                 reviewVideoSearch = ""
                                                 parentSheet = SheetType.NONE
                                                 sheet = SheetType.NOTE
