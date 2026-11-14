@@ -1476,7 +1476,7 @@ private fun FrameNativeApp(
                                 if (entryId == null) {
                                     repository.addReview(editReviewVideoId, editReview, if (canSetVideoRating) editRating else 0f)
                                 } else {
-                                    repository.updateReview(entryId, editReviewVideoId, editReview, 0)
+                                    repository.updateReview(entryId, editReviewVideoId, editReview, 0f)
                                 }
                                 refresh()
                                 sheet = SheetType.NONE
