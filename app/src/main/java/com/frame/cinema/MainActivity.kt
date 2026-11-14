@@ -2621,91 +2621,83 @@ private fun RecordsPage(
                                 }
                             }
                         }
-                        entries.forEachIndexed { index, entry ->
-                            val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
-                            val entryHighlight = entry.id == targetReviewId
-                            val expandDelay = index * 60
-                            val collapseDelay = (entries.size - index - 1) * 60
-                            LaunchedEffect(targetReviewId, expanded) {
-                                if (entryHighlight && expanded) {
-                                    delay(360 + expandDelay.toLong())
-                                    entryBringIntoView.bringIntoView()
-                                    delay(1500)
-                                    onTargetHandled()
-                                }
-                            }
-                            val entryTextColor by androidx.compose.animation.animateColorAsState(
-                                if (entryHighlight) ThemeTeal else Color(0xFF555555),
-                                animationSpec = tween(420),
-                                label = "record-review-highlight-${entry.id}"
-                            )
-                            AnimatedVisibility(
-                                visible = expanded,
-                                enter = expandVertically(
-                                    animationSpec = tween(300, delayMillis = expandDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                ) + fadeIn(tween(220, delayMillis = expandDelay)) +
-                                    slideInVertically(
-                                        initialOffsetY = { it / 8 },
-                                        animationSpec = tween(300, delayMillis = expandDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                    ),
-                                exit = shrinkVertically(
-                                    animationSpec = tween(300, delayMillis = collapseDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                ) + fadeOut(tween(220, delayMillis = collapseDelay)) +
-                                    slideOutVertically(
-                                        targetOffsetY = { it / 8 },
-                                        animationSpec = tween(300, delayMillis = collapseDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                    ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    Modifier.fillMaxWidth().drawBehind {
-                                        val axisX = 7.dp.toPx()
-                                        val dotCenterY = 15.dp.toPx()
-                                        val lineWidth = 1.dp.toPx()
-                                        val lineColor = Color(0xFFDADADA)
-                                        if (entries.size > 1) {
-                                            when (index) {
-                                                0 -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, dotCenterY),
-                                                    Offset(axisX, size.height),
-                                                    strokeWidth = lineWidth
-                                                )
-                                                entries.lastIndex -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, 0f),
-                                                    Offset(axisX, dotCenterY),
-                                                    strokeWidth = lineWidth
-                                                )
-                                                else -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, 0f),
-                                                    Offset(axisX, size.height),
-                                                    strokeWidth = lineWidth
-                                                )
-                                            }
+                        AnimatedVisibility(
+                            visible = expanded,
+                            enter = expandVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                            ) + fadeIn(tween(220)),
+                            exit = shrinkVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                            ) + fadeOut(tween(220)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.fillMaxWidth()) {
+                                entries.forEachIndexed { index, entry ->
+                                    val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
+                                    val entryHighlight = entry.id == targetReviewId
+                                    LaunchedEffect(targetReviewId, expanded) {
+                                        if (entryHighlight && expanded) {
+                                            delay(360)
+                                            entryBringIntoView.bringIntoView()
+                                            delay(1500)
+                                            onTargetHandled()
                                         }
-                                        drawCircle(
-                                            color = Color(0xFFA5A5A5),
-                                            radius = 4.dp.toPx(),
-                                            center = Offset(axisX, dotCenterY)
-                                        )
                                     }
-                                ) {
-                                    Spacer(Modifier.width(14.dp))
-                                    Column(
-                                        Modifier.weight(1f).padding(start = 10.dp, top = 8.dp, bottom = 8.dp)
-                                            .bringIntoViewRequester(entryBringIntoView)
-                                            .noRippleClickable { onEdit(entry) }
+                                    val entryTextColor by androidx.compose.animation.animateColorAsState(
+                                        if (entryHighlight) ThemeTeal else Color(0xFF555555),
+                                        animationSpec = tween(420),
+                                        label = "record-review-highlight-${entry.id}"
+                                    )
+                                    Row(
+                                        Modifier.fillMaxWidth().drawBehind {
+                                            val axisX = 7.dp.toPx()
+                                            val dotCenterY = 15.dp.toPx()
+                                            val lineWidth = 1.dp.toPx()
+                                            val lineColor = Color(0xFFDADADA)
+                                            if (entries.size > 1) {
+                                                when (index) {
+                                                    0 -> drawLine(
+                                                        lineColor,
+                                                        Offset(axisX, dotCenterY),
+                                                        Offset(axisX, size.height),
+                                                        strokeWidth = lineWidth
+                                                    )
+                                                    entries.lastIndex -> drawLine(
+                                                        lineColor,
+                                                        Offset(axisX, 0f),
+                                                        Offset(axisX, dotCenterY),
+                                                        strokeWidth = lineWidth
+                                                    )
+                                                    else -> drawLine(
+                                                        lineColor,
+                                                        Offset(axisX, 0f),
+                                                        Offset(axisX, size.height),
+                                                        strokeWidth = lineWidth
+                                                    )
+                                                }
+                                            }
+                                            drawCircle(
+                                                color = Color(0xFFA5A5A5),
+                                                radius = 4.dp.toPx(),
+                                                center = Offset(axisX, dotCenterY)
+                                            )
+                                        }
                                     ) {
-                                        Text(
-                                            SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                            color = Color(0xFF999999),
-                                            fontSize = 11.sp,
-                                            lineHeight = 14.sp,
-                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                        )
-                                        Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 5.dp))
+                                        Spacer(Modifier.width(14.dp))
+                                        Column(
+                                            Modifier.weight(1f).padding(start = 10.dp, top = 8.dp, bottom = 8.dp)
+                                                .bringIntoViewRequester(entryBringIntoView)
+                                                .noRippleClickable { onEdit(entry) }
+                                        ) {
+                                            Text(
+                                                SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                                color = Color(0xFF999999),
+                                                fontSize = 11.sp,
+                                                lineHeight = 14.sp,
+                                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                            )
+                                            Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 5.dp))
+                                        }
                                     }
                                 }
                             }
