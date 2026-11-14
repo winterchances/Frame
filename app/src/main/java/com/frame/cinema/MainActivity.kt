@@ -2547,7 +2547,7 @@ private fun RecordsPage(
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
                                 Modifier.weight(1f).height(100.dp),
-                                verticalArrangement = Arrangement.SpaceBetween
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
                                     displayVideoName(video.name),
@@ -2560,31 +2560,24 @@ private fun RecordsPage(
                                     overflow = TextOverflow.Ellipsis,
                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                 )
-                                Column {
-                                    Text(
-                                        if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                        fontSize = 12.sp,
-                                        lineHeight = 15.sp,
-                                        color = Color(0xFF999999),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                    )
-                                    Spacer(Modifier.height(2.dp))
-                                    RatingStars(
-                                        video.rating,
-                                        16.dp,
-                                        onRate = { onRateVideo(video, it) },
-                                        spacing = 2.dp,
-                                        modifier = Modifier
-                                    )
-                                }
+                                RatingStars(
+                                    video.rating,
+                                    16.dp,
+                                    onRate = { onRateVideo(video, it) },
+                                    spacing = 2.dp,
+                                    modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
+                                )
+                                Text(
+                                    if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
+                                    fontSize = 12.sp,
+                                    lineHeight = 15.sp,
+                                    color = Color(0xFF999999),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                )
                             }
                         }
-                        Box(
-                            Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                                .height(0.5.dp).background(Color(0xFFEBEBEB))
-                        )
                         Row(
                             Modifier.fillMaxWidth()
                                 .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = if (expanded) 12.dp else 0.dp),
@@ -2667,7 +2660,7 @@ private fun RecordsPage(
                                 Row(
                                     Modifier.fillMaxWidth().drawBehind {
                                         val axisX = 7.dp.toPx()
-                                        val dotCenterY = 16.dp.toPx()
+                                        val dotCenterY = 15.dp.toPx()
                                         val lineWidth = 1.dp.toPx()
                                         val lineColor = Color(0xFFDADADA)
                                         if (entries.size > 1) {
@@ -2701,15 +2694,18 @@ private fun RecordsPage(
                                 ) {
                                     Spacer(Modifier.width(14.dp))
                                     Column(
-                                        Modifier.weight(1f).padding(start = 10.dp, top = 10.dp, bottom = 10.dp)
+                                        Modifier.weight(1f).padding(start = 10.dp, top = 8.dp, bottom = 8.dp)
                                             .bringIntoViewRequester(entryBringIntoView)
                                             .noRippleClickable { onEdit(entry) }
                                     ) {
                                         Text(
                                             SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                            color = Color(0xFF999999), fontSize = 11.sp
+                                            color = Color(0xFF999999),
+                                            fontSize = 11.sp,
+                                            lineHeight = 14.sp,
+                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                         )
-                                        Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 7.dp))
+                                        Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 5.dp))
                                     }
                                 }
                             }
