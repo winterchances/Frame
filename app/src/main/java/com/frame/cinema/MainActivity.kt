@@ -2578,9 +2578,17 @@ private fun RecordsPage(
                                 )
                             }
                         }
+                        val reviewHeaderBottomPadding by animateDpAsState(
+                            targetValue = if (expanded) 12.dp else 0.dp,
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = androidx.compose.animation.core.FastOutSlowInEasing
+                            ),
+                            label = "record-review-header-spacing-${video.id}"
+                        )
                         Row(
                             Modifier.fillMaxWidth()
-                                .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = if (expanded) 12.dp else 0.dp),
+                                .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = reviewHeaderBottomPadding),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
