@@ -2,6 +2,7 @@ package com.frame.cinema
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaScannerConnection
@@ -1772,8 +1773,15 @@ private fun HomePage(
 ) {
     val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.take(4) }
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(6) }
-    var continueExpanded by remember { mutableStateOf(true) }
-    var recentExpanded by remember { mutableStateOf(true) }
+    val homeExpansionPreferences = remember {
+        LocalContext.current.getSharedPreferences("frame_home_expansion", Context.MODE_PRIVATE)
+    }
+    var continueExpanded by remember {
+        mutableStateOf(homeExpansionPreferences.getBoolean("continue_expanded", true))
+    }
+    var recentExpanded by remember {
+        mutableStateOf(homeExpansionPreferences.getBoolean("recent_expanded", true))
+    }
     val showTopBar by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
@@ -1832,7 +1840,12 @@ private fun HomePage(
                 }
             }
             item(key = "home-stat-panel-gap") { Spacer(Modifier.height(25.dp)) }
-            item(key = "home-continue-heading") { SectionHeading("继续观看", continueExpanded, onToggle = { continueExpanded = !continueExpanded }) }
+            item(key = "home-continue-heading") {
+                SectionHeading("继续观看", continueExpanded, onToggle = {
+                    continueExpanded = !continueExpanded
+                    homeExpansionPreferences.edit().putBoolean("continue_expanded", continueExpanded).apply()
+                })
+            }
             item(key = "home-continue-content") {
                 AnimatedVisibility(
                     visible = continueExpanded,
@@ -1878,7 +1891,10 @@ private fun HomePage(
                     chevronCollapseDurationMs = 240,
                     chevronExpandEasing = androidx.compose.animation.core.FastOutSlowInEasing,
                     chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing,
-                    onToggle = { recentExpanded = !recentExpanded }
+                    onToggle = {
+                        recentExpanded = !recentExpanded
+                        homeExpansionPreferences.edit().putBoolean("recent_expanded", recentExpanded).apply()
+                    }
                 )
             }
             item(key = "home-recent-content") {
@@ -2320,8 +2336,35 @@ private fun RecordsPage(
     onTargetHandled: () -> Unit
 ) {
     val listState = rememberLazyListState()
-    val expandedVideoReviews = remember { mutableStateMapOf<Long, Boolean>() }
-    val expandedStandaloneReviews = remember { mutableStateMapOf<Long, Boolean>() }
+    val recordExpansionPreferences = remember {
+        LocalContext.current.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
+    }
+    val expandedVideoReviews = remember {
+        mutableStateMapOf<Long, Boolean>().apply {
+            recordExpansionPreferences.all.forEach { (key, value) ->
+                if (key.startsWith("video_") && value is Boolean) {
+                    key.removePrefix("video_").toLongOrNull()?.let { this[it] = value }
+                }
+            }
+        }
+    }
+    val expandedStandaloneReviews = remember {
+        mutableStateMapOf<Long, Boolean>().apply {
+            recordExpansionPreferences.all.forEach { (key, value) ->
+                if (key.startsWith("standalone_") && value is Boolean) {
+                    key.removePrefix("standalone_").toLongOrNull()?.let { this[it] = value }
+                }
+            }
+        }
+    }
+    fun setVideoReviewsExpanded(id: Long, expanded: Boolean) {
+        expandedVideoReviews[id] = expanded
+        recordExpansionPreferences.edit().putBoolean("video_$id", expanded).apply()
+    }
+    fun setStandaloneReviewExpanded(id: Long, expanded: Boolean) {
+        expandedStandaloneReviews[id] = expanded
+        recordExpansionPreferences.edit().putBoolean("standalone_$id", expanded).apply()
+    }
     val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
@@ -2372,12 +2415,12 @@ private fun RecordsPage(
         val targetId = targetReviewId ?: return@LaunchedEffect
         val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
         if (videoIndex >= 0) {
-            expandedVideoReviews[displayVideos[videoIndex].id] = true
+            setVideoReviewsExpanded(displayVideos[videoIndex].id, true)
             listState.animateScrollToItem(3 + videoIndex)
         } else {
             val standaloneIndex = standaloneReviews.indexOfFirst { it.id == targetId }
             if (standaloneIndex >= 0) {
-                expandedStandaloneReviews[targetId] = true
+                setStandaloneReviewExpanded(targetId, true)
                 listState.animateScrollToItem(3 + displayVideos.size + standaloneIndex)
             } else onTargetHandled()
         }
@@ -2494,7 +2537,7 @@ private fun RecordsPage(
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
                                 Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                verticalArrangement = Arrangement.spacedBy(9.dp)
                             ) {
                                 Text(
                                     displayVideoName(video.name),
@@ -2514,7 +2557,12 @@ private fun RecordsPage(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     RatingStars(video.rating, 14.dp, onRate = { onRateVideo(video, it) }, spacing = 0.dp, modifier = Modifier.offset(x = (-4).dp))
-                                    Spacer(Modifier.weight(1f))
+                                }
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("感想 · ${entries.size}条", color = Color(0xFF888888), fontSize = 12.sp, modifier = Modifier.weight(1f))
                                     Box(
                                         Modifier.size(28.dp).noRippleClickable { onCreate(video) },
                                         contentAlignment = Alignment.Center
@@ -2535,7 +2583,7 @@ private fun RecordsPage(
                                         )
                                         Box(
                                             Modifier.padding(start = 7.dp).size(28.dp)
-                                                .noRippleClickable { expandedVideoReviews[video.id] = !expanded },
+                                                .noRippleClickable { setVideoReviewsExpanded(video.id, !expanded) },
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
@@ -2585,22 +2633,23 @@ private fun RecordsPage(
                                     ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(
-                                    Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                                        .bringIntoViewRequester(entryBringIntoView)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(entryBackground)
-                                        .noRippleClickable { onEdit(entry) }
-                                        .padding(12.dp)
-                                ) {
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.fillMaxWidth()) {
+                                    if (index > 0) {
+                                        Box(Modifier.fillMaxWidth().height(0.7.dp).background(Color(0xFFEAEAEA)))
+                                    }
+                                    Column(
+                                        Modifier.fillMaxWidth().padding(vertical = 10.dp)
+                                            .bringIntoViewRequester(entryBringIntoView)
+                                            .background(entryBackground, RoundedCornerShape(8.dp))
+                                            .noRippleClickable { onEdit(entry) }
+                                            .padding(vertical = 3.dp)
+                                    ) {
                                         Text(
                                             SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                            color = Color(0xFF999999), fontSize = 11.sp,
-                                            modifier = Modifier.weight(1f)
+                                            color = Color(0xFF999999), fontSize = 11.sp
                                         )
+                                        Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 7.dp))
                                     }
-                                    Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 5.dp))
                                 }
                             }
                         }
@@ -2640,16 +2689,27 @@ private fun RecordsPage(
                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
                                 color = Color(0xFF999999), fontSize = 11.sp
                             )
+                            val standaloneChevronRotation by animateFloatAsState(
+                                targetValue = if (expanded) 0f else -90f,
+                                animationSpec = tween(
+                                    durationMillis = if (expanded) 300 else 250,
+                                    easing = if (expanded)
+                                        androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)
+                                    else
+                                        androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
+                                ),
+                                label = "record-standalone-chevron-" + entry.id
+                            )
                             Box(
                                 Modifier.padding(start = 7.dp).size(28.dp)
-                                    .noRippleClickable { expandedStandaloneReviews[entry.id] = !expanded },
+                                    .noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                    Icons.Outlined.ExpandMore,
                                     if (expanded) "收起正文" else "展开正文",
                                     tint = MutedText,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.rotate(standaloneChevronRotation).size(20.dp)
                                 )
                             }
                         }
