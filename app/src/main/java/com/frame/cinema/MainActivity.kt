@@ -92,6 +92,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.derivedStateOf
@@ -3451,7 +3452,7 @@ private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
         Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Outlined.Settings, "设置", Modifier.size(20.dp), tint = MainText)
+            Icon(Icons.Rounded.Settings, "设置", Modifier.size(22.dp), tint = MainText)
         }
     }
 }
