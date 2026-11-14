@@ -1043,8 +1043,8 @@ private fun FrameNativeApp(
                         LazyColumn(
                             modifier = Modifier.fillMaxWidth()
                                 .heightIn(max = 350.dp)
-                                .shadow(5.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(18.dp))
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White),
                             userScrollEnabled = false
                         ) {
@@ -1131,10 +1131,10 @@ private fun FrameNativeApp(
                         Row(
                             Modifier.fillMaxWidth()
                                 .height(52.dp)
-                                .shadow(5.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .padding(horizontal = 8.dp),
+                                .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             BasicTextField(
@@ -1183,7 +1183,6 @@ private fun FrameNativeApp(
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
@@ -1430,6 +1429,7 @@ private fun FrameNativeApp(
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
+                                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(if (editReviewVideoId != null) ThemeTeal else Color.White)
                                         .noRippleClickable {
@@ -1451,6 +1451,7 @@ private fun FrameNativeApp(
                                 }
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
+                                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(if (editReviewVideoId == null) ThemeTeal else Color.White)
                                         .noRippleClickable { editReviewVideoId = null; editRating = 0f },
@@ -1470,8 +1471,8 @@ private fun FrameNativeApp(
                                 RatingStars(editRating, 30.dp, onRate = { editRating = it }, spacing = 5.dp)
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp)).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
-                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
+                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
                             } else if (canSetVideoRating && editRating == 0f) {
@@ -1492,6 +1493,7 @@ private fun FrameNativeApp(
                         if (editReviewId != null) {
                             Box(
                                 Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp)
+                                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(Color.White)
                                     .noRippleClickable {
