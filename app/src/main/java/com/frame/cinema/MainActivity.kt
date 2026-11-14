@@ -2547,7 +2547,7 @@ private fun RecordsPage(
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
                                 Modifier.weight(1f).height(100.dp),
-                                verticalArrangement = Arrangement.Top
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
                                     displayVideoName(video.name),
@@ -2560,29 +2560,34 @@ private fun RecordsPage(
                                     overflow = TextOverflow.Ellipsis,
                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                 )
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                    fontSize = 12.sp,
-                                    lineHeight = 15.sp,
-                                    color = Color(0xFF999999),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                RatingStars(
-                                    video.rating,
-                                    14.dp,
-                                    onRate = { onRateVideo(video, it) },
-                                    spacing = 0.dp,
-                                    modifier = Modifier.offset(x = (-4).dp)
-                                )
+                                Column {
+                                    Text(
+                                        if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
+                                        fontSize = 12.sp,
+                                        lineHeight = 15.sp,
+                                        color = Color(0xFF999999),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    RatingStars(
+                                        video.rating,
+                                        16.dp,
+                                        onRate = { onRateVideo(video, it) },
+                                        spacing = 2.dp,
+                                        modifier = Modifier
+                                    )
+                                }
                             }
                         }
-                        Box(Modifier.fillMaxWidth().height(0.7.dp).background(Color(0xFFEAEAEA)))
+                        Box(
+                            Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                                .height(0.5.dp).background(Color(0xFFEBEBEB))
+                        )
                         Row(
-                            Modifier.fillMaxWidth().height(36.dp),
+                            Modifier.fillMaxWidth()
+                                .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = if (expanded) 12.dp else 0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -2660,9 +2665,10 @@ private fun RecordsPage(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(Modifier.fillMaxWidth()) {
-                                    if (index > 0) {
-                                        Box(Modifier.fillMaxWidth().height(0.7.dp).background(Color(0xFFEAEAEA)))
-                                    }
+                                    Box(
+                                        Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                                            .height(0.5.dp).background(Color(0xFFEBEBEB))
+                                    )
                                     Column(
                                         Modifier.fillMaxWidth().padding(vertical = 10.dp)
                                             .bringIntoViewRequester(entryBringIntoView)
