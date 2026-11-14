@@ -2701,7 +2701,7 @@ private fun RecordsPage(
                                 ) {
                                     Spacer(Modifier.width(14.dp))
                                     Column(
-                                        Modifier.weight(1f).padding(start = 10.dp, vertical = 10.dp)
+                                        Modifier.weight(1f).padding(start = 10.dp, top = 10.dp, bottom = 10.dp)
                                             .bringIntoViewRequester(entryBringIntoView)
                                             .noRippleClickable { onEdit(entry) }
                                     ) {
