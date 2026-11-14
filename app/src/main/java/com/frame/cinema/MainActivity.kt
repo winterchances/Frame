@@ -1304,7 +1304,6 @@ private fun FrameNativeApp(
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
@@ -1521,7 +1520,7 @@ private fun FrameNativeApp(
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
+                                
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
