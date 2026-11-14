@@ -36,7 +36,7 @@ data class VideoItem(
     val category: String = "全部分类",
     val bgIndex: Int = 1,
     val review: String = "",
-    val rating: Int = 0,
+    val rating: Float = 0f,
     val durationMs: Long = 0L,
     val lastPlayedAt: Long = 0L,
     val thumbPath: String? = null
@@ -143,7 +143,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     category = cursor.getString(cursor.getColumnIndexOrThrow("category")),
                     bgIndex = cursor.getInt(cursor.getColumnIndexOrThrow("bg_index")),
                     review = cursor.getString(cursor.getColumnIndexOrThrow("review")),
-                    rating = cursor.getInt(cursor.getColumnIndexOrThrow("rating")),
+                    rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating")),
                     durationMs = cursor.getLong(cursor.getColumnIndexOrThrow("duration_ms")),
                     lastPlayedAt = cursor.getLong(cursor.getColumnIndexOrThrow("last_played_at")),
                     thumbPath = cursor.getString(cursor.getColumnIndexOrThrow("thumb_path"))
@@ -191,7 +191,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     entries.minWithOrNull(compareBy<ReviewEntry> { it.createdAt }.thenBy { it.id })?.rating ?: 0
                 }
             val normalizedVideos = videos.map { video ->
-                if (video.rating > 0) video else video.copy(rating = legacyRatings[video.id] ?: 0)
+                if (video.rating > 0f) video else video.copy(rating = (legacyRatings[video.id] ?: 0).toFloat())
             }
 
             normalizedVideos.forEach { video ->
@@ -201,7 +201,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("progress", video.progress); put("status", video.status)
                     put("is_fav", if (video.isFav) 1 else 0); put("category", video.category)
                     put("bg_index", video.bgIndex); put("review", "")
-                    put("rating", video.rating.coerceIn(0, 5))
+                    put("rating", video.rating.coerceIn(0f, 5f))
                     put("duration_ms", video.durationMs); put("last_played_at", video.lastPlayedAt)
                     put("thumb_path", video.thumbPath)
                 }
