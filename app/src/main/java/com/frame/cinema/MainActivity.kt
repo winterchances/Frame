@@ -2143,7 +2143,7 @@ private fun LibraryFilterHeader(
         ) {
             listOf("全部", "在看", "已看").forEach { value ->
                 Column(Modifier.noRippleClickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(value, color = if (status == value) MainText else MutedText, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                    Text(value, color = if (status == value) MainText else MutedText, fontWeight = FontWeight.Medium, fontSize = 17.sp)
                     if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
                 }
             }
@@ -2303,7 +2303,7 @@ private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int)
     ) {
         Text(
             label,
-            fontSize = 16.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.Medium,
             color = Color.Black,
             modifier = Modifier.fillMaxWidth()
@@ -3484,7 +3484,7 @@ private fun SectionHeading(
     ) {
         Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeTeal))
         Text(
-            text, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MainText,
+            text, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = MainText,
             modifier = Modifier.padding(start = 8.dp).weight(1f).graphicsLayer { scaleX = titleScale; scaleY = titleScale }
         )
         if (expanded != null) Icon(Icons.Outlined.ExpandMore, null, tint = MutedText, modifier = Modifier.rotate(rotation).size(20.dp))
