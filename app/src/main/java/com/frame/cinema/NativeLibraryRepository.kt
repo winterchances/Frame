@@ -33,14 +33,14 @@ class NativeLibraryRepository(context: Context) {
     fun addReview(videoId: Long?, content: String, rating: Float) {
         val text = content.trim()
         if (text.isNotEmpty()) {
-            store.addReview(videoId, text, 0, System.currentTimeMillis())
+            store.addReview(videoId, text, 0f, System.currentTimeMillis())
             if (videoId != null && rating > 0f) updateVideoRating(videoId, rating)
         }
     }
 
-    fun updateReview(id: Long, videoId: Long?, content: String, rating: Int) {
+    fun updateReview(id: Long, videoId: Long?, content: String, rating: Float) {
         val text = content.trim()
-        if (text.isNotEmpty()) store.updateReview(id, videoId, text, 0)
+        if (text.isNotEmpty()) store.updateReview(id, videoId, text, 0f)
         else store.deleteReview(id)
     }
 
