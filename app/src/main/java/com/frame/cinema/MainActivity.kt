@@ -2395,12 +2395,6 @@ private fun RecordsPage(
         expandedStandaloneReviews[id] = expanded
         recordExpansionPreferences.edit().putBoolean("standalone_$id", expanded).apply()
     }
-    val titleAlphaState = remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 0f
-            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
-        }
-    }
     val showTopBar by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
@@ -2458,21 +2452,6 @@ private fun RecordsPage(
     val watchedCount = completedVideos.size
     val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
     val reviewedCount = reviews.size
-    val recordsTitleHeightPx = remember { mutableIntStateOf(0) }
-    val recordsStatsHeightPx = remember { mutableIntStateOf(0) }
-    val recordsGapPx = with(LocalDensity.current) { 26.dp.toPx() }
-    val recordsOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val recordsScrollDistancePx = remember(hasRecords) {
-        derivedStateOf {
-            when (listState.firstVisibleItemIndex) {
-                0 -> listState.firstVisibleItemScrollOffset.toFloat()
-                1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                2 -> (recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue +
-                    (if (hasRecords) recordsGapPx else 0f) + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> recordsTitleHeightPx.intValue + recordsStatsHeightPx.intValue + recordsOffscreenPx
-            }
-        }
-    }
     Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
@@ -2494,9 +2473,7 @@ private fun RecordsPage(
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f)
-                        .onGloballyPositioned { recordsTitleHeightPx.intValue = it.size.height }
-                        .graphicsLayer { alpha = 0f }
-                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -2510,8 +2487,6 @@ private fun RecordsPage(
             item {
                 Column(
                     Modifier.fillMaxWidth()
-                        .onGloballyPositioned { recordsStatsHeightPx.intValue = it.size.height }
-                        .graphicsLayer { alpha = 0f }
                         .background(PageBg.copy(alpha = .95f))
                 ) {
                     Row(
@@ -2818,44 +2793,6 @@ private fun RecordsPage(
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
-        }
-
-        Column(
-            Modifier.fillMaxWidth()
-                .graphicsLayer { translationY = -recordsScrollDistancePx.value }
-        ) {
-            Row(
-                Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = titleAlphaState.value }
-                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
-                    ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
-                }
-            }
-            Column(Modifier.fillMaxWidth().background(PageBg.copy(alpha = .95f))) {
-                Row(
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 10.dp)
-                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Glass)
-                        .padding(horizontal = 10.dp, vertical = 15.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Stat("已看完", watchedCount.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("写下感想", reviewedCount.toString(), "篇", Modifier.weight(1f))
-                }
-            }
-            if (hasRecords) Spacer(Modifier.height(26.dp))
         }
 
         AnimatedVisibility(
