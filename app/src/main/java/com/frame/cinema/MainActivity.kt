@@ -3434,16 +3434,15 @@ private fun ActionIcon(
     iconSize: androidx.compose.ui.unit.Dp = 20.dp,
     iconModifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = Modifier.size(36.dp).noRippleClickable(onClick),
-        shape = CircleShape,
-        color = Color.White,
-        shadowElevation = 1.dp,
-        
+    Box(
+        modifier = Modifier.size(36.dp)
+            .shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+            .clip(CircleShape)
+            .background(Color.White)
+            .noRippleClickable(onClick),
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, description, iconModifier.size(iconSize), tint = Color(0xFF333333))
-        }
+        Icon(icon, description, iconModifier.size(iconSize), tint = Color(0xFF333333))
     }
 }
 
