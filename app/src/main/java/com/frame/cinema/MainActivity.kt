@@ -932,7 +932,7 @@ private fun FrameNativeApp(
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), CircleShape)
+                        .border(1.dp, Color.White.copy(alpha = .7f), CircleShape)
                         .noRippleClickable { showFab = !showFab },
                     contentAlignment = Alignment.Center
                 ) {
@@ -1768,7 +1768,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
             .clip(RoundedCornerShape(28.dp))
             .background(Glass)
-            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(28.dp))
+            .border(1.dp, Color.White.copy(alpha = .7f), RoundedCornerShape(28.dp))
             .padding(5.dp)
     ) {
         val slot = maxWidth / 4
@@ -1854,10 +1854,9 @@ private fun HomePage(
                 ) {
                     Row(
                         Modifier.fillMaxWidth()
-                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Glass)
-                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                             .padding(horizontal = 10.dp, vertical = 15.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -2524,10 +2523,9 @@ private fun RecordsPage(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 10.dp)
-                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Glass)
-                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                             .padding(horizontal = 10.dp, vertical = 15.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -2848,10 +2846,9 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
                         .clip(RoundedCornerShape(16.dp))
                         .background(Glass)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                         .padding(horizontal = 10.dp, vertical = 15.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
