@@ -2664,13 +2664,44 @@ private fun RecordsPage(
                                     ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(Modifier.fillMaxWidth()) {
-                                    Box(
-                                        Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                                            .height(0.5.dp).background(Color(0xFFEBEBEB))
-                                    )
+                                Row(
+                                    Modifier.fillMaxWidth().drawBehind {
+                                        val axisX = 7.dp.toPx()
+                                        val dotCenterY = 16.dp.toPx()
+                                        val lineWidth = 1.dp.toPx()
+                                        val lineColor = Color(0xFFDADADA)
+                                        if (entries.size > 1) {
+                                            when (index) {
+                                                0 -> drawLine(
+                                                    lineColor,
+                                                    Offset(axisX, dotCenterY),
+                                                    Offset(axisX, size.height),
+                                                    strokeWidth = lineWidth
+                                                )
+                                                entries.lastIndex -> drawLine(
+                                                    lineColor,
+                                                    Offset(axisX, 0f),
+                                                    Offset(axisX, dotCenterY),
+                                                    strokeWidth = lineWidth
+                                                )
+                                                else -> drawLine(
+                                                    lineColor,
+                                                    Offset(axisX, 0f),
+                                                    Offset(axisX, size.height),
+                                                    strokeWidth = lineWidth
+                                                )
+                                            }
+                                        }
+                                        drawCircle(
+                                            color = Color(0xFFA5A5A5),
+                                            radius = 4.dp.toPx(),
+                                            center = Offset(axisX, dotCenterY)
+                                        )
+                                    }
+                                ) {
+                                    Spacer(Modifier.width(14.dp))
                                     Column(
-                                        Modifier.fillMaxWidth().padding(vertical = 10.dp)
+                                        Modifier.weight(1f).padding(start = 10.dp, vertical = 10.dp)
                                             .bringIntoViewRequester(entryBringIntoView)
                                             .noRippleClickable { onEdit(entry) }
                                     ) {
