@@ -3693,19 +3693,19 @@ private fun SortOptionAction(
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
             )
             Box(Modifier.size(36.dp).noRippleClickable(onAscending), contentAlignment = Alignment.Center) {
-                Icon(
-                    FrameSortDirectionIcon,
+                Text(
                     "正序",
-                    tint = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
-                    modifier = Modifier.size(19.dp)
+                    color = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
             Box(Modifier.size(36.dp).noRippleClickable(onDescending), contentAlignment = Alignment.Center) {
-                Icon(
-                    FrameSortDirectionIcon,
+                Text(
                     "倒序",
-                    tint = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
-                    modifier = Modifier.size(19.dp).rotate(180f)
+                    color = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
