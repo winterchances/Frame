@@ -2567,8 +2567,8 @@ private fun RecordsPage(
                         ) {
                             Box(
                                 Modifier.size(75.dp, 100.dp)
-                                    .shadow(2.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                                    .clip(RoundedCornerShape(10.dp))
                                     .background(PosterBrush(video.bgIndex))
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
