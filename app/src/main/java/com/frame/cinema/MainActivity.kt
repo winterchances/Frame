@@ -1583,7 +1583,7 @@ private fun FrameNativeApp(
                         Spacer(Modifier.height(24.dp))
                     }
                     SheetType.CLEAR_RECENT -> SheetContent("清空播放记录？") {
-                        Text("只清除观看进度，不会删除片库中的视频。", color = MutedText, modifier = Modifier.padding(bottom = 12.dp))
+                        Text("只清除观看进度，不会删除片库中的视频。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(bottom = 12.dp))
                         SheetAction("确认清空", danger = true) { repository.clearRecent(); refresh(); sheet = SheetType.NONE }
                     }
                     SheetType.CLEAR_DATA -> Unit
@@ -2817,7 +2817,7 @@ private fun RecordsPage(
                                     animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
                                 )
                         ) {
-                            Text(entry.content, color = Color(0xFF555555), fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+                            Text(entry.content, color = Color(0xFF555555), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
                         }
                     }
                 }
