@@ -426,7 +426,8 @@ private fun FrameNativeApp(
     val hazeState = remember { HazeState() }
     val homeListState = rememberLazyListState()
     val libraryListState = rememberLazyListState()
-    val libraryCategoryScrollState = rememberScrollState()
+    val libraryStickyCategoryScrollState = rememberScrollState()
+    val libraryFloatingCategoryScrollState = rememberScrollState()
     val recentListState = rememberLazyListState()
     val recordsListState = rememberLazyListState()
     var page by remember { mutableStateOf(MainPage.HOME) }
@@ -782,7 +783,8 @@ private fun FrameNativeApp(
                             MainPage.LIBRARY -> LibraryPage(
                                 hazeState = hazeState,
                                 listState = libraryListState,
-                                categoryScrollState = libraryCategoryScrollState,
+                                stickyCategoryScrollState = libraryStickyCategoryScrollState,
+                                floatingCategoryScrollState = libraryFloatingCategoryScrollState,
                                 videos.sortedWith { a, b ->
                                     val primary = when (sort) {
                                         SortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
@@ -2003,7 +2005,8 @@ private fun HomePage(
 private fun LibraryPage(
     hazeState: HazeState,
     listState: LazyListState,
-    categoryScrollState: androidx.compose.foundation.ScrollState,
+    stickyCategoryScrollState: androidx.compose.foundation.ScrollState,
+    floatingCategoryScrollState: androidx.compose.foundation.ScrollState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
@@ -2055,7 +2058,7 @@ private fun LibraryPage(
             stickyHeader(key = "library-filter-header") {
                 LibraryFilterHeader(
                     categories = categories, status = status, category = category,
-                    categoryScrollState = categoryScrollState,
+                    categoryScrollState = stickyCategoryScrollState,
                     onStatus = onStatus, onCategory = onCategory,
                     alpha = 0f,
                     onBoundsChanged = {}
@@ -2104,7 +2107,7 @@ private fun LibraryPage(
         }
         LibraryFilterHeader(
             categories = categories, status = status, category = category,
-            categoryScrollState = categoryScrollState,
+            categoryScrollState = floatingCategoryScrollState,
             onStatus = onStatus, onCategory = onCategory,
             alpha = 1f, onBoundsChanged = onStickyHeaderBoundsChanged,
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
