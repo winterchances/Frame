@@ -1098,7 +1098,7 @@ private fun FrameNativeApp(
                                         if (cat == "我的最爱") "我的收藏" else cat,
                                         Modifier.weight(1f).padding(start = 12.dp),
                                         color = MainText,
-                                        fontSize = 15.sp
+                                        fontSize = 16.sp
                                     )
                                     if (isDefault) {
                                         Text(
@@ -1235,7 +1235,7 @@ private fun FrameNativeApp(
                                                 Text(
                                                     video?.let { displayVideoName(it.name) } ?: "独立感想",
                                                     color = MainText,
-                                                    fontSize = if (video == null) 12.sp else 15.sp,
+                                                    fontSize = if (video == null) 12.sp else 16.sp,
                                                     fontWeight = if (video == null) FontWeight.Normal else FontWeight.Medium,
                                                     lineHeight = if (video == null) 17.sp else 21.sp,
                                                     maxLines = 1,
@@ -1356,7 +1356,7 @@ private fun FrameNativeApp(
                                             Text(
                                                 displayVideoName(video.name),
                                                 color = MainText,
-                                                fontSize = 15.sp,
+                                                fontSize = 16.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 lineHeight = 21.sp,
                                                 maxLines = 2,
@@ -1441,7 +1441,7 @@ private fun FrameNativeApp(
                                     Text(
                                         linkedVideo?.let { displayVideoName(it.name) } ?: "关联视频",
                                         color = if (editReviewVideoId != null) Color.White else MainText,
-                                        fontSize = 14.sp,
+                                        fontSize = 16.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center,
@@ -1456,7 +1456,7 @@ private fun FrameNativeApp(
                                         .noRippleClickable { editReviewVideoId = null; editRating = 0f },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("不关联视频", color = if (editReviewVideoId == null) Color.White else MainText, fontSize = 14.sp)
+                                    Text("不关联视频", color = if (editReviewVideoId == null) Color.White else MainText, fontSize = 16.sp)
                                 }
                             }
                             Spacer(Modifier.height(16.dp))
@@ -3689,7 +3689,7 @@ private fun SortOptionAction(
                 label,
                 Modifier.weight(1f),
                 color = if (selected) ThemeTeal else MainText,
-                fontSize = 15.sp,
+                fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
             )
             Box(Modifier.size(36.dp).noRippleClickable(onAscending), contentAlignment = Alignment.Center) {
