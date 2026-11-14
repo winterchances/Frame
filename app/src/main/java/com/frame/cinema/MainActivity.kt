@@ -2532,7 +2532,7 @@ private fun RecordsPage(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Stat("已看完", watchedCount.toString(), "部", Modifier.weight(1f))
+                        Stat("已看完", watchedCount.toString(), "个", Modifier.weight(1f))
                         Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
                         Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
                         Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
@@ -2614,7 +2614,7 @@ private fun RecordsPage(
                         )
                         Row(
                             Modifier.fillMaxWidth()
-                                .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = reviewHeaderBottomPadding),
+                                .padding(start = 4.dp, top = 16.dp, bottom = reviewHeaderBottomPadding),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -2628,7 +2628,7 @@ private fun RecordsPage(
                                 Modifier.size(30.dp).noRippleClickable { onCreate(video) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Outlined.Add, "添加感想", tint = MutedText, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Outlined.Add, "添加感想", tint = MutedText, modifier = Modifier.size(16.dp))
                             }
                             val chevronRotation by animateFloatAsState(
                                 targetValue = if (entries.isEmpty() || !expanded) -90f else 0f,
@@ -2794,7 +2794,7 @@ private fun RecordsPage(
                                 label = "record-standalone-chevron-" + entry.id
                             )
                             Box(
-                                Modifier.padding(start = 7.dp).size(28.dp)
+                                Modifier.size(30.dp)
                                     .noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -2802,7 +2802,7 @@ private fun RecordsPage(
                                     Icons.Outlined.ExpandMore,
                                     if (expanded) "收起正文" else "展开正文",
                                     tint = MutedText,
-                                    modifier = Modifier.rotate(standaloneChevronRotation).size(20.dp)
+                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
                                 )
                             }
                         }
@@ -2856,7 +2856,7 @@ private fun RecordsPage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Stat("已看完", watchedCount.toString(), "部", Modifier.weight(1f))
+                    Stat("已看完", watchedCount.toString(), "个", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
                     Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
