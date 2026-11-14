@@ -2247,15 +2247,16 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                         )
                     }
                     item { Spacer(Modifier.height(10.dp)) }
-                    items(list, key = { it.id }) { video ->
+                    itemsIndexed(list, key = { _, video -> video.id }) { itemIndex, video ->
                         RecentHistoryCard(
                             video,
                             onClick = { onVideo(video) },
                             onMore = { onMore(video) },
+                            isLastInGroup = itemIndex == list.lastIndex,
                             modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
-                    item { Spacer(Modifier.height(3.dp)) }
+                    item { Spacer(Modifier.height(0.dp)) }
                 }
                 item { Spacer(Modifier.height(12.dp)) }
             }
@@ -2313,11 +2314,11 @@ private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int)
 }
 
 @Composable
-private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
+private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, isLastInGroup: Boolean = false, modifier: Modifier = Modifier) {
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
     Row(
-        modifier.fillMaxWidth().padding(bottom = 12.dp)
+        modifier.fillMaxWidth().padding(bottom = if (isLastInGroup) 0.dp else 12.dp)
             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
