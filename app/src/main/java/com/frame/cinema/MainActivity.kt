@@ -425,6 +425,9 @@ private fun FrameNativeApp(
     }
     val hazeState = remember { HazeState() }
     val homeListState = rememberLazyListState()
+    val libraryListState = rememberLazyListState()
+    val recentListState = rememberLazyListState()
+    val recordsListState = rememberLazyListState()
     var page by remember { mutableStateOf(MainPage.HOME) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
@@ -777,6 +780,7 @@ private fun FrameNativeApp(
                             )
                             MainPage.LIBRARY -> LibraryPage(
                                 hazeState = hazeState,
+                                listState = libraryListState,
                                 videos.sortedWith { a, b ->
                                     val primary = when (sort) {
                                         SortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
@@ -801,6 +805,7 @@ private fun FrameNativeApp(
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
+                                listState = recentListState,
                                 videos,
                                 onVideo = { selected = it; playVideo(it) },
                                 onClear = { sheet = SheetType.CLEAR_RECENT },
@@ -808,6 +813,7 @@ private fun FrameNativeApp(
                             )
                             MainPage.RECORDS -> RecordsPage(
                                 hazeState = hazeState,
+                                listState = recordsListState,
                                 videos = videos,
                                 reviews = reviewEntries,
                                 targetReviewId = targetReviewId,
@@ -1994,13 +2000,13 @@ private fun HomePage(
 @Composable
 private fun LibraryPage(
     hazeState: HazeState,
+    listState: LazyListState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit
 ) {
-    val listState = rememberLazyListState()
     val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
@@ -2154,8 +2160,7 @@ private fun LibraryFilterHeader(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RecentPage(hazeState: HazeState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    val listState = rememberLazyListState()
+private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
     val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
@@ -2342,6 +2347,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
 @Composable
 private fun RecordsPage(
     hazeState: HazeState,
+    listState: LazyListState,
     videos: List<VideoItem>,
     reviews: List<ReviewEntry>,
     targetReviewId: Long?,
@@ -2354,7 +2360,6 @@ private fun RecordsPage(
     onRateVideo: (VideoItem, Float) -> Unit,
     onTargetHandled: () -> Unit
 ) {
-    val listState = rememberLazyListState()
     val context = LocalContext.current
     val recordExpansionPreferences = remember {
         context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
