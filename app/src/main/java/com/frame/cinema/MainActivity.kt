@@ -1854,10 +1854,10 @@ private fun HomePage(
                 ) {
                     Row(
                         Modifier.fillMaxWidth()
-                            .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(Glass)
-                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                             .padding(horizontal = 10.dp, vertical = 15.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -1895,8 +1895,8 @@ private fun HomePage(
                         LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 2.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                             itemsIndexed(continuing, key = { _, video -> video.id }) { _, video ->
                                 Box(
-                                    Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                        .clip(RoundedCornerShape(20.dp)).background(PosterBrush(video.bgIndex)).noRippleClickable { onVideo(video) }
+                                    Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                                        .clip(RoundedCornerShape(16.dp)).background(PosterBrush(video.bgIndex)).noRippleClickable { onVideo(video) }
                                 ) {
                                     Thumbnail(video, Modifier.fillMaxSize())
                                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, .4f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .8f)))))
@@ -2524,10 +2524,10 @@ private fun RecordsPage(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 10.dp)
-                            .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(Glass)
-                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                             .padding(horizontal = 10.dp, vertical = 15.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -2555,8 +2555,8 @@ private fun RecordsPage(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 16.dp)
-                            .shadow(6.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
                             .padding(15.dp)
                     ) {
@@ -2769,8 +2769,8 @@ private fun RecordsPage(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 16.dp)
-                            .shadow(6.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(RoundedCornerShape(16.dp))
                             .bringIntoViewRequester(entryBringIntoView)
                             .background(entryBackground)
                             .noRippleClickable { onEdit(entry) }
@@ -2848,10 +2848,10 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                        .clip(RoundedCornerShape(20.dp))
+                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(Glass)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(20.dp))
+                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(16.dp))
                         .padding(horizontal = 10.dp, vertical = 15.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
