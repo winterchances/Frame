@@ -1771,10 +1771,11 @@ private fun HomePage(
     listState: LazyListState,
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
+    val context = LocalContext.current
     val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.take(4) }
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(6) }
     val homeExpansionPreferences = remember {
-        LocalContext.current.getSharedPreferences("frame_home_expansion", Context.MODE_PRIVATE)
+        context.getSharedPreferences("frame_home_expansion", Context.MODE_PRIVATE)
     }
     var continueExpanded by remember {
         mutableStateOf(homeExpansionPreferences.getBoolean("continue_expanded", true))
@@ -2336,8 +2337,9 @@ private fun RecordsPage(
     onTargetHandled: () -> Unit
 ) {
     val listState = rememberLazyListState()
+    val context = LocalContext.current
     val recordExpansionPreferences = remember {
-        LocalContext.current.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
+        context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
     }
     val expandedVideoReviews = remember {
         mutableStateMapOf<Long, Boolean>().apply {
