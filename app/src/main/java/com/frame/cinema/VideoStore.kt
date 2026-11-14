@@ -14,7 +14,7 @@ data class ReviewEntry(
     val id: Long,
     val videoId: Long?,
     val content: String,
-    val rating: Int = 0,
+    val rating: Float = 0f,
     val createdAt: Long
 )
 
@@ -188,7 +188,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 .filter { it.videoId != null && it.rating > 0 }
                 .groupBy { it.videoId!! }
                 .mapValues { (_, entries) ->
-                    entries.minWithOrNull(compareBy<ReviewEntry> { it.createdAt }.thenBy { it.id })?.rating ?: 0
+                    entries.minWithOrNull(compareBy<ReviewEntry> { it.createdAt }.thenBy { it.id })?.rating ?: 0f
                 }
             val normalizedVideos = videos.map { video ->
                 if (video.rating > 0f) video else video.copy(rating = (legacyRatings[video.id] ?: 0).toFloat())
@@ -217,7 +217,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     if (review.id > 0L) put("id", review.id)
                     if (review.videoId == null) putNull("video_id") else put("video_id", review.videoId)
                     put("content", review.content)
-                    put("rating", 0)
+                    put("rating", 0f)
                     put("created_at", review.createdAt)
                 }
                 db.insertWithOnConflict("reviews", null, values, SQLiteDatabase.CONFLICT_REPLACE)
@@ -239,7 +239,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                         id = cursor.getLong(cursor.getColumnIndexOrThrow("id")),
                         videoId = if (cursor.isNull(videoIdIndex)) null else cursor.getLong(videoIdIndex),
                         content = cursor.getString(cursor.getColumnIndexOrThrow("content")),
-                        rating = cursor.getInt(cursor.getColumnIndexOrThrow("rating")),
+                        rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating")),
                         createdAt = cursor.getLong(cursor.getColumnIndexOrThrow("created_at"))
                     )
                 )
@@ -247,21 +247,21 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         }
     }
 
-    @Synchronized fun addReview(videoId: Long?, content: String, rating: Int, createdAt: Long): Long {
+    @Synchronized fun addReview(videoId: Long?, content: String, rating: Float, createdAt: Long): Long {
         val values = ContentValues().apply {
             if (videoId == null) putNull("video_id") else put("video_id", videoId)
             put("content", content)
-            put("rating", rating.coerceIn(0, 5))
+            put("rating", rating.coerceIn(0f, 5f))
             put("created_at", createdAt)
         }
         return writableDatabase.insert("reviews", null, values)
     }
 
-    @Synchronized fun updateReview(id: Long, videoId: Long?, content: String, rating: Int) {
+    @Synchronized fun updateReview(id: Long, videoId: Long?, content: String, rating: Float) {
         val values = ContentValues().apply {
             if (videoId == null) putNull("video_id") else put("video_id", videoId)
             put("content", content)
-            put("rating", rating.coerceIn(0, 5))
+            put("rating", rating.coerceIn(0f, 5f))
         }
         writableDatabase.update("reviews", values, "id=?", arrayOf(id.toString()))
     }
