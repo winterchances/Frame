@@ -22,6 +22,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
+import android.util.LruCache
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -249,6 +250,12 @@ private val MainText = Color(0xFF1A1A1A)
 private val ThemeTeal = Color(0xFF7FB5B1)
 private val MutedText = Color(0xFF888888)
 private val Glass = Color.White.copy(alpha = .85f)
+
+private val thumbnailBitmapCache = object : LruCache<String, Bitmap>(
+    (Runtime.getRuntime().maxMemory() / 1024L / 8L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+) {
+    override fun sizeOf(key: String, value: Bitmap): Int = (value.byteCount / 1024).coerceAtLeast(1)
+}
 
 private fun buildFrameStarIcon(name: String, filled: Boolean): ImageVector =
     ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
@@ -2010,7 +2017,7 @@ private fun LibraryPage(
     }
     Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
-            item {
+            item(key = "library-title") {
                 Row(
                     Modifier.fillMaxWidth()
                         .onGloballyPositioned { libraryTitleHeightPx.intValue = it.size.height }
@@ -2025,7 +2032,7 @@ private fun LibraryPage(
                     ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
                 }
             }
-            stickyHeader {
+            stickyHeader(key = "library-filter-header") {
                 LibraryFilterHeader(
                     categories = categories, status = status, category = category,
                     onStatus = onStatus, onCategory = onCategory,
@@ -2038,7 +2045,7 @@ private fun LibraryPage(
             } else {
                 item { Spacer(Modifier.height(5.dp)) }
                 filtered.chunked(columns).forEach { rowVideos ->
-                    item {
+                    item(key = "library-row-${rowVideos.first().id}") {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(gap),
@@ -2055,7 +2062,7 @@ private fun LibraryPage(
                             repeat(columns - rowVideos.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
-                    item { Spacer(Modifier.height(gap)) }
+                    item(key = "library-row-gap-${rowVideos.first().id}") { Spacer(Modifier.height(gap)) }
                 }
             }
         }
@@ -3444,14 +3451,14 @@ private fun PosterCard(
     onBoundsChanged: ((Rect) -> Unit)? = null
 ) {
     val haptic = LocalHapticFeedback.current
-    var cardBounds by remember { mutableStateOf(Rect.Zero) }
+    val cardBounds = remember { arrayOf(Rect.Zero) }
     Column(
         modifier.graphicsLayer { this.alpha = alpha }
             .onGloballyPositioned {
-                cardBounds = it.boundsInRoot()
-                onBoundsChanged?.invoke(cardBounds)
+                cardBounds[0] = it.boundsInRoot()
+                onBoundsChanged?.invoke(cardBounds[0])
             }
-            .noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds) })
+            .noRippleCombinedClickable(onClick = { onPlay(video) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong(cardBounds[0]) })
     ) {
         PosterCardVisual(video, compact, highlighted)
     }
@@ -3474,9 +3481,19 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
 
 @Composable
 private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
-    val bitmap = remember(video.thumbPath) {
-        video.thumbPath?.let { path -> runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull() }
-    }
+    val bitmap = produceState<ImageBitmap?>(null, video.thumbPath) {
+        val path = video.thumbPath
+        value = if (path.isNullOrBlank()) {
+            null
+        } else {
+            val decoded = withContext(Dispatchers.IO) {
+                thumbnailBitmapCache.get(path) ?: runCatching {
+                    BitmapFactory.decodeFile(path)?.also { thumbnailBitmapCache.put(path, it) }
+                }.getOrNull()
+            }
+            decoded?.asImageBitmap()
+        }
+    }.value
     if (bitmap != null) {
         Image(
             bitmap,
