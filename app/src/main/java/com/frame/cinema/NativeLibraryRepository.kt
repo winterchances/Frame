@@ -30,11 +30,11 @@ class NativeLibraryRepository(context: Context) {
     fun reviews(): List<ReviewEntry> = store.allReviews()
     fun categories(): List<String> = store.categories()
 
-    fun addReview(videoId: Long?, content: String, rating: Int) {
+    fun addReview(videoId: Long?, content: String, rating: Float) {
         val text = content.trim()
         if (text.isNotEmpty()) {
             store.addReview(videoId, text, 0, System.currentTimeMillis())
-            if (videoId != null && rating > 0) updateVideoRating(videoId, rating)
+            if (videoId != null && rating > 0f) updateVideoRating(videoId, rating)
         }
     }
 
@@ -44,9 +44,9 @@ class NativeLibraryRepository(context: Context) {
         else store.deleteReview(id)
     }
 
-    fun updateVideoRating(id: Long, rating: Int) {
+    fun updateVideoRating(id: Long, rating: Float) {
         store.allVideos().firstOrNull { it.id == id }?.let { video ->
-            store.upsert(video.copy(rating = rating.coerceIn(0, 5)))
+            store.upsert(video.copy(rating = rating.coerceIn(0f, 5f)))
         }
     }
 
