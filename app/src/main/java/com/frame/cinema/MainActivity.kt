@@ -1144,9 +1144,9 @@ private fun FrameNativeApp(
                                     .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                     .padding(horizontal = 12.dp),
                                 singleLine = true,
-                                decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText); inner() },
+                                decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText, fontSize = 16.sp); inner() },
                                 textStyle = TextStyle(
-                                    fontSize = 15.sp,
+                                    fontSize = 16.sp,
                                     lineHeight = 18.sp,
                                     color = MainText,
                                     platformStyle = PlatformTextStyle(includeFontPadding = false)
@@ -1186,10 +1186,10 @@ private fun FrameNativeApp(
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
-                                if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想...", color = MutedText, fontSize = 15.sp)
+                                if (recordSearch.isEmpty()) Text("搜索视频名称或观影感想...", color = MutedText, fontSize = 16.sp)
                                 inner()
                             },
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, color = MainText)
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = MainText)
                         )
                         val recordQuery = recordSearch.trim()
                         val matchingReviewEntries = if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
@@ -1307,10 +1307,10 @@ private fun FrameNativeApp(
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
-                                if (search.isEmpty()) Text("搜索本地视频...", color = MutedText, fontSize = 15.sp)
+                                if (search.isEmpty()) Text("搜索本地视频...", color = MutedText, fontSize = 16.sp)
                                 inner()
                             },
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, color = MainText)
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = MainText)
                         )
                         val searchResults = remember(search, videos) {
                             val query = search.trim()
@@ -1388,7 +1388,7 @@ private fun FrameNativeApp(
                                     .padding(horizontal = 16.dp),
                                 singleLine = true,
                                 textStyle = TextStyle(
-                                    fontSize = 15.sp,
+                                    fontSize = 16.sp,
                                     lineHeight = 18.sp,
                                     color = MainText,
                                     platformStyle = PlatformTextStyle(includeFontPadding = false)
@@ -1470,7 +1470,7 @@ private fun FrameNativeApp(
                                 RatingStars(editRating, 30.dp, onRate = { editRating = it }, spacing = 5.dp)
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText); inner() }, textStyle = TextStyle(fontSize = 15.sp, color = MainText, lineHeight = 22.sp))
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText, fontSize = 16.sp); inner() }, textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp))
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
@@ -1524,10 +1524,10 @@ private fun FrameNativeApp(
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
-                                if (reviewVideoSearch.isEmpty()) Text("搜索要关联的视频...", color = MutedText, fontSize = 15.sp)
+                                if (reviewVideoSearch.isEmpty()) Text("搜索要关联的视频...", color = MutedText, fontSize = 16.sp)
                                 inner()
                             },
-                            textStyle = TextStyle(fontSize = 15.sp, color = MainText)
+                            textStyle = TextStyle(fontSize = 16.sp, color = MainText)
                         )
                         val query = reviewVideoSearch.trim()
                         val matchingVideos = if (query.isBlank()) emptyList() else videos.filter {
