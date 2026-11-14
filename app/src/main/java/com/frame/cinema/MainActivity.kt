@@ -1869,7 +1869,7 @@ private fun HomePage(
                     }
                 }
             }
-            item(key = "home-stat-panel-gap") { Spacer(Modifier.height(25.dp)) }
+            item(key = "home-stat-panel-gap") { Spacer(Modifier.height(26.dp)) }
             item(key = "home-continue-heading") {
                 SectionHeading("继续观看", continueExpanded, onToggle = {
                     continueExpanded = !continueExpanded
@@ -2556,7 +2556,7 @@ private fun RecordsPage(
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
-                            .padding(15.dp)
+                            .padding(16.dp)
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
