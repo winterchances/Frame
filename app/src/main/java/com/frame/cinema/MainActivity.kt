@@ -2341,7 +2341,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     Text("播放至${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 2, overflow = TextOverflow.Clip, softWrap = true, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                 }
             }
-            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomCenter) {
+            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomEnd) {
                 Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFD0D0D0), modifier = Modifier.size(16.dp))
             }
         }
