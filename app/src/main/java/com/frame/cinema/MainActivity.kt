@@ -1505,7 +1505,7 @@ private fun FrameNativeApp(
                         SheetAction("不关联视频", bottomPadding = 0.dp) { startNewReview(null) }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
+                        SheetHeading(if (editReviewVideoId == null) { if (editReviewId == null) "新增记录" else "编辑记录" } else { if (editReviewId == null) "新增观影感想" else "编辑观影感想" })
                         val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
                         if (editReviewVideoId == null) {
                             val coverBitmap = remember(editReviewCoverPath, editReviewCoverUri) {
