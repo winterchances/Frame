@@ -3614,7 +3614,7 @@ private fun SortOptionAction(
         shadowElevation = 0.dp
     ) {
         Row(
-            Modifier.fillMaxWidth().height(54.dp).padding(start = 18.dp, end = 8.dp),
+            Modifier.fillMaxWidth().height(54.dp).padding(start = 18.dp, end = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -3628,7 +3628,7 @@ private fun SortOptionAction(
                 Text(
                     "正序",
                     color = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -3636,7 +3636,7 @@ private fun SortOptionAction(
                 Text(
                     "倒序",
                     color = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
