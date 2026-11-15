@@ -2855,7 +2855,7 @@ private fun RecordsPage(
                                     Icons.Outlined.ExpandMore,
                                     if (expanded) "收起正文" else "展开正文",
                                     tint = MutedText,
-                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
+                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp).offset(x = 3.dp)
                                 )
                             }
                         }
