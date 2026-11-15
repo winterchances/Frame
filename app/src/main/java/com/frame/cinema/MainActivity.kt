@@ -1492,7 +1492,52 @@ private fun FrameNativeApp(
                             editReviewVideoId != null &&
                             reviewEntries.none { it.videoId == editReviewVideoId }
                         val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
-                        if (linkedVideo != null) {
+                        if (editReviewId == null) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(20.dp)
+                            ) {
+                                Box(
+                                    Modifier.weight(1f).height(48.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (linkedVideo != null) ThemeTeal else Color.White)
+                                        .noRippleClickable {
+                                            reviewVideoSearch = ""
+                                            sheet = SheetType.REVIEW_VIDEO_PICKER
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        linkedVideo?.let { displayVideoName(it.name) } ?: "关联视频",
+                                        color = if (linkedVideo != null) Color.White else MainText,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
+                                    )
+                                }
+                                Box(
+                                    Modifier.weight(1f).height(48.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (linkedVideo == null) ThemeTeal else Color.White)
+                                        .noRippleClickable {
+                                            editReviewVideoId = null
+                                            selected = null
+                                            editRating = 0f
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "不关联视频",
+                                        color = if (linkedVideo == null) Color.White else MainText,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                        } else if (linkedVideo != null) {
                             Text(
                                 displayVideoName(linkedVideo.name),
                                 color = MainText,
