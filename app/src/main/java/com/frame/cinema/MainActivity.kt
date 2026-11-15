@@ -990,7 +990,7 @@ private fun FrameNativeApp(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
-                         .padding(top = 26.dp, bottom = if (sheetKeyboardUp) 400.dp else if (displayedSheet == SheetType.SETTINGS) 30.dp else 40.dp)
+                         .padding(top = 26.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
                         .navigationBarsPadding()
                 ) {
                 when (displayedSheet) {
@@ -999,7 +999,7 @@ private fun FrameNativeApp(
                             galleryPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
                         }
                         SheetAction("从文件中选择视频") { importPicker.launch(arrayOf("video/*")) }
-                        SheetAction("扫描整个文件夹") { folderPicker.launch(null) }
+                        SheetAction("扫描整个文件夹", bottomPadding = 0.dp) { folderPicker.launch(null) }
                     }
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
@@ -1032,7 +1032,6 @@ private fun FrameNativeApp(
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
                         }
-                        Spacer(Modifier.height(10.dp))
                     }
                     SheetType.SORT -> SheetContent("视频排序") {
                         SortOptionAction(
@@ -1043,12 +1042,13 @@ private fun FrameNativeApp(
                         SortOptionAction(
                             "按名称", sort == SortMode.NAME, sortDirection,
                             onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE },
+                            bottomPadding = 0.dp
                         )
                     }
                     SheetType.GRID -> SheetContent("视图模式") {
                         SheetAction("2列大图（舒适）") { compact = false; sheet = SheetType.NONE }
-                        SheetAction("3列小图（紧凑）") { compact = true; sheet = SheetType.NONE }
+                        SheetAction("3列小图（紧凑）", bottomPadding = 0.dp) { compact = true; sheet = SheetType.NONE }
                     }
                     SheetType.CATEGORIES -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("分类管理")
@@ -1177,7 +1177,6 @@ private fun FrameNativeApp(
                                 Icon(Icons.Outlined.Add, "添加分类", tint = Color.White, modifier = Modifier.size(20.dp))
                             }
                         }
-                        Spacer(Modifier.height(20.dp))
                     }
                     SheetType.RECORD_SEARCH -> Column(
                         Modifier.fillMaxWidth()
@@ -1290,7 +1289,6 @@ private fun FrameNativeApp(
                                 }
                             }
                         }
-                        Spacer(Modifier.height(12.dp))
                         if (!sheetKeyboardUp && matchingReviewEntries.size in 1..4) {
                             Spacer(Modifier.height(with(LocalDensity.current) { recordSearchBottomSpacerPx.toDp() }))
                         }
@@ -1314,7 +1312,8 @@ private fun FrameNativeApp(
                         SortOptionAction(
                             "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
                             onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE },
+                            bottomPadding = 0.dp
                         )
                     }
                     SheetType.SEARCH -> Column(
@@ -1411,7 +1410,6 @@ private fun FrameNativeApp(
                                 }
                             }
                         }
-                        Spacer(Modifier.height(12.dp))
                         if (!sheetKeyboardUp && searchResults.size in 1..4) {
                             Spacer(Modifier.height(with(LocalDensity.current) { videoSearchBottomSpacerPx.toDp() }))
                         }
@@ -1457,11 +1455,10 @@ private fun FrameNativeApp(
                         ) {
                             Text("保存", color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
-                        Spacer(Modifier.height(24.dp))
                     }
                     SheetType.MOVE -> SheetContent("移动到分类") {
                         categories.filter { it != "全部分类" }.forEach { cat ->
-                            SheetAction(cat) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
+                            SheetAction(cat, bottomPadding = if (cat == categories.lastOrNull()) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
                         }
                     }
                     SheetType.REVIEW_CREATE_OPTIONS -> SheetContent("新增观影感想") {
@@ -1475,7 +1472,7 @@ private fun FrameNativeApp(
                             parentSheet = SheetType.NONE
                             sheet = SheetType.REVIEW_VIDEO_PICKER
                         }
-                        SheetAction("不关联视频") { startNewReview(null) }
+                        SheetAction("不关联视频", bottomPadding = 0.dp) { startNewReview(null) }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
@@ -1538,7 +1535,6 @@ private fun FrameNativeApp(
                                 Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                             }
                         }
-                        Spacer(Modifier.height(24.dp))
                     }
                     SheetType.REVIEW_VIDEO_PICKER -> Column(
                         Modifier.fillMaxWidth().padding(horizontal = 20.dp)
@@ -1613,15 +1609,14 @@ private fun FrameNativeApp(
                                 }
                             }
                         }
-                        Spacer(Modifier.height(24.dp))
                     }
                     SheetType.CLEAR_RECENT -> SheetContent("清空播放记录？") {
                         Text("只清除观看进度，不会删除片库中的视频。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(bottom = 12.dp))
-                        SheetAction("确认清空", danger = true) { repository.clearRecent(); refresh(); sheet = SheetType.NONE }
+                        SheetAction("确认清空", danger = true, bottomPadding = 0.dp) { repository.clearRecent(); refresh(); sheet = SheetType.NONE }
                     }
                     SheetType.CLEAR_DATA -> Unit
                     SheetType.DELETE_RECENT -> SheetContent("删除这条播放记录？") {
-                        SheetAction("删除播放记录", danger = true) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
+                        SheetAction("删除播放记录", danger = true, bottomPadding = 0.dp) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
                     SheetType.NONE -> Unit
                 }
@@ -3737,11 +3732,12 @@ private fun SortOptionAction(
     label: String,
     selected: Boolean,
     direction: SortDirection,
+    bottomPadding: androidx.compose.ui.unit.Dp = 12.dp,
     onAscending: () -> Unit,
     onDescending: () -> Unit
 ) {
     Surface(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        Modifier.fillMaxWidth().padding(bottom = bottomPadding)
             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
             .clip(RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
@@ -3800,9 +3796,14 @@ private fun SheetHeading(title: String) {
 }
 
 @Composable
-private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
+private fun SheetAction(
+    text: String,
+    danger: Boolean = false,
+    bottomPadding: androidx.compose.ui.unit.Dp = 12.dp,
+    onClick: () -> Unit
+) {
     Surface(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).height(52.dp)
+        Modifier.fillMaxWidth().padding(bottom = bottomPadding).height(52.dp)
             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
             .clip(RoundedCornerShape(16.dp)).noRippleClickable(onClick),
         shape = RoundedCornerShape(16.dp),
