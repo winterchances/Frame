@@ -3093,7 +3093,9 @@ private fun RecordsPage(
                             .padding(16.dp)
                     ) {
                         val standaloneTitle = entry.title.ifBlank { "未命名" }
-                        val standaloneVideoStyle = entry.coverPath != null || entry.rating > 0f
+                        val coverBitmap = remember(entry.coverPath) {
+                            entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
+                        }
                         val standaloneChevronRotation by animateFloatAsState(
                             targetValue = if (expanded) 0f else -90f,
                             animationSpec = tween(
@@ -3105,41 +3107,68 @@ private fun RecordsPage(
                             ),
                             label = "record-standalone-chevron-" + entry.id
                         )
-                        if (standaloneVideoStyle) {
-                            val coverBitmap = remember(entry.coverPath) { entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() } }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
-                                Box(Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFECEDEF)), contentAlignment = Alignment.Center) {
-                                    if (coverBitmap != null) Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                    else Icon(Icons.Outlined.Image, null, tint = Color(0xFFB5B5B5), modifier = Modifier.size(25.dp))
-                                }
-                                Column(Modifier.weight(1f).height(100.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                                    Text(standaloneTitle, color = if (entry.title.isBlank()) MutedText else Color(0xFF222222), fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                    RatingStars(entry.rating, 16.dp, onRate = {}, spacing = 2.dp)
-                                    Text(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)), color = Color(0xFF999999), fontSize = 11.sp)
-                                }
-                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.CenterEnd) {
-                                    Icon(
-                                        Icons.Outlined.ExpandMore,
-                                        if (expanded) "收起正文" else "展开正文",
-                                        tint = MutedText,
-                                        modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
-                                            .offset(x = 3.dp, y = 0.dp)
-                                    )
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Box(
+                                Modifier.size(75.dp, 100.dp)
+                                    .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFECEDEF)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (coverBitmap != null) {
+                                    Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                } else {
+                                    Icon(Icons.Outlined.Image, null, tint = Color(0xFFB5B5B5), modifier = Modifier.size(25.dp))
                                 }
                             }
-                        } else {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Text(standaloneTitle, color = MutedText, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)), color = Color(0xFF999999), fontSize = 11.sp)
-                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.CenterEnd) {
-                                    Icon(
-                                        Icons.Outlined.ExpandMore,
-                                        if (expanded) "收起正文" else "展开正文",
-                                        tint = MutedText,
-                                        modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
-                                            .offset(x = 3.dp, y = 0.dp)
-                                    )
-                                }
+                            Column(
+                                Modifier.weight(1f).height(100.dp)
+                            ) {
+                                Text(
+                                    standaloneTitle,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 16.sp,
+                                    color = if (entry.title.isBlank()) MutedText else Color(0xFF222222),
+                                    lineHeight = 22.sp,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                )
+                                Spacer(Modifier.weight(1f))
+                                RatingStars(
+                                    entry.rating,
+                                    16.dp,
+                                    onRate = {},
+                                    spacing = 2.dp,
+                                    modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                    fontSize = 12.sp,
+                                    lineHeight = 15.sp,
+                                    color = Color(0xFF999999),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                )
+                            }
+                            Box(
+                                Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    Icons.Outlined.ExpandMore,
+                                    if (expanded) "收起正文" else "展开正文",
+                                    tint = MutedText,
+                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
+                                        .offset(x = 3.dp, y = 0.dp)
+                                )
                             }
                         }
                         AnimatedVisibility(
