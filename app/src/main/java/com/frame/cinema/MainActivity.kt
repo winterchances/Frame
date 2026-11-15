@@ -909,13 +909,13 @@ private fun FrameNativeApp(
                 )
                 Box(
                     Modifier.size(48.dp)
-                        .shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f))
                         .graphicsLayer {
                             alpha = searchProgress
                             scaleX = .5f + .5f * searchProgress
                             scaleY = .5f + .5f * searchProgress
                             translationY = 20.dp.toPx() * (1f - searchProgress)
                         }
+                        .shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f))
                         .then(if (showFab) Modifier.noRippleClickable { search = ""; sheet = SheetType.SEARCH; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
@@ -925,13 +925,13 @@ private fun FrameNativeApp(
                 }
                 Box(
                     Modifier.size(48.dp)
-                        .shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f))
                         .graphicsLayer {
                             alpha = importProgress
                             scaleX = .5f + .5f * importProgress
                             scaleY = .5f + .5f * importProgress
                             translationY = 20.dp.toPx() * (1f - importProgress)
                         }
+                        .shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f))
                         .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.IMPORT; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
