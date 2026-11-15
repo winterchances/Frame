@@ -999,7 +999,7 @@ private fun FrameNativeApp(
                         }
                         Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
-                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                                 Text(
                                     if (appVersion.isBlank()) "" else "v$appVersion",
@@ -1008,15 +1008,15 @@ private fun FrameNativeApp(
                                 )
                             }
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
-                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { exportDataLauncher.launch("Frame-backup.json") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { exportDataLauncher.launch("Frame-backup.json") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导出数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
-                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { importDataLauncher.launch(arrayOf("application/json")) }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { importDataLauncher.launch(arrayOf("application/json")) }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导入数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
-                            Row(Modifier.fillMaxWidth().height(51.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
                         }
@@ -1053,7 +1053,7 @@ private fun FrameNativeApp(
                                 var dragRemainder by remember(cat) { mutableFloatStateOf(0f) }
                                 val latestCategories = rememberUpdatedState(categories)
                                 Row(
-                                    Modifier.fillMaxWidth().height(50.dp)
+                                    Modifier.fillMaxWidth().height(52.dp)
                                         .animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         .then(
                                             Modifier.pointerInput(cat) {
@@ -1398,7 +1398,7 @@ private fun FrameNativeApp(
                         Spacer(Modifier.height(16.dp))
                         Box(
                             Modifier.fillMaxWidth()
-                                .height(50.dp)
+                                .height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
@@ -1427,7 +1427,7 @@ private fun FrameNativeApp(
                             val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                                 Box(
-                                    Modifier.weight(1f).height(48.dp)
+                                    Modifier.weight(1f).height(52.dp)
                                         .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(if (editReviewVideoId != null) ThemeTeal else Color.White)
@@ -1449,7 +1449,7 @@ private fun FrameNativeApp(
                                     )
                                 }
                                 Box(
-                                    Modifier.weight(1f).height(48.dp)
+                                    Modifier.weight(1f).height(52.dp)
                                         .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(if (editReviewVideoId == null) ThemeTeal else Color.White)
@@ -3713,7 +3713,7 @@ private fun SortOptionAction(
         shadowElevation = 0.dp
     ) {
         Row(
-            Modifier.fillMaxWidth().height(54.dp).padding(start = 18.dp, end = 14.dp),
+            Modifier.fillMaxWidth().height(52.dp).padding(start = 18.dp, end = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -3766,27 +3766,28 @@ private fun SheetHeading(title: String) {
 @Composable
 private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Unit) {
     Surface(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).height(52.dp)
             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
             .clip(RoundedCornerShape(16.dp)).noRippleClickable(onClick),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        shadowElevation = 0.dp,
-        ) {
-        Text(
-            text,
-            color = if (danger) Color(0xFFFF3B30) else MainText,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(18.dp)
-        )
+        shadowElevation = 0.dp
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text,
+                color = if (danger) Color(0xFFFF3B30) else MainText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
 @Composable
 private fun SettingRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().height(51.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = MainText, fontSize = 16.sp, modifier = Modifier.weight(1f))
         Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ThemeTeal else Color(0xFFE0E0E0)).noRippleClickable { onChecked(!checked) }) {
             val knobOffset by animateDpAsState(if (checked) 22.dp else 2.dp, tween(300), label = "setting-switch")
