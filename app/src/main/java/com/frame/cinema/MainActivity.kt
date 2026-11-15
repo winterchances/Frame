@@ -1897,7 +1897,7 @@ private fun HomePage(
                                     with(snapFling) { performFling(initialVelocity * .58f) }
                             }
                         }
-                        LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 4.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                        LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             itemsIndexed(continuing, key = { _, video -> video.id }) { _, video ->
                                 Box(
                                     Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
