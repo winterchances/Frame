@@ -2706,7 +2706,7 @@ private fun RecordsPage(
                                     Icons.Outlined.ExpandMore,
                                     if (entries.isEmpty()) "暂无感想" else if (expanded) "收起感想" else "展开感想",
                                     tint = if (entries.isEmpty()) Color(0xFFBBBBBB) else MutedText,
-                                    modifier = Modifier.rotate(chevronRotation).size(18.dp)
+                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp)
                                 )
                             }
                         }
