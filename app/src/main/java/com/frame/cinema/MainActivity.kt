@@ -969,7 +969,7 @@ private fun FrameNativeApp(
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
-                        .border(1.dp, Color(0xFFE6E6E6), CircleShape)
+                        .border(0.3.dp, Color(0xFFE6E6E6), CircleShape)
                         .noRippleClickable { showFab = !showFab },
                     contentAlignment = Alignment.Center
                 ) {
@@ -1031,7 +1031,7 @@ private fun FrameNativeApp(
                         Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
                             SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
                         }
                         Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
@@ -1044,15 +1044,15 @@ private fun FrameNativeApp(
                                     fontSize = 11.sp
                                 )
                             }
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { exportDataLauncher.launch("Frame-backup.json") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导出数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { importDataLauncher.launch(arrayOf("application/json")) }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导入数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
@@ -1071,7 +1071,7 @@ private fun FrameNativeApp(
                                 onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
                                 onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                             )
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按名称", sort == SortMode.NAME, sortDirection,
                                 onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
@@ -1095,7 +1095,7 @@ private fun FrameNativeApp(
                             ) {
                                 Text("2列大图（舒适）", color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             Row(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable { compact = true; sheet = SheetType.NONE }
@@ -1364,19 +1364,19 @@ private fun FrameNativeApp(
                                 onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
                                 onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                             )
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按名称", recordSortMode == RecordSortMode.NAME, recordSortDirection,
                                 onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
                                 onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                             )
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按看完时间", recordSortMode == RecordSortMode.WATCHED, recordSortDirection,
                                 onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
                                 onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
                             )
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
                                 onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
@@ -1557,7 +1557,7 @@ private fun FrameNativeApp(
                             ) {
                                 Text("关联视频", color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             Row(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable { startNewReview(null) }
@@ -2015,7 +2015,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
                 .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                 .clip(RoundedCornerShape(28.dp))
                 .background(Glass)
-                .border(1.dp, Color(0xFFE6E6E6), RoundedCornerShape(28.dp))
+                .border(0.3.dp, Color(0xFFE6E6E6), RoundedCornerShape(28.dp))
                 .padding(5.dp)
         ) {
             val slot = (navWidth - 10.dp) / 4
@@ -2129,8 +2129,8 @@ private fun HomePage(
                 ) {
                     Row(
                         Modifier.fillMaxWidth()
-                            .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                            .clip(RoundedCornerShape(16.dp))
+                            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(Glass)
                             .padding(horizontal = 10.dp, vertical = 15.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -2282,8 +2282,8 @@ private fun HomePage(
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 20.dp)
-                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                        .clip(RoundedCornerShape(16.dp))
+                        .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(Glass)
                         .padding(horizontal = 10.dp, vertical = 15.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -2838,8 +2838,8 @@ private fun RecordsPage(
                         Modifier.fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 10.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                            .clip(RoundedCornerShape(16.dp))
+                            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(Glass)
                             .padding(horizontal = 10.dp, vertical = 15.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -2891,7 +2891,7 @@ private fun RecordsPage(
                             ) {
                                 Text(
                                     displayVideoName(video.name),
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
@@ -3038,7 +3038,7 @@ private fun RecordsPage(
                                             }
                                         }
                                         drawCircle(
-                                            color = Color(0xFFA5A5A5),
+                                            color = ThemeTeal,
                                             radius = 4.dp.toPx(),
                                             center = Offset(axisX, dotCenterY)
                                         )
@@ -3130,7 +3130,7 @@ private fun RecordsPage(
                             ) {
                                 Text(
                                     standaloneTitle,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (entry.title.isBlank()) MutedText else Color(0xFF222222),
@@ -3219,8 +3219,8 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 10.dp)
-                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                        .clip(RoundedCornerShape(16.dp))
+                        .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(Glass)
                         .padding(horizontal = 10.dp, vertical = 15.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -4061,31 +4061,50 @@ private fun SortOptionRow(
             fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
         )
         Row {
-            Text(
-                "正序",
-                Modifier.clip(RoundedCornerShape(6.dp))
-                    .background(if (isSelected && direction == SortDirection.ASCENDING) ThemeTeal.copy(alpha = 0.15f) else Color.Transparent)
+            val ascendingSelected = isSelected && direction == SortDirection.ASCENDING
+            val ascendingBackground by androidx.compose.animation.animateColorAsState(
+                targetValue = if (ascendingSelected) ThemeTeal else Color.Transparent,
+                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                label = "sort-ascending-background"
+            )
+            val ascendingText by androidx.compose.animation.animateColorAsState(
+                targetValue = if (ascendingSelected) Color.White else Color(0xFFAAAAAA),
+                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                label = "sort-ascending-text"
+            )
+            Box(
+                Modifier.clip(RoundedCornerShape(90.dp))
+                    .background(ascendingBackground)
                     .noRippleClickable { onAscending() }
                     .padding(horizontal = 10.dp, vertical = 5.dp),
-                color = if (isSelected && direction == SortDirection.ASCENDING) ThemeTeal else Color(0xFFAAAAAA),
-                fontSize = 13.sp,
-                fontWeight = if (isSelected && direction == SortDirection.ASCENDING) FontWeight.Bold else FontWeight.Normal
-            )
+                contentAlignment = Alignment.Center
+            ) {
+                Text("正序", color = ascendingText, fontSize = 13.sp, fontWeight = if (ascendingSelected) FontWeight.Bold else FontWeight.Normal)
+            }
             Spacer(Modifier.width(4.dp))
-            Text(
-                "倒序",
-                Modifier.clip(RoundedCornerShape(6.dp))
-                    .background(if (isSelected && direction == SortDirection.DESCENDING) ThemeTeal.copy(alpha = 0.15f) else Color.Transparent)
+            val descendingSelected = isSelected && direction == SortDirection.DESCENDING
+            val descendingBackground by androidx.compose.animation.animateColorAsState(
+                targetValue = if (descendingSelected) ThemeTeal else Color.Transparent,
+                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                label = "sort-descending-background"
+            )
+            val descendingText by androidx.compose.animation.animateColorAsState(
+                targetValue = if (descendingSelected) Color.White else Color(0xFFAAAAAA),
+                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                label = "sort-descending-text"
+            )
+            Box(
+                Modifier.clip(RoundedCornerShape(90.dp))
+                    .background(descendingBackground)
                     .noRippleClickable { onDescending() }
                     .padding(horizontal = 10.dp, vertical = 5.dp),
-                color = if (isSelected && direction == SortDirection.DESCENDING) ThemeTeal else Color(0xFFAAAAAA),
-                fontSize = 13.sp,
-                fontWeight = if (isSelected && direction == SortDirection.DESCENDING) FontWeight.Bold else FontWeight.Normal
-            )
+                contentAlignment = Alignment.Center
+            ) {
+                Text("倒序", color = descendingText, fontSize = 13.sp, fontWeight = if (descendingSelected) FontWeight.Bold else FontWeight.Normal)
+            }
         }
     }
 }
-
 @Composable
 private fun SheetContent(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
