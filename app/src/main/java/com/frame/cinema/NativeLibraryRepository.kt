@@ -209,6 +209,7 @@ class NativeLibraryRepository(context: Context) {
 
     fun clearAll() {
         store.allVideos().forEach { ThumbnailStore.delete(app, it.thumbPath) }
+        File(app.filesDir, "review_covers").deleteRecursively()
         store.clear()
         store.clearWatchTime()
         ThumbnailStore.clear(app)
