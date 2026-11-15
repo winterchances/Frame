@@ -2135,10 +2135,10 @@ private fun LibraryFilterHeader(
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .background(PageBg)
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 9.dp, bottom = 10.dp)
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(top = 15.dp, bottom = 10.dp),
+            Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(25.dp)
         ) {
             listOf("全部", "在看", "已看").forEach { value ->
@@ -2300,7 +2300,7 @@ private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int)
             .onGloballyPositioned { onHeightChanged(it.size.height) }
             .background(PageBg)
             .statusBarsPadding()
-            .padding(top = 10.dp, bottom = 10.dp)
+            .padding(top = 9.dp, bottom = 10.dp)
     ) {
         Text(
             label,
@@ -2308,7 +2308,7 @@ private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int)
             fontWeight = FontWeight.Medium,
             color = Color.Black,
             modifier = Modifier.fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 5.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 5.dp)
         )
     }
 }
@@ -2473,7 +2473,7 @@ private fun RecordsPage(
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f)
-                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -3379,7 +3379,7 @@ private fun ActionIcon(
 
 @Composable
 private fun Header(title: String, onSettings: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
         Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Settings, "设置", Modifier.size(22.dp), tint = MainText)
