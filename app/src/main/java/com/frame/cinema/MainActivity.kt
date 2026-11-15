@@ -1495,6 +1495,9 @@ private fun FrameNativeApp(
                             editReviewVideoId = null
                             editReview = ""
                             editRating = 0f
+                            editReviewTitle = ""
+                            editReviewCoverUri = null
+                            editReviewCoverPath = null
                             reviewVideoSearch = ""
                             parentSheet = SheetType.NONE
                             sheet = SheetType.REVIEW_VIDEO_PICKER
@@ -1523,7 +1526,7 @@ private fun FrameNativeApp(
                                 ) {
                                     if (coverBitmap != null) Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                     else Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                        Icon(Icons.Outlined.AddPhotoAlternate, null, tint = Color(0xFF999999), modifier = Modifier.size(22.dp))
+                                        Icon(Icons.Outlined.Image, null, tint = Color(0xFF999999), modifier = Modifier.size(22.dp))
                                         Text("添加封面", color = Color(0xFF999999), fontSize = 10.sp)
                                     }
                                 }
