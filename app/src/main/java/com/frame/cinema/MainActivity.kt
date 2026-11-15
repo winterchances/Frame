@@ -1805,31 +1805,35 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
             .onGloballyPositioned { onBoundsChanged?.invoke(it.boundsInRoot()) }
-            .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
             .height(56.dp)
-            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-            .clip(RoundedCornerShape(28.dp))
-            .background(Glass)
-            .border(1.dp, Color.White.copy(alpha = .7f), RoundedCornerShape(28.dp))
-            .padding(5.dp)
+            .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
     ) {
-        val slot = maxWidth / 4
-        val target = slot * entries.indexOfFirst { it.first == current }
-        val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
-        Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
-        Row(Modifier.fillMaxSize()) {
-            entries.forEach { (item, icon) ->
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        item.label,
-                        fontSize = 10.sp,
-                        lineHeight = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MainText,
-                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                    )
+        Box(
+            Modifier.fillMaxSize()
+                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
+                .clip(RoundedCornerShape(28.dp))
+                .background(Glass)
+                .border(1.dp, Color.White.copy(alpha = .7f), RoundedCornerShape(28.dp))
+                .padding(5.dp)
+        ) {
+            val slot = (maxWidth - 10.dp) / 4
+            val target = slot * entries.indexOfFirst { it.first == current }
+            val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
+            Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
+            Row(Modifier.fillMaxSize()) {
+                entries.forEach { (item, icon) ->
+                    Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            item.label,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MainText,
+                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                        )
+                    }
                 }
             }
         }
