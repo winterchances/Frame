@@ -1503,10 +1503,83 @@ private fun FrameNativeApp(
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
-                        val canSetVideoRating = editReviewId == null &&
-                            editReviewVideoId != null &&
-                            reviewEntries.none { it.videoId == editReviewVideoId }
                         val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
+                        if (editReviewVideoId == null) {
+                            val coverBitmap = remember(editReviewCoverPath, editReviewCoverUri) {
+                                runCatching {
+                                    when {
+                                        editReviewCoverUri != null -> context.contentResolver.openInputStream(editReviewCoverUri!!)?.use { BitmapFactory.decodeStream(it) }
+                                        editReviewCoverPath != null -> BitmapFactory.decodeFile(editReviewCoverPath)
+                                        else -> null
+                                    }
+                                }.getOrNull()
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
+                                Box(
+                                    Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp))
+                                        .background(Color(0xFFECEDEF))
+                                        .noRippleClickable { reviewCoverPicker.launch(arrayOf("image/*")) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (coverBitmap != null) Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                    else Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                        Icon(Icons.Outlined.AddPhotoAlternate, null, tint = Color(0xFF999999), modifier = Modifier.size(22.dp))
+                                        Text("添加封面", color = Color(0xFF999999), fontSize = 10.sp)
+                                    }
+                                }
+                                Column(Modifier.weight(1f).height(100.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                                    BasicTextField(
+                                        editReviewTitle,
+                                        { editReviewTitle = it },
+                                        Modifier.fillMaxWidth().heightIn(min = 42.dp)
+                                            .shadow(4.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                            .clip(RoundedCornerShape(12.dp)).background(Color.White).padding(11.dp),
+                                        singleLine = true,
+                                        decorationBox = { inner -> if (editReviewTitle.isEmpty()) Text("输入标题（选填）", color = MutedText, fontSize = 14.sp); inner() },
+                                        textStyle = TextStyle(fontSize = 14.sp, color = MainText, fontWeight = FontWeight.Medium)
+                                    )
+                                    RatingStars(editRating, 20.dp, onRate = { editRating = it }, spacing = 3.dp)
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            BasicTextField(
+                                editReview, { editReview = it },
+                                Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp)
+                                    .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                    .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp),
+                                decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的感想...", color = MutedText, fontSize = 16.sp); inner() },
+                                textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp)
+                            )
+                            val canSaveStandalone = editReview.isNotBlank()
+                            Box(
+                                Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp)
+                                    .shadow(if (canSaveStandalone) 4.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(if (canSaveStandalone) ThemeTeal else Color(0xFFE5E5E5))
+                                    .then(if (canSaveStandalone) Modifier.noRippleClickable {
+                                        val saved = if (editReviewId == null) {
+                                            repository.addStandaloneReview(editReviewTitle, editReview, editRating, editReviewCoverUri)
+                                        } else {
+                                            repository.updateStandaloneReview(editReviewId!!, editReviewTitle, editReview, editRating, editReviewCoverUri, editReviewCoverPath)
+                                        }
+                                        if (saved) { refresh(); sheet = SheetType.NONE }
+                                    } else Modifier),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("保存记录", color = if (canSaveStandalone) Color.White else Color(0xFF999999), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                            }
+                            if (editReviewId != null) {
+                                Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable {
+                                    editReviewId?.let { repository.deleteReview(it) }; refresh(); sheet = SheetType.NONE
+                                }, contentAlignment = Alignment.Center) {
+                                    Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        } else {
+                            val canSetVideoRating = editReviewId == null &&
+                                editReviewVideoId != null &&
+                                reviewEntries.none { it.videoId == editReviewVideoId }
                         if (editReviewId == null) {
                             Row(
                                 Modifier.fillMaxWidth(),
@@ -1606,6 +1679,7 @@ private fun FrameNativeApp(
                             ) {
                                 Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                             }
+                        }
                         }
                     }
                     SheetType.REVIEW_VIDEO_PICKER -> Column(
