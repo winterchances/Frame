@@ -1079,9 +1079,32 @@ private fun FrameNativeApp(
                             )
                         }
                     }
-                    SheetType.GRID -> SheetContent("视图模式") {
-                        SheetAction("2列大图（舒适）") { compact = false; sheet = SheetType.NONE }
-                        SheetAction("3列小图（紧凑）", bottomPadding = 0.dp) { compact = true; sheet = SheetType.NONE }
+                    SheetType.GRID -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("视图模式")
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().height(52.dp)
+                                    .noRippleClickable { compact = false; sheet = SheetType.NONE }
+                                    .padding(horizontal = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("2列大图（舒适）", color = MainText, fontSize = 16.sp)
+                            }
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Row(
+                                Modifier.fillMaxWidth().height(52.dp)
+                                    .noRippleClickable { compact = true; sheet = SheetType.NONE }
+                                    .padding(horizontal = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("3列小图（紧凑）", color = MainText, fontSize = 16.sp)
+                            }
+                        }
                     }
                     SheetType.CATEGORIES -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("分类管理")
@@ -1506,21 +1529,44 @@ private fun FrameNativeApp(
                             SheetAction(cat, bottomPadding = if (cat == categories.lastOrNull()) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
                         }
                     }
-                    SheetType.REVIEW_CREATE_OPTIONS -> SheetContent("新增观影感想") {
-                        SheetAction("关联视频") {
-                            selected = null
-                            editReviewId = null
-                            editReviewVideoId = null
-                            editReview = ""
-                            editRating = 0f
-                            editReviewTitle = ""
-                            editReviewCoverUri = null
-                            editReviewCoverPath = null
-                            reviewVideoSearch = ""
-                            parentSheet = SheetType.NONE
-                            sheet = SheetType.REVIEW_VIDEO_PICKER
+                    SheetType.REVIEW_CREATE_OPTIONS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("新增观影感想")
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().height(52.dp)
+                                    .noRippleClickable {
+                                        selected = null
+                                        editReviewId = null
+                                        editReviewVideoId = null
+                                        editReview = ""
+                                        editRating = 0f
+                                        editReviewTitle = ""
+                                        editReviewCoverUri = null
+                                        editReviewCoverPath = null
+                                        reviewVideoSearch = ""
+                                        parentSheet = SheetType.NONE
+                                        sheet = SheetType.REVIEW_VIDEO_PICKER
+                                    }
+                                    .padding(horizontal = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("关联视频", color = MainText, fontSize = 16.sp)
+                            }
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            Row(
+                                Modifier.fillMaxWidth().height(52.dp)
+                                    .noRippleClickable { startNewReview(null) }
+                                    .padding(horizontal = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("不关联视频", color = MainText, fontSize = 16.sp)
+                            }
                         }
-                        SheetAction("不关联视频", bottomPadding = 0.dp) { startNewReview(null) }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading(if (editReviewVideoId == null) { if (editReviewId == null) "新增记录" else "编辑记录" } else { if (editReviewId == null) "新增观影感想" else "编辑观影感想" })
