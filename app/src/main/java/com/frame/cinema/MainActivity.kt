@@ -2393,12 +2393,14 @@ private fun LibraryPage(
                             verticalAlignment = Alignment.Top
                         ) {
                             rowVideos.forEach { video ->
-                                PosterCard(
-                                    video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
-                                    Modifier.weight(1f),
-                                    alpha = 1f,
-                                    onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
-                                )
+                                key(video.id) {
+                                    PosterCard(
+                                        video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
+                                        Modifier.weight(1f),
+                                        alpha = 1f,
+                                        onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
+                                    )
+                                }
                             }
                             repeat(columns - rowVideos.size) { Spacer(Modifier.weight(1f)) }
                         }
@@ -3937,7 +3939,10 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
 
 @Composable
 private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
-    val bitmap = produceState<ImageBitmap?>(null, video.thumbPath) {
+    val bitmap = produceState<ImageBitmap?>(
+        initialValue = video.thumbPath?.let { thumbnailBitmapCache.get(it)?.asImageBitmap() },
+        key1 = video.thumbPath
+    ) {
         val path = video.thumbPath
         value = if (path.isNullOrBlank()) {
             null
