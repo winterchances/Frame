@@ -1808,6 +1808,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
             .height(56.dp)
             .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
     ) {
+        val navWidth = maxWidth
         Box(
             Modifier.fillMaxSize()
                 .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
@@ -1816,7 +1817,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
                 .border(1.dp, Color.White.copy(alpha = .7f), RoundedCornerShape(28.dp))
                 .padding(5.dp)
         ) {
-            val slot = (maxWidth - 10.dp) / 4
+            val slot = (navWidth - 10.dp) / 4
             val target = slot * entries.indexOfFirst { it.first == current }
             val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
             Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
