@@ -349,7 +349,7 @@ class MainActivity : ComponentActivity() {
                             FrameNativeApp(
                                 repository = repository,
                                 player = controller,
-                                openPlayerRequest = openPlayerRequest.intValue,
+                                openPlayerRequest = openPlayerRequest,
                                 onPlay = { item -> startNativePlayback(item) },
                                 onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
                                 onOrientation = { requested ->
@@ -416,7 +416,7 @@ class MainActivity : ComponentActivity() {
 private fun FrameNativeApp(
     repository: NativeLibraryRepository,
     player: Player,
-    openPlayerRequest: Int,
+    openPlayerRequest: State<Int>,
     onPlay: (VideoItem) -> Unit,
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
@@ -424,6 +424,7 @@ private fun FrameNativeApp(
     onSystemBarsVisible: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val openPlayerRequestValue by openPlayerRequest
     val appVersion = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -504,8 +505,8 @@ private fun FrameNativeApp(
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
-    LaunchedEffect(openPlayerRequest) {
-        if (openPlayerRequest > 0) {
+    LaunchedEffect(openPlayerRequestValue) {
+        if (openPlayerRequestValue > 0) {
             val mediaId = player.currentMediaItem?.mediaId
             val currentVideo = mediaId?.let { id -> repository.videos().firstOrNull { it.id.toString() == id } }
             if (currentVideo != null) {
@@ -684,8 +685,8 @@ private fun FrameNativeApp(
                 }
                 require(backup.videos.all {
                     it.uri.isNotBlank() && it.name.isNotBlank() && it.date.isNotBlank() &&
-                        it.size.length >= 0 && it.status.isNotBlank() && it.category.isNotBlank() &&
-                        it.review.length >= 0 && it.progress.isFinite()
+                        it.status.isNotBlank() && it.category.isNotBlank() &&
+                        it.progress.isFinite()
                 })
                 require(backup.videos.map { it.uri }.distinct().size == backup.videos.size)
                 val ids = backup.videos.map { it.id }.toSet()
