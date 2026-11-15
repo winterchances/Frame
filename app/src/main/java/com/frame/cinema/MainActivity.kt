@@ -1196,7 +1196,12 @@ private fun FrameNativeApp(
                             val videoName = videos.firstOrNull { it.id == entry.videoId }?.let { displayVideoName(it.name) }.orEmpty()
                             entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
                         }.take(30)
-                        matchingReviewEntries.forEach { entry ->
+                        var recordSearchBottomSpacerPx by remember(recordSearch) { mutableFloatStateOf(0f) }
+                        val searchSheetMidpointPx = with(LocalDensity.current) {
+                            LocalConfiguration.current.screenHeightDp.dp.toPx() * .55f
+                        }
+                        matchingReviewEntries.forEachIndexed { index, entry ->
+                            val isLastShortResult = index == matchingReviewEntries.lastIndex && matchingReviewEntries.size <= 4
                             key("review_search_${entry.id}") {
                                 val video = videos.firstOrNull { it.id == entry.videoId }
                                 AnimatedVisibility(
@@ -1206,6 +1211,15 @@ private fun FrameNativeApp(
                                 ) {
                                     Surface(
                                         Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .then(
+                                                if (isLastShortResult) Modifier.onGloballyPositioned { coordinates ->
+                                                    if (!sheetKeyboardUp) {
+                                                        val desired = (coordinates.boundsInRoot().bottom + recordSearchBottomSpacerPx - searchSheetMidpointPx)
+                                                            .coerceIn(0f, searchSheetMidpointPx * .9f)
+                                                        if (abs(recordSearchBottomSpacerPx - desired) > 1f) recordSearchBottomSpacerPx = desired
+                                                    }
+                                                } else Modifier
+                                            )
                                             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                             .clip(RoundedCornerShape(16.dp))
                                             .noRippleClickable {
@@ -1265,6 +1279,9 @@ private fun FrameNativeApp(
                             }
                         }
                         Spacer(Modifier.height(12.dp))
+                        if (!sheetKeyboardUp && matchingReviewEntries.size in 1..4) {
+                            Spacer(Modifier.height(with(LocalDensity.current) { recordSearchBottomSpacerPx.toDp() }))
+                        }
                     }
                     SheetType.RECORD_SORT -> SheetContent("记录排序") {
                         SortOptionAction(
@@ -1321,7 +1338,12 @@ private fun FrameNativeApp(
                                 .take(30)
                                 .toList()
                         }
-                        searchResults.forEach { video ->
+                        var videoSearchBottomSpacerPx by remember(search) { mutableFloatStateOf(0f) }
+                        val searchSheetMidpointPx = with(LocalDensity.current) {
+                            LocalConfiguration.current.screenHeightDp.dp.toPx() * .55f
+                        }
+                        searchResults.forEachIndexed { index, video ->
+                            val isLastShortResult = index == searchResults.lastIndex && searchResults.size <= 4
                             key(video.id) {
                                 AnimatedVisibility(
                                     visible = true,
@@ -1330,6 +1352,15 @@ private fun FrameNativeApp(
                                 ) {
                                     Surface(
                                         Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .then(
+                                                if (isLastShortResult) Modifier.onGloballyPositioned { coordinates ->
+                                                    if (!sheetKeyboardUp) {
+                                                        val desired = (coordinates.boundsInRoot().bottom + videoSearchBottomSpacerPx - searchSheetMidpointPx)
+                                                            .coerceIn(0f, searchSheetMidpointPx * .9f)
+                                                        if (abs(videoSearchBottomSpacerPx - desired) > 1f) videoSearchBottomSpacerPx = desired
+                                                    }
+                                                } else Modifier
+                                            )
                                             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                             .clip(RoundedCornerShape(16.dp))
                                             .noRippleClickable {
@@ -1369,6 +1400,9 @@ private fun FrameNativeApp(
                             }
                         }
                         Spacer(Modifier.height(12.dp))
+                        if (!sheetKeyboardUp && searchResults.size in 1..4) {
+                            Spacer(Modifier.height(with(LocalDensity.current) { videoSearchBottomSpacerPx.toDp() }))
+                        }
                     }
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("重命名")
