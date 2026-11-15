@@ -909,6 +909,7 @@ private fun FrameNativeApp(
                 )
                 Box(
                     Modifier.size(48.dp)
+                        .shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f))
                         .graphicsLayer {
                             alpha = searchProgress
                             scaleX = .5f + .5f * searchProgress
@@ -918,12 +919,13 @@ private fun FrameNativeApp(
                         .then(if (showFab) Modifier.noRippleClickable { search = ""; sheet = SheetType.SEARCH; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(48.dp).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
                         Icon(Icons.Outlined.Search, "搜索", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
                 Box(
                     Modifier.size(48.dp)
+                        .shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f))
                         .graphicsLayer {
                             alpha = importProgress
                             scaleX = .5f + .5f * importProgress
@@ -933,7 +935,7 @@ private fun FrameNativeApp(
                         .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.IMPORT; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(48.dp).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
                         Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
