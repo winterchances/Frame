@@ -969,7 +969,7 @@ private fun FrameNativeApp(
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
-                        .border(1.dp, Color.White.copy(alpha = .7f), CircleShape)
+                        .border(1.dp, Color(0xFFE6E6E6), CircleShape)
                         .noRippleClickable { showFab = !showFab },
                     contentAlignment = Alignment.Center
                 ) {
