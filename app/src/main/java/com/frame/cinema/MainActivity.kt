@@ -313,6 +313,23 @@ class MainActivity : ComponentActivity() {
     private lateinit var repository: NativeLibraryRepository
     private var backgroundPlaybackAllowed = true
     private val openPlayerRequest = mutableIntStateOf(0)
+    private val appIconBytes: ByteArray? by lazy {
+        runCatching {
+            val drawable = packageManager.getApplicationIcon(packageName)
+            val bitmap = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
+            try {
+                val canvas = android.graphics.Canvas(bitmap)
+                drawable.setBounds(0, 0, 256, 256)
+                drawable.draw(canvas)
+                java.io.ByteArrayOutputStream().use { stream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                    stream.toByteArray()
+                }
+            } finally {
+                bitmap.recycle()
+            }
+        }.getOrNull()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -362,19 +379,7 @@ class MainActivity : ComponentActivity() {
 
     private fun startNativePlayback(item: VideoItem) {
         val controller = player ?: return
-        val iconBytes = runCatching {
-            val drawable = packageManager.getApplicationIcon(packageName)
-            val bitmap = android.graphics.Bitmap.createBitmap(
-                256, 256, android.graphics.Bitmap.Config.ARGB_8888
-            )
-            val canvas = android.graphics.Canvas(bitmap)
-            drawable.setBounds(0, 0, 256, 256)
-            drawable.draw(canvas)
-            java.io.ByteArrayOutputStream().use { stream ->
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
-                stream.toByteArray()
-            }
-        }.getOrNull()
+        val iconBytes = appIconBytes
         val metadataBuilder = MediaMetadata.Builder()
             .setTitle(item.name)
         if (iconBytes != null) {
@@ -470,6 +475,20 @@ private fun FrameNativeApp(
     var newCategory by remember { mutableStateOf("") }
     var sort by remember { mutableStateOf(SortMode.ADDED) }
     var sortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
+    val videoById = remember(videos) { videos.associateBy { it.id } }
+    val sortedLibraryVideos = remember(videos, sort, sortDirection) {
+        videos.sortedWith { a, b ->
+            val primary = when (sort) {
+                SortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
+                SortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
+            }
+            val directed = if (sortDirection == SortDirection.ASCENDING) primary else -primary
+            if (directed != 0) directed else {
+                val addedComparison = a.addedAt.compareTo(b.addedAt)
+                if (addedComparison != 0) addedComparison else a.id.compareTo(b.id)
+            }
+        }
+    }
     var allowBackground by remember { mutableStateOf(true) }
     var keepAwake by remember { mutableStateOf(true) }
     val preferences = remember { context.getSharedPreferences("frame_preferences", android.content.Context.MODE_PRIVATE) }
@@ -786,17 +805,7 @@ private fun FrameNativeApp(
                                 listState = libraryListState,
                                 stickyCategoryScrollState = libraryStickyCategoryScrollState,
                                 floatingCategoryScrollState = libraryFloatingCategoryScrollState,
-                                videos.sortedWith { a, b ->
-                                    val primary = when (sort) {
-                                        SortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
-                                        SortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
-                                    }
-                                    val directed = if (sortDirection == SortDirection.ASCENDING) primary else -primary
-                                    if (directed != 0) directed else {
-                                        val addedComparison = a.addedAt.compareTo(b.addedAt)
-                                        if (addedComparison != 0) addedComparison else a.id.compareTo(b.id)
-                                    }
-                                }, categories, status, category, compact,
+                                sortedLibraryVideos, categories, status, category, compact,
                                 { status = it }, { category = it },
                                 { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
                                 { sheet = SheetType.CATEGORIES },
@@ -1203,10 +1212,12 @@ private fun FrameNativeApp(
                             textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = MainText)
                         )
                         val recordQuery = recordSearch.trim()
-                        val matchingReviewEntries = if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
-                            val videoName = videos.firstOrNull { it.id == entry.videoId }?.let { displayVideoName(it.name) }.orEmpty()
-                            entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
-                        }.take(30)
+                        val matchingReviewEntries = remember(recordQuery, reviewEntries, videoById) {
+                            if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
+                                val videoName = videoById[entry.videoId]?.let { displayVideoName(it.name) }.orEmpty()
+                                entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
+                            }.take(30)
+                        }
                         var recordSearchBottomSpacerPx by remember(recordSearch) { mutableFloatStateOf(0f) }
                         val searchSheetMidpointPx = with(LocalDensity.current) {
                             LocalConfiguration.current.screenHeightDp.dp.toPx() * .55f
@@ -1214,7 +1225,7 @@ private fun FrameNativeApp(
                         matchingReviewEntries.forEachIndexed { index, entry ->
                             val isLastShortResult = index == matchingReviewEntries.lastIndex && matchingReviewEntries.size <= 4
                             key("review_search_${entry.id}") {
-                                val video = videos.firstOrNull { it.id == entry.videoId }
+                                val video = videoById[entry.videoId]
                                 AnimatedVisibility(
                                     visible = true,
                                     enter = fadeIn(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) +
@@ -1559,9 +1570,11 @@ private fun FrameNativeApp(
                             textStyle = TextStyle(fontSize = 16.sp, color = MainText)
                         )
                         val query = reviewVideoSearch.trim()
-                        val matchingVideos = if (query.isBlank()) emptyList() else videos.filter {
-                            displayVideoName(it.name).contains(query, true)
-                        }.take(30)
+                        val matchingVideos = remember(query, videos) {
+                            if (query.isBlank()) emptyList() else videos.filter {
+                                displayVideoName(it.name).contains(query, true)
+                            }.take(30)
+                        }
                         matchingVideos.forEach { video ->
                             key("review_link_${video.id}") {
                                 AnimatedVisibility(
