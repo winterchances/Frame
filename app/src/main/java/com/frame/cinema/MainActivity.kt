@@ -2500,11 +2500,14 @@ private fun RecordsPage(
     val reviewsByVideo = remember(reviews) {
         reviews.filter { it.videoId != null }.groupBy { it.videoId!! }
     }
-    val displayVideos = remember(videos, reviews, sortMode, sortDirection) {
+    val sortedReviewsByVideo = remember(reviewsByVideo) {
+        reviewsByVideo.mapValues { (_, entries) -> entries.sortedByDescending { it.createdAt } }
+    }
+    val displayVideos = remember(videos, reviewsByVideo, sortMode, sortDirection) {
         videos.filter { video ->
             val completed = video.status == "watched" || video.progress >= 100f
-            val entries = reviews.filter { it.videoId == video.id }
-            completed || entries.isNotEmpty()
+            val hasReviews = reviewsByVideo[video.id].orEmpty().isNotEmpty()
+            completed || hasReviews
         }.sortedWith { a, b ->
             val primary = when (sortMode) {
                 RecordSortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
@@ -2613,7 +2616,7 @@ private fun RecordsPage(
                 item(key = "records-list-heading") { SectionHeading("观看记录", horizontalPadding = 20.dp) }
                 item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
-                    val entries = reviewsByVideo[video.id].orEmpty().sortedByDescending { it.createdAt }
+                    val entries = sortedReviewsByVideo[video.id].orEmpty()
                     val completed = video.status == "watched" || video.progress >= 100f
                     val expanded = expandedVideoReviews[video.id] ?: true
                     Column(
