@@ -3632,6 +3632,7 @@ private fun SortOptionAction(
                     fontWeight = FontWeight.Medium
                 )
             }
+            Spacer(Modifier.width(8.dp))
             Box(Modifier.size(36.dp).noRippleClickable(onDescending), contentAlignment = Alignment.Center) {
                 Text(
                     "倒序",
