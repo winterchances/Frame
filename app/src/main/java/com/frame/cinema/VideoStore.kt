@@ -225,7 +225,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     if (review.id > 0L) put("id", review.id)
                     if (review.videoId == null) putNull("video_id") else put("video_id", review.videoId)
                     put("content", review.content)
-                    put("rating", 0f)
+                    put("rating", if (review.videoId == null) review.rating.coerceIn(0f, 5f) else 0f)
                     put("created_at", review.createdAt)
                     put("title", review.title)
                     put("cover_path", review.coverPath)
