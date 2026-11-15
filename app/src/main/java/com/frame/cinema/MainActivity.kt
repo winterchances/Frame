@@ -1231,7 +1231,7 @@ private fun FrameNativeApp(
                         val matchingReviewEntries = remember(recordQuery, reviewEntries, videoById) {
                             if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
                                 val videoName = videoById[entry.videoId]?.let { displayVideoName(it.name) }.orEmpty()
-                                entry.content.contains(recordQuery, true) || videoName.contains(recordQuery, true)
+                                entry.content.contains(recordQuery, true) || entry.title.contains(recordQuery, true) || videoName.contains(recordQuery, true)
                             }.take(30)
                         }
                         var recordSearchBottomSpacerPx by remember(recordSearch) { mutableFloatStateOf(0f) }
