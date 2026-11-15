@@ -990,7 +990,7 @@ private fun FrameNativeApp(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
-                         .padding(top = 26.dp, bottom = if (sheetKeyboardUp) 400.dp else 40.dp)
+                         .padding(top = 26.dp, bottom = if (sheetKeyboardUp) 400.dp else 50.dp)
                         .navigationBarsPadding()
                 ) {
                 when (displayedSheet) {
@@ -2597,7 +2597,7 @@ private fun RecordsPage(
                 }
             } else {
                 item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(4.dp)) }
-                item(key = "records-list-heading") { SectionHeading("观看记录") }
+                item(key = "records-list-heading") { SectionHeading("观看记录", horizontalPadding = 20.dp) }
                 item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
                     val entries = reviewsByVideo[video.id].orEmpty().sortedByDescending { it.createdAt }
@@ -3526,7 +3526,8 @@ private fun SectionHeading(
     chevronExpandDurationMs: Int = 300,
     chevronCollapseDurationMs: Int = 250,
     chevronExpandEasing: androidx.compose.animation.core.Easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f),
-    chevronCollapseEasing: androidx.compose.animation.core.Easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
+    chevronCollapseEasing: androidx.compose.animation.core.Easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f),
+    horizontalPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     val rotation by animateFloatAsState(
         if (expanded == false) -90f else 0f,
@@ -3541,7 +3542,7 @@ private fun SectionHeading(
         label = "section-title-press"
     )
     Row(
-        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp)
+        Modifier.fillMaxWidth().padding(horizontal = horizontalPadding).padding(top = 10.dp, bottom = 12.dp)
             .then(if (onToggle != null) Modifier.clickable(interactionSource = interactionSource, indication = null) { onToggle() } else Modifier),
         verticalAlignment = Alignment.CenterVertically
     ) {
