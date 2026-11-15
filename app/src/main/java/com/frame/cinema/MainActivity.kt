@@ -2624,8 +2624,7 @@ private fun RecordsPage(
                                     .background(PosterBrush(video.bgIndex))
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
-                                Modifier.weight(1f).height(100.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                Modifier.weight(1f).height(100.dp)
                             ) {
                                 Text(
                                     displayVideoName(video.name),
@@ -2638,6 +2637,7 @@ private fun RecordsPage(
                                     overflow = TextOverflow.Ellipsis,
                                     style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
                                 )
+                                Spacer(Modifier.weight(1f))
                                 RatingStars(
                                     video.rating,
                                     16.dp,
@@ -2645,6 +2645,7 @@ private fun RecordsPage(
                                     spacing = 2.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
+                                Spacer(Modifier.height(4.dp))
                                 Text(
                                     if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
                                     fontSize = 12.sp,
@@ -2699,7 +2700,7 @@ private fun RecordsPage(
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
                                 ),
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.CenterEnd
                             ) {
                                 Icon(
                                     Icons.Outlined.ExpandMore,
