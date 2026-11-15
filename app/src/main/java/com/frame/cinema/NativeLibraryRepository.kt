@@ -11,6 +11,7 @@ import androidx.documentfile.provider.DocumentFile
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.File
 import java.util.concurrent.Executors
 
 /**
@@ -49,7 +50,7 @@ class NativeLibraryRepository(context: Context) {
         if (text.isEmpty()) return false
         val now = System.currentTimeMillis()
         val id = store.addReview(null, text, rating, now, title.trim(), null)
-        val coverPath = coverUri?.let { ThumbnailStore.saveCustomCover(app, it, id) }
+        val coverPath = coverUri?.let { saveReviewCover(it, id) }
         if (coverPath != null) store.updateReview(id, null, text, rating, title.trim(), coverPath)
         return true
     }
@@ -57,10 +58,10 @@ class NativeLibraryRepository(context: Context) {
     fun updateStandaloneReview(id: Long, title: String, content: String, rating: Float, coverUri: Uri?, existingCoverPath: String?): Boolean {
         val text = content.trim()
         if (text.isEmpty()) return false
-        val newPath = coverUri?.let { ThumbnailStore.saveCustomCover(app, it, id) }
+        val newPath = coverUri?.let { saveReviewCover(it, id) }
         val finalPath = newPath ?: existingCoverPath
         store.updateReview(id, null, text, rating, title.trim(), finalPath)
-        if (newPath != null && existingCoverPath != null && existingCoverPath != newPath) ThumbnailStore.delete(app, existingCoverPath)
+        if (newPath != null && existingCoverPath != null && existingCoverPath != newPath) File(existingCoverPath).delete()
         return true
     }
 
@@ -70,7 +71,19 @@ class NativeLibraryRepository(context: Context) {
         }
     }
 
-    fun deleteReview(id: Long) = store.deleteReview(id)
+    fun deleteReview(id: Long) {
+        store.allReviews().firstOrNull { it.id == id }?.coverPath?.let { File(it).delete() }
+        store.deleteReview(id)
+    }
+
+    private fun saveReviewCover(uri: Uri, reviewId: Long): String? = runCatching {
+        val directory = File(app.filesDir, "review_covers").apply { mkdirs() }
+        val target = File(directory, "review_$reviewId.jpg")
+        app.contentResolver.openInputStream(uri)?.use { input ->
+            target.outputStream().use { output -> input.copyTo(output) }
+        } ?: return null
+        target.absolutePath
+    }.getOrNull()
 
     fun importUris(uris: List<Uri>, onMetadataReady: () -> Unit = {}): Int {
         var added = 0
