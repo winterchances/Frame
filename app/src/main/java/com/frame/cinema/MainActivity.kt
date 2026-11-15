@@ -1951,7 +1951,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
                 .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                 .clip(RoundedCornerShape(28.dp))
                 .background(Glass)
-                .border(1.dp, Color.White.copy(alpha = .7f), RoundedCornerShape(28.dp))
+                .border(1.dp, Color(0xFFE6E6E6), RoundedCornerShape(28.dp))
                 .padding(5.dp)
         ) {
             val slot = (navWidth - 10.dp) / 4
