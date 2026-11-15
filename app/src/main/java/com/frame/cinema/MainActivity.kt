@@ -1818,6 +1818,11 @@ private fun HomePage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val homeOverlayOffsets by remember(listState) {
+        derivedStateOf {
+            listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
+        }
+    }
     Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
@@ -1837,13 +1842,14 @@ private fun HomePage(
         }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Box(Modifier.zIndex(1f)) {
+                Box(Modifier.zIndex(1f).graphicsLayer { alpha = 0f }) {
                     Header("首页", onSettings)
                 }
             }
             item(key = "home-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
+                        .graphicsLayer { alpha = 0f }
                         .background(PageBg)
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                         .drawBehind {
@@ -1980,6 +1986,46 @@ private fun HomePage(
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
+        }
+
+        val homeTitleOffset = homeOverlayOffsets["home-large-title"]
+        if (homeTitleOffset != null) {
+            Box(
+                Modifier.fillMaxWidth().zIndex(1f)
+                    .graphicsLayer { translationY = homeTitleOffset }
+                    .padding(horizontal = 20.dp)
+            ) {
+                Header("首页", onSettings)
+            }
+        }
+        val homeStatsOffset = homeOverlayOffsets["home-stat-panel"]
+        if (homeStatsOffset != null) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .graphicsLayer { translationY = homeStatsOffset }
+                    .background(PageBg)
+                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
+                    .drawBehind {
+                        val bleed = 20.dp.toPx()
+                        drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
+                    }
+            ) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Glass)
+                        .padding(horizontal = 10.dp, vertical = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
+                }
+            }
         }
 
         AnimatedVisibility(
@@ -2400,6 +2446,11 @@ private fun RecordsPage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val recordsOverlayOffsets by remember(listState) {
+        derivedStateOf {
+            listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
+        }
+    }
     val completedVideos = remember(videos) {
         videos.filter { it.status == "watched" || it.progress >= 100f }
     }
@@ -2472,7 +2523,7 @@ private fun RecordsPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().zIndex(1f)
+                    Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = 0f }
                     .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -2484,9 +2535,10 @@ private fun RecordsPage(
                     }
                 }
             }
-            item {
+            item(key = "records-stat-panel") {
                 Column(
                     Modifier.fillMaxWidth()
+                        .graphicsLayer { alpha = 0f }
                         .background(PageBg.copy(alpha = .95f))
                 ) {
                     Row(
@@ -2793,6 +2845,49 @@ private fun RecordsPage(
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
+        }
+
+        val recordsTitleOffset = recordsOverlayOffsets["records-large-title"]
+        if (recordsTitleOffset != null) {
+            Row(
+                Modifier.fillMaxWidth().zIndex(1f)
+                    .graphicsLayer { translationY = recordsTitleOffset }
+                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
+                    ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
+                }
+            }
+        }
+        val recordsStatsOffset = recordsOverlayOffsets["records-stat-panel"]
+        if (recordsStatsOffset != null) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .graphicsLayer { translationY = recordsStatsOffset }
+                    .background(PageBg.copy(alpha = .95f))
+            ) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 10.dp)
+                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Glass)
+                        .padding(horizontal = 10.dp, vertical = 15.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Stat("已看完", watchedCount.toString(), "个", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
+                    Stat("写下感想", reviewedCount.toString(), "篇", Modifier.weight(1f))
+                }
+            }
         }
 
         AnimatedVisibility(
