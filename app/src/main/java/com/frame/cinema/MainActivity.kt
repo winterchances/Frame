@@ -298,7 +298,7 @@ private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
 private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, NAME, WATCHED, RATING }
@@ -826,7 +826,19 @@ private fun FrameNativeApp(
                                 sortDirection = recordSortDirection,
                                 onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
                                 onSort = { sheet = SheetType.RECORD_SORT },
-                                onCreate = { startNewReview(it) },
+                                onCreate = { video ->
+                                    if (video == null) {
+                                        selected = null
+                                        editReviewId = null
+                                        editReviewVideoId = null
+                                        editReview = ""
+                                        editRating = 0f
+                                        parentSheet = SheetType.NONE
+                                        sheet = SheetType.REVIEW_CREATE_OPTIONS
+                                    } else {
+                                        startNewReview(video)
+                                    }
+                                },
                                 onEdit = { openReviewEditor(it) },
                                 onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
                                 onTargetHandled = { targetReviewId = null }
@@ -1452,47 +1464,34 @@ private fun FrameNativeApp(
                             SheetAction(cat) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
                         }
                     }
+                    SheetType.REVIEW_CREATE_OPTIONS -> SheetContent("新增观影感想") {
+                        SheetAction("关联视频") {
+                            selected = null
+                            editReviewId = null
+                            editReviewVideoId = null
+                            editReview = ""
+                            editRating = 0f
+                            reviewVideoSearch = ""
+                            parentSheet = SheetType.NONE
+                            sheet = SheetType.REVIEW_VIDEO_PICKER
+                        }
+                        SheetAction("不关联视频") { startNewReview(null) }
+                    }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading(if (editReviewId == null) "新增观影感想" else "编辑观影感想")
                         val canSetVideoRating = editReviewId == null &&
                             editReviewVideoId != null &&
                             reviewEntries.none { it.videoId == editReviewVideoId }
-                        if (editReviewId == null && selected == null) {
-                            val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                                Box(
-                                    Modifier.weight(1f).height(52.dp)
-                                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(if (editReviewVideoId != null) ThemeTeal else Color.White)
-                                        .noRippleClickable {
-                                            reviewVideoSearch = ""
-                                            parentSheet = SheetType.NOTE
-                                            sheet = SheetType.REVIEW_VIDEO_PICKER
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        linkedVideo?.let { displayVideoName(it.name) } ?: "关联视频",
-                                        color = if (editReviewVideoId != null) Color.White else MainText,
-                                        fontSize = 16.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
-                                    )
-                                }
-                                Box(
-                                    Modifier.weight(1f).height(52.dp)
-                                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(if (editReviewVideoId == null) ThemeTeal else Color.White)
-                                        .noRippleClickable { editReviewVideoId = null; editRating = 0f },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("不关联视频", color = if (editReviewVideoId == null) Color.White else MainText, fontSize = 16.sp)
-                                }
-                            }
+                        val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
+                        if (linkedVideo != null) {
+                            Text(
+                                displayVideoName(linkedVideo.name),
+                                color = MainText,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                             Spacer(Modifier.height(16.dp))
                         }
                         if (canSetVideoRating) {
@@ -2638,7 +2637,7 @@ private fun RecordsPage(
                                     modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
-                                    color = Color(0xFF222222),
+                                    color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
                                     lineHeight = 22.sp,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
@@ -2835,7 +2834,7 @@ private fun RecordsPage(
                             .padding(16.dp)
                     ) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text("独立感想", color = MainText, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.weight(1f))
+                            Text("未命名", color = MutedText, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
                                 color = Color(0xFF999999), fontSize = 11.sp
@@ -3463,9 +3462,12 @@ private fun compareNaturalVideoNames(left: String, right: String): Int {
     return leftTokens.size.compareTo(rightTokens.size)
 }
 
-private fun displayVideoName(name: String): String = name.replace(
-    Regex("\\.(mp4|m4v|mkv|avi|mov|wmv|flv|webm|3gp|3g2|ts|mts|m2ts|mpg|mpeg|mpe|mpv|ogv|ogg|asf|rm|rmvb|vob|divx|f4v|mxf|nsv|wtv|dvr-ms|amv|hevc|h264|h265)$", RegexOption.IGNORE_CASE), ""
-)
+private fun displayVideoName(name: String): String {
+    val displayName = name.replace(
+        Regex("\\.(mp4|m4v|mkv|avi|mov|wmv|flv|webm|3gp|3g2|ts|mts|m2ts|mpg|mpeg|mpe|mpv|ogv|ogg|asf|rm|rmvb|vob|divx|f4v|mxf|nsv|wtv|dvr-ms|amv|hevc|h264|h265)$", RegexOption.IGNORE_CASE), ""
+    )
+    return displayName.ifBlank { "未命名" }
+}
 
 @Composable
 private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
