@@ -1058,18 +1058,26 @@ private fun FrameNativeApp(
                             }
                         }
                     }
-                    SheetType.SORT -> SheetContent("视频排序") {
-                        SortOptionAction(
-                            "按添加时间", sort == SortMode.ADDED, sortDirection,
-                            onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        )
-                        SortOptionAction(
-                            "按名称", sort == SortMode.NAME, sortDirection,
-                            onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE },
-                            bottomPadding = 0.dp
-                        )
+                    SheetType.SORT -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("视频排序")
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                        ) {
+                            SortOptionRow(
+                                "按添加时间", sort == SortMode.ADDED, sortDirection,
+                                onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                                onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            SortOptionRow(
+                                "按名称", sort == SortMode.NAME, sortDirection,
+                                onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                                onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            )
+                        }
                     }
                     SheetType.GRID -> SheetContent("视图模式") {
                         SheetAction("2列大图（舒适）") { compact = false; sheet = SheetType.NONE }
@@ -1320,28 +1328,38 @@ private fun FrameNativeApp(
                             Spacer(Modifier.height(with(LocalDensity.current) { recordSearchBottomSpacerPx.toDp() }))
                         }
                     }
-                    SheetType.RECORD_SORT -> SheetContent("记录排序") {
-                        SortOptionAction(
-                            "按添加时间", recordSortMode == RecordSortMode.ADDED, recordSortDirection,
-                            onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        )
-                        SortOptionAction(
-                            "按名称", recordSortMode == RecordSortMode.NAME, recordSortDirection,
-                            onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        )
-                        SortOptionAction(
-                            "按看完时间", recordSortMode == RecordSortMode.WATCHED, recordSortDirection,
-                            onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
-                        )
-                        SortOptionAction(
-                            "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
-                            onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                            onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE },
-                            bottomPadding = 0.dp
-                        )
+                    SheetType.RECORD_SORT -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("记录排序")
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                        ) {
+                            SortOptionRow(
+                                "按添加时间", recordSortMode == RecordSortMode.ADDED, recordSortDirection,
+                                onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                                onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            SortOptionRow(
+                                "按名称", recordSortMode == RecordSortMode.NAME, recordSortDirection,
+                                onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                                onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            SortOptionRow(
+                                "按看完时间", recordSortMode == RecordSortMode.WATCHED, recordSortDirection,
+                                onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                                onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                            SortOptionRow(
+                                "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
+                                onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
+                                onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                            )
+                        }
                     }
                     SheetType.SEARCH -> Column(
                         Modifier.fillMaxWidth()
@@ -3949,50 +3967,46 @@ private fun RatingStars(
 }
 
 @Composable
-private fun SortOptionAction(
-    label: String,
-    selected: Boolean,
+private fun SortOptionRow(
+    title: String,
+    isSelected: Boolean,
     direction: SortDirection,
-    bottomPadding: androidx.compose.ui.unit.Dp = 12.dp,
     onAscending: () -> Unit,
     onDescending: () -> Unit
 ) {
-    Surface(
-        Modifier.fillMaxWidth().padding(bottom = bottomPadding)
-            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-            .clip(RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        shadowElevation = 0.dp
+    Row(
+        Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            Modifier.fillMaxWidth().height(52.dp).padding(start = 18.dp, end = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Text(
+            title,
+            Modifier.weight(1f),
+            color = if (isSelected) MainText else MutedText,
+            fontSize = 16.sp,
+            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+        )
+        Row {
             Text(
-                label,
-                Modifier.weight(1f),
-                color = if (selected) ThemeTeal else MainText,
-                fontSize = 16.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                "正序",
+                Modifier.clip(RoundedCornerShape(6.dp))
+                    .background(if (isSelected && direction == SortDirection.ASCENDING) ThemeTeal.copy(alpha = 0.15f) else Color.Transparent)
+                    .noRippleClickable { onAscending() }
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                color = if (isSelected && direction == SortDirection.ASCENDING) ThemeTeal else Color(0xFFAAAAAA),
+                fontSize = 13.sp,
+                fontWeight = if (isSelected && direction == SortDirection.ASCENDING) FontWeight.Bold else FontWeight.Normal
             )
-            Box(Modifier.size(36.dp).noRippleClickable(onAscending), contentAlignment = Alignment.Center) {
-                Text(
-                    "正序",
-                    color = if (selected && direction == SortDirection.ASCENDING) ThemeTeal else MutedText,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Box(Modifier.size(36.dp).noRippleClickable(onDescending), contentAlignment = Alignment.Center) {
-                Text(
-                    "倒序",
-                    color = if (selected && direction == SortDirection.DESCENDING) ThemeTeal else MutedText,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Spacer(Modifier.width(4.dp))
+            Text(
+                "倒序",
+                Modifier.clip(RoundedCornerShape(6.dp))
+                    .background(if (isSelected && direction == SortDirection.DESCENDING) ThemeTeal.copy(alpha = 0.15f) else Color.Transparent)
+                    .noRippleClickable { onDescending() }
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                color = if (isSelected && direction == SortDirection.DESCENDING) ThemeTeal else Color(0xFFAAAAAA),
+                fontSize = 13.sp,
+                fontWeight = if (isSelected && direction == SortDirection.DESCENDING) FontWeight.Bold else FontWeight.Normal
+            )
         }
     }
 }
