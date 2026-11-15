@@ -2074,7 +2074,7 @@ private fun LibraryPage(
         }
     }
     val columns = if (compact) 3 else 2
-    val gap = if (compact) 10.dp else 15.dp
+    val gap = if (compact) 10.dp else 16.dp
     val libraryTitleHeightPx = remember { mutableIntStateOf(0) }
     val libraryOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val libraryTitleScrollDistancePx = remember {
@@ -2365,7 +2365,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
     val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
     Row(
-        modifier.fillMaxWidth().padding(bottom = if (isLastInGroup) 0.dp else 12.dp)
+        modifier.fillMaxWidth().padding(bottom = if (isLastInGroup) 0.dp else 16.dp)
             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
             .background(Color.White).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
@@ -3541,7 +3541,7 @@ private fun Stat(label: String, value: String, unit: String, modifier: Modifier 
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 12.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 16.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
