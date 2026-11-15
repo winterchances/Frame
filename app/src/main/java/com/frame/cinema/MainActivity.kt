@@ -2645,7 +2645,7 @@ private fun RecordsPage(
                                     spacing = 2.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.height(6.dp))
                                 Text(
                                     if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
                                     fontSize = 12.sp,
