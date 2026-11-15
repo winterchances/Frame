@@ -1514,7 +1514,6 @@ private fun FrameNativeApp(
                                         fontWeight = FontWeight.Medium,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
                                     )
                                 }
