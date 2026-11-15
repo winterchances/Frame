@@ -471,6 +471,9 @@ private fun FrameNativeApp(
     var editName by remember { mutableStateOf("") }
     var editReview by remember { mutableStateOf("") }
     var editRating by remember { mutableFloatStateOf(0f) }
+    var editReviewTitle by remember { mutableStateOf("") }
+    var editReviewCoverUri by remember { mutableStateOf<Uri?>(null) }
+    var editReviewCoverPath by remember { mutableStateOf<String?>(null) }
     var editReviewId by remember { mutableStateOf<Long?>(null) }
     var editReviewVideoId by remember { mutableStateOf<Long?>(null) }
     var newCategory by remember { mutableStateOf("") }
@@ -569,6 +572,9 @@ private fun FrameNativeApp(
         editReviewVideoId = video?.id
         editReview = ""
         editRating = video?.rating ?: 0f
+        editReviewTitle = ""
+        editReviewCoverUri = null
+        editReviewCoverPath = null
         parentSheet = SheetType.NONE
         sheet = SheetType.NOTE
     }
@@ -577,7 +583,10 @@ private fun FrameNativeApp(
         editReviewVideoId = entry.videoId
         selected = videos.firstOrNull { it.id == entry.videoId }
         editReview = entry.content
-        editRating = 0f
+        editRating = entry.rating
+        editReviewTitle = entry.title
+        editReviewCoverUri = null
+        editReviewCoverPath = entry.coverPath
         parentSheet = SheetType.NONE
         sheet = SheetType.NOTE
     }
@@ -627,6 +636,12 @@ private fun FrameNativeApp(
             refresh(); notify("封面已更新")
         }
         sheet = SheetType.NONE
+    }
+    val reviewCoverPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            editReviewCoverUri = uri
+        }
     }
     val exportDataLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
