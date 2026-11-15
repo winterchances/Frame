@@ -928,7 +928,7 @@ private fun FrameNativeApp(
                 Box(
                     Modifier.size(56.dp)
                         .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
-                        .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
+                        .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
@@ -1763,7 +1763,7 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
     BoxWithConstraints(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
             .onGloballyPositioned { onBoundsChanged?.invoke(it.boundsInRoot()) }
-            .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .06f))
+            .shadow(8.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
             .height(56.dp)
             .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
             .clip(RoundedCornerShape(28.dp))
