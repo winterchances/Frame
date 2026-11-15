@@ -2182,10 +2182,10 @@ private fun LibraryFilterHeader(
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .background(PageBg)
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = 9.dp, bottom = 10.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 1.dp)
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 10.dp),
+            Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(25.dp)
         ) {
             listOf("全部", "在看", "已看").forEach { value ->
@@ -2286,6 +2286,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                 item { EmptyHint("暂无播放记录") }
             } else {
                 groups.forEachIndexed { groupIndex, (label, list) ->
+                    if (groupIndex > 0) item { Spacer(Modifier.height(7.dp)) }
                     stickyHeader {
                         RecentDateHeader(
                             label,
@@ -2293,7 +2294,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                             onHeightChanged = { headerHeightPx = it }
                         )
                     }
-                    item { Spacer(Modifier.height(10.dp)) }
+                    item { Spacer(Modifier.height(1.dp)) }
                     itemsIndexed(list, key = { _, video -> video.id }) { itemIndex, video ->
                         RecentHistoryCard(
                             video,
