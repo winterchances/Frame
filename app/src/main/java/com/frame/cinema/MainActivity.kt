@@ -1875,7 +1875,7 @@ private fun HomePage(
                     }
                 }
             }
-            item(key = "home-stat-panel-gap") { Spacer(Modifier.height(26.dp)) }
+            item(key = "home-stat-panel-gap") { Spacer(Modifier.height(14.dp)) }
             item(key = "home-continue-heading") {
                 SectionHeading("继续观看", continueExpanded, onToggle = {
                     continueExpanded = !continueExpanded
@@ -2566,7 +2566,7 @@ private fun RecordsPage(
                     Spacer(Modifier.height(20.dp))
                 }
             } else {
-                item { Spacer(Modifier.height(26.dp)) }
+                item { Spacer(Modifier.height(24.dp)) }
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
                     val entries = reviewsByVideo[video.id].orEmpty().sortedByDescending { it.createdAt }
                     val completed = video.status == "watched" || video.progress >= 100f
