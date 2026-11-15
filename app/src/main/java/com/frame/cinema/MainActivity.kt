@@ -2969,7 +2969,7 @@ private fun RecordsPage(
                                     Icons.Outlined.ExpandMore,
                                     if (entries.isEmpty()) "暂无感想" else if (expanded) "收起感想" else "展开感想",
                                     tint = if (entries.isEmpty()) Color(0xFFBBBBBB) else MutedText,
-                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp, y = if (entries.isEmpty() || !expanded) 1.dp else 0.dp)
+                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp, y = 0.dp)
                                 )
                             }
                         }
@@ -3123,7 +3123,7 @@ private fun RecordsPage(
                                         if (expanded) "收起正文" else "展开正文",
                                         tint = MutedText,
                                         modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
-                                            .offset(x = 3.dp, y = if (expanded) 0.dp else 1.dp)
+                                            .offset(x = 3.dp, y = 0.dp)
                                     )
                                 }
                             }
@@ -3137,7 +3137,7 @@ private fun RecordsPage(
                                         if (expanded) "收起正文" else "展开正文",
                                         tint = MutedText,
                                         modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
-                                            .offset(x = 3.dp, y = if (expanded) 0.dp else 1.dp)
+                                            .offset(x = 3.dp, y = 0.dp)
                                     )
                                 }
                             }
