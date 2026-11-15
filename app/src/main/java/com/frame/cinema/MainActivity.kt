@@ -2040,7 +2040,7 @@ private fun HomePage(
                     }
             ) {
                 Row(
-                    Modifier.fillMaxWidth()
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp)
                         .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
                         .clip(RoundedCornerShape(16.dp))
                         .background(Glass)
@@ -2403,7 +2403,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             Thumbnail(video, Modifier.fillMaxSize())
         }
         Box(Modifier.weight(1f).height(84.dp)) {
-            Column(Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.SpaceBetween) {                Text(
+            Column(Modifier.fillMaxSize().padding(end = 12.dp), verticalArrangement = Arrangement.SpaceBetween) {                Text(
                     displayVideoName(video.name),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
@@ -2418,7 +2418,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     Text("播放至${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, overflow = TextOverflow.Clip, softWrap = false, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                 }
             }
-            Box(Modifier.align(Alignment.BottomEnd).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomEnd) {
+            Box(Modifier.align(Alignment.BottomEnd).offset(x = 4.dp).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomEnd) {
                 Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFD0D0D0), modifier = Modifier.size(16.dp).offset(x = 4.dp))
             }
         }
@@ -2596,7 +2596,7 @@ private fun RecordsPage(
                     Spacer(Modifier.height(20.dp))
                 }
             } else {
-                item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(14.dp)) }
+                item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(4.dp)) }
                 item(key = "records-list-heading") { SectionHeading("观看记录") }
                 item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
@@ -2706,7 +2706,7 @@ private fun RecordsPage(
                                     Icons.Outlined.ExpandMore,
                                     if (entries.isEmpty()) "暂无感想" else if (expanded) "收起感想" else "展开感想",
                                     tint = if (entries.isEmpty()) Color(0xFFBBBBBB) else MutedText,
-                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp)
+                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp, y = if (entries.isEmpty() || !expanded) 1.dp else 0.dp)
                                 )
                             }
                         }
@@ -2855,7 +2855,7 @@ private fun RecordsPage(
                                     Icons.Outlined.ExpandMore,
                                     if (expanded) "收起正文" else "展开正文",
                                     tint = MutedText,
-                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp).offset(x = 3.dp)
+                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp).offset(x = 3.dp, y = if (expanded) 0.dp else 1.dp)
                                 )
                             }
                         }
