@@ -2963,13 +2963,13 @@ private fun RecordsPage(
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
                                 ),
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.CenterEnd
                             ) {
                                 Icon(
                                     Icons.Outlined.ExpandMore,
                                     if (entries.isEmpty()) "暂无感想" else if (expanded) "收起感想" else "展开感想",
                                     tint = if (entries.isEmpty()) Color(0xFFBBBBBB) else MutedText,
-                                    modifier = Modifier.rotate(chevronRotation).size(20.dp)
+                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp, y = if (entries.isEmpty() || !expanded) 1.dp else 0.dp)
                                 )
                             }
                         }
@@ -3117,12 +3117,13 @@ private fun RecordsPage(
                                     RatingStars(entry.rating, 16.dp, onRate = {}, spacing = 2.dp)
                                     Text(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)), color = Color(0xFF999999), fontSize = 11.sp)
                                 }
-                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.CenterEnd) {
                                     Icon(
                                         Icons.Outlined.ExpandMore,
                                         if (expanded) "收起正文" else "展开正文",
                                         tint = MutedText,
-                                        modifier = Modifier.rotate(standaloneChevronRotation).size(20.dp)
+                                        modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
+                                            .offset(x = 3.dp, y = if (expanded) 0.dp else 1.dp)
                                     )
                                 }
                             }
@@ -3130,12 +3131,13 @@ private fun RecordsPage(
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Text(standaloneTitle, color = MutedText, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)), color = Color(0xFF999999), fontSize = 11.sp)
-                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.CenterEnd) {
                                     Icon(
                                         Icons.Outlined.ExpandMore,
                                         if (expanded) "收起正文" else "展开正文",
                                         tint = MutedText,
-                                        modifier = Modifier.rotate(standaloneChevronRotation).size(20.dp)
+                                        modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
+                                            .offset(x = 3.dp, y = if (expanded) 0.dp else 1.dp)
                                     )
                                 }
                             }
