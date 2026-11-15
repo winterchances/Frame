@@ -2002,6 +2002,23 @@ private fun HomePage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val homeTitleAlphaState = remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+        }
+    }
+    val homeTitleHeightPx = remember { mutableIntStateOf(0) }
+    val homeOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val homeTitleScrollDistancePx = remember {
+        derivedStateOf {
+            when (listState.firstVisibleItemIndex) {
+                0 -> listState.firstVisibleItemScrollOffset.toFloat()
+                1 -> (homeTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> homeTitleHeightPx.intValue + homeOffscreenPx
+            }
+        }
+    }
     val homeOverlayOffsets by remember(listState) {
         derivedStateOf {
             listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
@@ -2026,7 +2043,11 @@ private fun HomePage(
         }
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "home-large-title") {
-                Box(Modifier.zIndex(1f).graphicsLayer { alpha = 0f }) {
+                Box(
+                    Modifier.zIndex(1f)
+                        .onGloballyPositioned { homeTitleHeightPx.intValue = it.size.height }
+                        .graphicsLayer { alpha = 0f }
+                ) {
                     Header("首页", onSettings)
                 }
             }
@@ -2173,15 +2194,15 @@ private fun HomePage(
             item { Spacer(Modifier.height(20.dp)) }
         }
 
-        val homeTitleOffset = homeOverlayOffsets["home-large-title"]
-        if (homeTitleOffset != null) {
-            Box(
-                Modifier.fillMaxWidth().zIndex(1f)
-                    .graphicsLayer { translationY = homeTitleOffset }
-                    .padding(horizontal = 20.dp)
-            ) {
-                Header("首页", onSettings)
-            }
+        Box(
+            Modifier.fillMaxWidth().zIndex(1f)
+                .graphicsLayer {
+                    translationY = -homeTitleScrollDistancePx.value
+                    alpha = homeTitleAlphaState.value
+                }
+                .padding(horizontal = 20.dp)
+        ) {
+            Header("首页", onSettings)
         }
         val homeStatsOffset = homeOverlayOffsets["home-stat-panel"]
         if (homeStatsOffset != null) {
@@ -2632,6 +2653,23 @@ private fun RecordsPage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val recordsTitleAlphaState = remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+        }
+    }
+    val recordsTitleHeightPx = remember { mutableIntStateOf(0) }
+    val recordsOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val recordsTitleScrollDistancePx = remember {
+        derivedStateOf {
+            when (listState.firstVisibleItemIndex) {
+                0 -> listState.firstVisibleItemScrollOffset.toFloat()
+                1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> recordsTitleHeightPx.intValue + recordsOffscreenPx
+            }
+        }
+    }
     val recordsOverlayOffsets by remember(listState) {
         derivedStateOf {
             listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
@@ -2712,7 +2750,9 @@ private fun RecordsPage(
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "records-large-title") {
                 Row(
-                    Modifier.fillMaxWidth().zIndex(1f).graphicsLayer { alpha = 0f }
+                    Modifier.fillMaxWidth().zIndex(1f)
+                    .onGloballyPositioned { recordsTitleHeightPx.intValue = it.size.height }
+                    .graphicsLayer { alpha = 0f }
                     .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -3059,20 +3099,20 @@ private fun RecordsPage(
             item { Spacer(Modifier.height(20.dp)) }
         }
 
-        val recordsTitleOffset = recordsOverlayOffsets["records-large-title"]
-        if (recordsTitleOffset != null) {
-            Row(
-                Modifier.fillMaxWidth().zIndex(1f)
-                    .graphicsLayer { translationY = recordsTitleOffset }
-                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                    ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
-                    ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
+        Row(
+            Modifier.fillMaxWidth().zIndex(1f)
+                .graphicsLayer {
+                    translationY = -recordsTitleScrollDistancePx.value
+                    alpha = recordsTitleAlphaState.value
                 }
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
+                ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
+                ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
             }
         }
         val recordsStatsOffset = recordsOverlayOffsets["records-stat-panel"]
