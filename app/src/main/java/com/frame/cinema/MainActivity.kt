@@ -1897,7 +1897,7 @@ private fun HomePage(
                                     with(snapFling) { performFling(initialVelocity * .58f) }
                             }
                         }
-                        LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 2.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                        LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 4.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                             itemsIndexed(continuing, key = { _, video -> video.id }) { _, video ->
                                 Box(
                                     Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
@@ -1933,6 +1933,7 @@ private fun HomePage(
                     }
                 )
             }
+            item(key = "home-recent-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
             item(key = "home-recent-content") {
                 Column(Modifier.fillMaxWidth()) {
                     if (recent.isEmpty()) {
@@ -2568,7 +2569,7 @@ private fun RecordsPage(
             } else {
                 item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(14.dp)) }
                 item(key = "records-list-heading") { SectionHeading("观看记录") }
-                item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(12.dp)) }
+                item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
                     val entries = reviewsByVideo[video.id].orEmpty().sortedByDescending { it.createdAt }
                     val completed = video.status == "watched" || video.progress >= 100f
