@@ -2210,7 +2210,7 @@ private fun LibraryFilterHeader(
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .background(PageBg)
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 1.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 9.dp, bottom = 1.dp)
     ) {
         Row(
             Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 14.dp),
@@ -2256,10 +2256,10 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
     val recentOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val recentTitleScrollDistancePx = remember {
         derivedStateOf {
-            if (listState.firstVisibleItemIndex == 0) {
-                listState.firstVisibleItemScrollOffset.toFloat()
-            } else {
-                recentTitleHeightPx.intValue + recentOffscreenPx
+            when (listState.firstVisibleItemIndex) {
+                0 -> listState.firstVisibleItemScrollOffset.toFloat()
+                1 -> (recentTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
+                else -> recentTitleHeightPx.intValue + recentOffscreenPx
             }
         }
     }
