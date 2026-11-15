@@ -44,6 +44,26 @@ class NativeLibraryRepository(context: Context) {
         else store.deleteReview(id)
     }
 
+    fun addStandaloneReview(title: String, content: String, rating: Float, coverUri: Uri?): Boolean {
+        val text = content.trim()
+        if (text.isEmpty()) return false
+        val now = System.currentTimeMillis()
+        val id = store.addReview(null, text, rating, now, title.trim(), null)
+        val coverPath = coverUri?.let { ThumbnailStore.saveCustomCover(app, it, id) }
+        if (coverPath != null) store.updateReview(id, null, text, rating, title.trim(), coverPath)
+        return true
+    }
+
+    fun updateStandaloneReview(id: Long, title: String, content: String, rating: Float, coverUri: Uri?, existingCoverPath: String?): Boolean {
+        val text = content.trim()
+        if (text.isEmpty()) return false
+        val newPath = coverUri?.let { ThumbnailStore.saveCustomCover(app, it, id) }
+        val finalPath = newPath ?: existingCoverPath
+        store.updateReview(id, null, text, rating, title.trim(), finalPath)
+        if (newPath != null && existingCoverPath != null && existingCoverPath != newPath) ThumbnailStore.delete(app, existingCoverPath)
+        return true
+    }
+
     fun updateVideoRating(id: Long, rating: Float) {
         store.allVideos().firstOrNull { it.id == id }?.let { video ->
             store.upsert(video.copy(rating = rating.coerceIn(0f, 5f)))
