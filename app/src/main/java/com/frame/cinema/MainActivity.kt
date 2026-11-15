@@ -2491,12 +2491,12 @@ private fun RecordsPage(
         val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
         if (videoIndex >= 0) {
             setVideoReviewsExpanded(displayVideos[videoIndex].id, true)
-            listState.animateScrollToItem(3 + videoIndex)
+            listState.animateScrollToItem(5 + videoIndex)
         } else {
             val standaloneIndex = standaloneReviews.indexOfFirst { it.id == targetId }
             if (standaloneIndex >= 0) {
                 setStandaloneReviewExpanded(targetId, true)
-                listState.animateScrollToItem(3 + displayVideos.size + standaloneIndex)
+                listState.animateScrollToItem(5 + displayVideos.size + standaloneIndex)
             } else onTargetHandled()
         }
     }
@@ -2566,7 +2566,9 @@ private fun RecordsPage(
                     Spacer(Modifier.height(20.dp))
                 }
             } else {
-                item { Spacer(Modifier.height(24.dp)) }
+                item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(14.dp)) }
+                item(key = "records-list-heading") { SectionHeading("观看记录") }
+                item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(12.dp)) }
                 items(displayVideos, key = { "video_${it.id}" }) { video ->
                     val entries = reviewsByVideo[video.id].orEmpty().sortedByDescending { it.createdAt }
                     val completed = video.status == "watched" || video.progress >= 100f
