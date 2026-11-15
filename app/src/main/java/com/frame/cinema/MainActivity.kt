@@ -2985,34 +2985,31 @@ private fun RecordsPage(
                             .noRippleClickable { onEdit(entry) }
                             .padding(16.dp)
                     ) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text("未命名", color = MutedText, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                color = Color(0xFF999999), fontSize = 11.sp
-                            )
-                            val standaloneChevronRotation by animateFloatAsState(
-                                targetValue = if (expanded) 0f else -90f,
-                                animationSpec = tween(
-                                    durationMillis = if (expanded) 300 else 250,
-                                    easing = if (expanded)
-                                        androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)
-                                    else
-                                        androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
-                                ),
-                                label = "record-standalone-chevron-" + entry.id
-                            )
-                            Box(
-                                Modifier.size(30.dp)
-                                    .noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Outlined.ExpandMore,
-                                    if (expanded) "收起正文" else "展开正文",
-                                    tint = MutedText,
-                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp).offset(x = 3.dp, y = if (expanded) 0.dp else 1.dp)
-                                )
+                        val standaloneTitle = entry.title.ifBlank { "未命名" }
+                        val standaloneVideoStyle = entry.coverPath != null || entry.rating > 0f
+                        if (standaloneVideoStyle) {
+                            val coverBitmap = remember(entry.coverPath) { entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() } }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
+                                Box(Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFECEDEF)), contentAlignment = Alignment.Center) {
+                                    if (coverBitmap != null) Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                    else Icon(Icons.Outlined.Image, null, tint = Color(0xFFB5B5B5), modifier = Modifier.size(25.dp))
+                                }
+                                Column(Modifier.weight(1f).height(100.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                                    Text(standaloneTitle, color = if (entry.title.isBlank()) MutedText else Color(0xFF222222), fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    RatingStars(entry.rating, 16.dp, onRate = {}, spacing = 2.dp)
+                                    Text(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)), color = Color(0xFF999999), fontSize = 11.sp)
+                                }
+                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Outlined.ExpandMore, if (expanded) "收起正文" else "展开正文", tint = MutedText, modifier = Modifier.rotate(if (expanded) 0f else -90f).size(18.dp))
+                                }
+                            }
+                        } else {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(standaloneTitle, color = MutedText, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)), color = Color(0xFF999999), fontSize = 11.sp)
+                                Box(Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) }, contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Outlined.ExpandMore, if (expanded) "收起正文" else "展开正文", tint = MutedText, modifier = Modifier.rotate(if (expanded) 0f else -90f).size(18.dp))
+                                }
                             }
                         }
                         AnimatedVisibility(
