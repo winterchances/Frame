@@ -2007,9 +2007,12 @@ private fun FrameNativeApp(
             }
         }
         if (toast.isNotBlank()) {
-            Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp), shape = CircleShape, color = Color(0xDD222222)) {
-                Text(toast, color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
-            }        }
+            Box(Modifier.fillMaxSize()) {
+                Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp), shape = CircleShape, color = Color(0xDD222222)) {
+                    Text(toast, color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
+                }
+            }
+        }
     }
 }
 
