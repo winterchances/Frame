@@ -2648,7 +2648,7 @@ private fun LibraryPage(
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
                 .graphicsLayer {
                     translationY = if (multiSelectMode) {
-                        libraryTitleHeightPx.intValue.toFloat()
+                        libraryTitleHeightPx.intValue.toFloat() + with(density) { 12.dp.toPx() }
                     } else if (listState.firstVisibleItemIndex == 0) {
                         (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
                     } else 0f
