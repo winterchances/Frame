@@ -436,7 +436,7 @@ private fun FrameNativeApp(
     }
     val hazeState = remember { HazeState() }
     val homeListState = rememberLazyListState()
-    val libraryListState = rememberLazyListState()
+    val libraryListState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
     val libraryStickyCategoryScrollState = rememberScrollState()
     val libraryFloatingCategoryScrollState = rememberScrollState()
     val recentListState = rememberLazyListState()
@@ -2374,7 +2374,7 @@ private fun rememberSoftListFlingBehavior(): FlingBehavior {
 @Composable
 private fun LibraryPage(
     hazeState: HazeState,
-    listState: LazyListState,
+    listState: androidx.compose.foundation.lazy.grid.LazyGridState,
     stickyCategoryScrollState: androidx.compose.foundation.ScrollState,
     floatingCategoryScrollState: androidx.compose.foundation.ScrollState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
@@ -2422,8 +2422,16 @@ private fun LibraryPage(
         }
     }
     Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
-        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp)) {
-            item(key = "library-title") {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            state = listState,
+            flingBehavior = softListFlingBehavior,
+            modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(),
+            contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            verticalArrangement = Arrangement.spacedBy(gap)
+        ) {
+            item(key = "library-title", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 Row(
                     Modifier.fillMaxWidth()
                         .onGloballyPositioned {
@@ -2453,30 +2461,20 @@ private fun LibraryPage(
                 )
             }
             if (filtered.isEmpty()) {
-                item { EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频") }
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                    EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
+                }
             } else {
-                item { Spacer(Modifier.height(5.dp)) }
-                filtered.chunked(columns).forEachIndexed { rowIndex, rowVideos ->
-                    item(key = "library-row-$rowIndex") {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(gap),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            rowVideos.forEach { video ->
-                                key(video.id) {
-                                    PosterCard(
-                                        video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
-                                        Modifier.weight(1f),
-                                        alpha = 1f,
-                                        onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
-                                    )
-                                }
-                            }
-                            repeat(columns - rowVideos.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                    item(key = "library-row-gap-$rowIndex") { Spacer(Modifier.height(gap)) }
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                    Spacer(Modifier.height(5.dp))
+                }
+                items(filtered, key = { it.id }) { video ->
+                    PosterCard(
+                        video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
+                        Modifier.fillMaxWidth(),
+                        alpha = 1f,
+                        onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
+                    )
                 }
             }
         }
