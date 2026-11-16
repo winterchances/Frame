@@ -982,29 +982,38 @@ private fun FrameNativeApp(
 
         val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
 
-        AnimatedVisibility(
-            visibleState = sheetVisibility,
-            enter = fadeIn(tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
-            exit = fadeOut(tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))),
-            modifier = Modifier.zIndex(4f)
-        ) {
-            Box(
-                Modifier.fillMaxSize().zIndex(2f).blur(8.dp * maxOf(clearDialogProgress, importDialogProgress))
-                    .background(Color.Black.copy(alpha = .4f * (1f - maxOf(clearDialogProgress, importDialogProgress))))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                    ) { sheet = SheetType.NONE }
+        Box(Modifier.fillMaxSize().zIndex(4f)) {
+            AnimatedVisibility(
+                visibleState = sheetVisibility,
+                enter = fadeIn(tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
+                exit = fadeOut(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))),
+                modifier = Modifier.zIndex(2f)
             ) {
-                Column(
+                Box(
+                    Modifier.fillMaxSize().blur(8.dp * maxOf(clearDialogProgress, importDialogProgress))
+                        .background(Color.Black.copy(alpha = .4f * (1f - maxOf(clearDialogProgress, importDialogProgress))))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) { sheet = SheetType.NONE }
+                )
+            }
+            Box(Modifier.fillMaxSize()) {
+                AnimatedVisibility(
+                    visibleState = sheetVisibility,
+                    enter = androidx.compose.animation.EnterTransition.None,
+                    exit = androidx.compose.animation.ExitTransition.None,
+                    modifier = Modifier.zIndex(3f)
+                ) {
+                    Column(
                     Modifier.align(Alignment.BottomCenter)
                         .animateEnterExit(
                             enter = slideInVertically(
                                 animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))
                             ) { sheetSlideOffsetPx } + fadeIn(tween(340)),
                             exit = slideOutVertically(
-                                animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
-                            ) { sheetSlideOffsetPx } + fadeOut(tween(240))
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
+                            ) { sheetSlideOffsetPx }
                         )
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
@@ -1835,6 +1844,7 @@ private fun FrameNativeApp(
                     SheetType.NONE -> Unit
                 }
                 }
+            }
             }
         }
 
