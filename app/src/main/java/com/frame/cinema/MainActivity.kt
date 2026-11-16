@@ -4170,6 +4170,11 @@ private fun SortOptionRow(
         ),
         label = "sort-direction-indicator"
     )
+    val indicatorColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isSelected) ThemeTeal else Color.Transparent,
+        animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "sort-direction-indicator-color"
+    )
     val ascendingText by androidx.compose.animation.animateColorAsState(
         targetValue = if (ascendingSelected) Color.White else Color(0xFFAAAAAA),
         animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
@@ -4199,7 +4204,7 @@ private fun SortOptionRow(
                 Modifier.offset(x = indicatorOffset)
                     .size(width = 46.dp, height = 28.dp)
                     .clip(RoundedCornerShape(90.dp))
-                    .background(ThemeTeal)
+                    .background(indicatorColor)
             )
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
