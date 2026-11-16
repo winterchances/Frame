@@ -3131,7 +3131,7 @@ private fun RecordsPage(
                                         val axisX = 7.dp.toPx()
                                         val dotCenterY = 15.dp.toPx()
                                         val lineWidth = 1.dp.toPx()
-                                        val lineColor = Color(0xFFDADADA)
+                                        val lineColor = ThemeTeal
                                         if (entries.size > 1) {
                                             when (index) {
                                                 0 -> drawLine(
