@@ -2951,9 +2951,12 @@ private fun RecordsPage(
             setVideoReviewsExpanded(displayVideos[videoIndex].id, true)
             listState.animateScrollToItem(5 + videoIndex)
         } else {
-            val standaloneIndex = standaloneReviews.indexOfFirst { it.id == targetId }
+            val standaloneRootId = standaloneReviews.firstOrNull { root ->
+                root.id == targetId || reviews.any { it.id == targetId && it.standaloneGroupId == root.id }
+            }?.id
+            val standaloneIndex = standaloneReviews.indexOfFirst { it.id == standaloneRootId }
             if (standaloneIndex >= 0) {
-                setStandaloneReviewExpanded(targetId, true)
+                setStandaloneReviewExpanded(standaloneRootId!!, true)
                 listState.animateScrollToItem(5 + displayVideos.size + standaloneIndex)
             } else onTargetHandled()
         }
