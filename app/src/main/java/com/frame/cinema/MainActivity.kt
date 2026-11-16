@@ -1202,16 +1202,14 @@ private fun FrameNativeApp(
                                 .height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                                .padding(horizontal = 16.dp),
+                                .background(Color.White),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             BasicTextField(
                                 newCategory,
                                 { newCategory = it },
                                 Modifier.weight(1f)
-                                    .onFocusChanged { sheetKeyboardUp = it.isFocused }
-                                    .padding(horizontal = 12.dp),
+                                    .onFocusChanged { sheetKeyboardUp = it.isFocused },
                                 singleLine = true,
                                 decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText, fontSize = 16.sp); inner() },
                                 textStyle = TextStyle(
