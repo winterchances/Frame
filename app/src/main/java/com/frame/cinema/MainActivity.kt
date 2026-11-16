@@ -1006,8 +1006,9 @@ private fun FrameNativeApp(
                     visibleState = sheetVisibility,
                     enter = androidx.compose.animation.EnterTransition.None,
                     exit = androidx.compose.animation.ExitTransition.None,
-                    modifier = Modifier.zIndex(3f)
+                    modifier = Modifier.fillMaxSize().zIndex(3f)
                 ) {
+                    Box(Modifier.fillMaxSize()) {
                     Column(
                     Modifier.align(Alignment.BottomCenter)
                         .animateEnterExit(
@@ -1846,6 +1847,8 @@ private fun FrameNativeApp(
                     }
                     SheetType.NONE -> Unit
                 }
+                }
+                    }
                 }
             }
             }
