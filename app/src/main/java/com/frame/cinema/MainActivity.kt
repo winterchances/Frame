@@ -2014,7 +2014,6 @@ private fun FrameNativeApp(
             }
         }
     }
-}
 
 @Composable
 private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onBoundsChanged: ((Rect) -> Unit)? = null, onSelect: (MainPage) -> Unit) {
