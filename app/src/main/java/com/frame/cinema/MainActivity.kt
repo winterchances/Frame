@@ -480,6 +480,7 @@ private fun FrameNativeApp(
     var editReviewCoverPath by remember { mutableStateOf<String?>(null) }
     var editReviewId by remember { mutableStateOf<Long?>(null) }
     var editReviewVideoId by remember { mutableStateOf<Long?>(null) }
+    var editStandaloneGroupId by remember { mutableStateOf<Long?>(null) }
     var showReviewVideoActions by remember { mutableStateOf(true) }
     var newCategory by remember { mutableStateOf("") }
     var sort by remember { mutableStateOf(SortMode.ADDED) }
@@ -576,6 +577,7 @@ private fun FrameNativeApp(
         selected = video
         editReviewId = null
         editReviewVideoId = video?.id
+        editStandaloneGroupId = null
         editReview = ""
         editRating = video?.rating ?: 0f
         editReviewTitle = ""
@@ -587,12 +589,28 @@ private fun FrameNativeApp(
     fun openReviewEditor(entry: ReviewEntry) {
         editReviewId = entry.id
         editReviewVideoId = entry.videoId
+        editStandaloneGroupId = entry.standaloneGroupId
         selected = videos.firstOrNull { it.id == entry.videoId }
         editReview = entry.content
         editRating = entry.rating
         editReviewTitle = entry.title
         editReviewCoverUri = null
         editReviewCoverPath = entry.coverPath
+        parentSheet = SheetType.NONE
+        sheet = SheetType.NOTE
+    }
+    fun startStandaloneChildReview(groupId: Long) {
+        val parent = reviewEntries.firstOrNull { it.id == groupId && it.videoId == null && it.standaloneGroupId == null } ?: return
+        showReviewVideoActions = false
+        selected = null
+        editReviewId = null
+        editReviewVideoId = null
+        editStandaloneGroupId = parent.id
+        editReview = ""
+        editRating = 0f
+        editReviewTitle = parent.title
+        editReviewCoverUri = null
+        editReviewCoverPath = null
         parentSheet = SheetType.NONE
         sheet = SheetType.NOTE
     }
@@ -870,7 +888,7 @@ private fun FrameNativeApp(
                                         startNewReview(video, showVideoActions = false)
                                     }
                                 },
-                                onCreateStandalone = { startNewReview(null, showVideoActions = false) },
+                                onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
                                 onEdit = { openReviewEditor(it) },
                                 onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
                                 onTargetHandled = { targetReviewId = null }
@@ -1586,9 +1604,45 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading(if (editReviewVideoId == null) { if (editReviewId == null) "新增记录" else "编辑记录" } else { if (editReviewId == null) "新增观影感想" else "编辑观影感想" })
+                        SheetHeading(if (editStandaloneGroupId != null) { if (editReviewId == null) "新增感想" else "编辑感想" } else if (editReviewVideoId == null) { if (editReviewId == null) "新增记录" else "编辑记录" } else { if (editReviewId == null) "新增观影感想" else "编辑观影感想" })
                         val linkedVideo = videos.firstOrNull { it.id == editReviewVideoId }
                         if (editReviewVideoId == null) {
+                            if (editStandaloneGroupId != null) {
+                                val parentTitle = reviewEntries.firstOrNull { it.id == editStandaloneGroupId }?.title?.ifBlank { "未命名" } ?: "未命名"
+                                Text(parentTitle, color = MutedText, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                                BasicTextField(
+                                    editReview, { editReview = it },
+                                    Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp)
+                                        .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                        .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                        .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp),
+                                    decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的感想...", color = MutedText, fontSize = 16.sp); inner() },
+                                    textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp)
+                                )
+                                val canSaveChild = editReview.isNotBlank()
+                                Box(
+                                    Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp)
+                                        .shadow(if (canSaveChild) 4.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (canSaveChild) ThemeTeal else Color(0xFFE5E5E5))
+                                        .then(if (canSaveChild) Modifier.noRippleClickable {
+                                            val groupId = editStandaloneGroupId!!
+                                            val saved = if (editReviewId == null) repository.addStandaloneChildReview(groupId, editReview)
+                                                else repository.updateStandaloneChildReview(editReviewId!!, groupId, editReview)
+                                            if (saved) { refresh(); sheet = SheetType.NONE }
+                                        } else Modifier),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("保存记录", color = if (canSaveChild) Color.White else Color(0xFF999999), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                                }
+                                if (editReviewId != null) {
+                                    Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable {
+                                        editReviewId?.let { repository.deleteReview(it) }; refresh(); sheet = SheetType.NONE
+                                    }, contentAlignment = Alignment.Center) {
+                                        Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    }
+                                }
+                            } else {
                             val coverBitmap = remember(editReviewCoverPath, editReviewCoverUri) {
                                 runCatching {
                                     when {
@@ -1659,6 +1713,7 @@ private fun FrameNativeApp(
                                 }, contentAlignment = Alignment.Center) {
                                     Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                                 }
+                            }
                             }
                         } else {
                             val canSetVideoRating = editReviewId == null &&
@@ -2776,7 +2831,7 @@ private fun RecordsPage(
     onSearch: () -> Unit,
     onSort: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
-    onCreateStandalone: () -> Unit,
+    onCreateStandalone: (Long) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
     onRateVideo: (VideoItem, Float) -> Unit,
     onTargetHandled: () -> Unit
@@ -2886,7 +2941,7 @@ private fun RecordsPage(
         }
     }
     val standaloneReviews = remember(reviews) {
-        reviews.filter { it.videoId == null }.sortedByDescending { it.createdAt }
+        reviews.filter { it.videoId == null && it.standaloneGroupId == null }.sortedByDescending { it.createdAt }
     }
     val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
     LaunchedEffect(targetReviewId, displayVideos, standaloneReviews) {
@@ -3287,14 +3342,14 @@ private fun RecordsPage(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                "1 条",
+                                "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
                                 color = Color(0xFF999999),
                                 fontSize = 12.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
                             Box(
-                                Modifier.size(30.dp).noRippleClickable { onCreateStandalone() },
+                                Modifier.size(30.dp).noRippleClickable { onCreateStandalone(entry.id) },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
