@@ -65,6 +65,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.combinedClickable
@@ -2066,10 +2067,19 @@ private fun HomePage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val homeTitleTopPx = remember { mutableFloatStateOf(0f) }
     val homeTitleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
-            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+            else titleFadeAlpha(
+                listState.firstVisibleItemScrollOffset.toFloat(),
+                homeTitleTopPx.floatValue,
+                statusBarBottomPx,
+                titleSafetyGapPx
+            )
         }
     }
     val homeTitleHeightPx = remember { mutableIntStateOf(0) }
@@ -2109,7 +2119,12 @@ private fun HomePage(
             item(key = "home-large-title") {
                 Box(
                     Modifier.zIndex(1f)
-                        .onGloballyPositioned { homeTitleHeightPx.intValue = it.size.height }
+                        .onGloballyPositioned {
+                            homeTitleHeightPx.intValue = it.size.height
+                            if (homeTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                                homeTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                            }
+                        }
                         .graphicsLayer { alpha = 0f }
                 ) {
                     Header("首页", onSettings)
@@ -2330,10 +2345,19 @@ private fun LibraryPage(
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit
 ) {
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val libraryTitleTopPx = remember { mutableFloatStateOf(0f) }
     val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
-            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+            else titleFadeAlpha(
+                listState.firstVisibleItemScrollOffset.toFloat(),
+                libraryTitleTopPx.floatValue,
+                statusBarBottomPx,
+                titleSafetyGapPx
+            )
         }
     }
     val filtered = remember(videos, status, category) {
@@ -2360,7 +2384,12 @@ private fun LibraryPage(
             item(key = "library-title") {
                 Row(
                     Modifier.fillMaxWidth()
-                        .onGloballyPositioned { libraryTitleHeightPx.intValue = it.size.height }
+                        .onGloballyPositioned {
+                            libraryTitleHeightPx.intValue = it.size.height
+                            if (libraryTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                                libraryTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                            }
+                        }
                         .graphicsLayer { alpha = 0f }
                         .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -2489,10 +2518,19 @@ private fun LibraryFilterHeader(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val recentTitleTopPx = remember { mutableFloatStateOf(0f) }
     val titleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
-            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+            else titleFadeAlpha(
+                listState.firstVisibleItemScrollOffset.toFloat(),
+                recentTitleTopPx.floatValue,
+                statusBarBottomPx,
+                titleSafetyGapPx
+            )
         }
     }
     val recentTitleHeightPx = remember { mutableIntStateOf(0) }
@@ -2544,7 +2582,12 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
             item(key = "recent-large-title") {
                 Row(
                     Modifier.fillMaxWidth()
-                        .onGloballyPositioned { recentTitleHeightPx.intValue = it.size.height }
+                        .onGloballyPositioned {
+                            recentTitleHeightPx.intValue = it.size.height
+                            if (recentTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                                recentTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                            }
+                        }
                         .graphicsLayer { alpha = 0f }
                         .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -2719,10 +2762,19 @@ private fun RecordsPage(
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
         }
     }
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val recordsTitleTopPx = remember { mutableFloatStateOf(0f) }
     val recordsTitleAlphaState = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
-            else 1f - (listState.firstVisibleItemScrollOffset / 200f).coerceIn(0f, 1f)
+            else titleFadeAlpha(
+                listState.firstVisibleItemScrollOffset.toFloat(),
+                recordsTitleTopPx.floatValue,
+                statusBarBottomPx,
+                titleSafetyGapPx
+            )
         }
     }
     val recordsTitleHeightPx = remember { mutableIntStateOf(0) }
@@ -2817,7 +2869,12 @@ private fun RecordsPage(
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f)
-                    .onGloballyPositioned { recordsTitleHeightPx.intValue = it.size.height }
+                    .onGloballyPositioned {
+                        recordsTitleHeightPx.intValue = it.size.height
+                        if (recordsTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                            recordsTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                        }
+                    }
                     .graphicsLayer { alpha = 0f }
                     .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -3823,6 +3880,16 @@ private fun ActionIcon(
 }
 
 @Composable
+private fun titleFadeAlpha(
+    scrollOffsetPx: Float,
+    titleTopAtRestPx: Float,
+    statusBarBottomPx: Float,
+    safetyGapPx: Float
+): Float {
+    val fadeDistancePx = (titleTopAtRestPx - statusBarBottomPx - safetyGapPx).coerceAtLeast(1f)
+    return (1f - scrollOffsetPx / fadeDistancePx).coerceIn(0f, 1f)
+}
+
 private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
