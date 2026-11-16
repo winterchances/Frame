@@ -55,6 +55,24 @@ class NativeLibraryRepository(context: Context) {
         return true
     }
 
+    fun addStandaloneChildReview(groupId: Long, content: String): Boolean {
+        val text = content.trim()
+        if (text.isEmpty()) return false
+        val parent = store.allReviews().firstOrNull { it.id == groupId && it.videoId == null && it.standaloneGroupId == null }
+            ?: return false
+        store.addReview(null, text, 0f, System.currentTimeMillis(), standaloneGroupId = parent.id)
+        return true
+    }
+
+    fun updateStandaloneChildReview(id: Long, groupId: Long, content: String): Boolean {
+        val text = content.trim()
+        if (text.isEmpty()) return false
+        val child = store.allReviews().firstOrNull { it.id == id && it.standaloneGroupId == groupId }
+            ?: return false
+        store.updateReview(child.id, null, text, 0f, standaloneGroupId = groupId)
+        return true
+    }
+
     fun updateStandaloneReview(id: Long, title: String, content: String, rating: Float, coverUri: Uri?, existingCoverPath: String?): Boolean {
         val text = content.trim()
         if (text.isEmpty()) return false
