@@ -17,7 +17,8 @@ data class ReviewEntry(
     val rating: Float = 0f,
     val createdAt: Long,
     val title: String = "",
-    val coverPath: String? = null
+    val coverPath: String? = null,
+    val standaloneGroupId: Long? = null
 )
 
 data class LibraryBackup(
@@ -46,7 +47,7 @@ data class VideoItem(
     val contentUri: Uri get() = Uri.parse(uri)
 }
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 6) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 7) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -77,7 +78,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             rating INTEGER NOT NULL DEFAULT 0,
             created_at INTEGER NOT NULL,
             title TEXT NOT NULL DEFAULT '',
-            cover_path TEXT
+            cover_path TEXT,
+            standalone_group_id INTEGER
         )""".trimIndent())
         listOf("全部分类", "我的最爱").forEachIndexed { index, name ->
             val values = ContentValues().apply { put("name", name); put("position", index) }
@@ -114,6 +116,9 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         if (oldVersion < 6) {
             db.execSQL("ALTER TABLE reviews ADD COLUMN title TEXT NOT NULL DEFAULT ''")
             db.execSQL("ALTER TABLE reviews ADD COLUMN cover_path TEXT")
+        }
+        if (oldVersion < 7) {
+            db.execSQL("ALTER TABLE reviews ADD COLUMN standalone_group_id INTEGER")
         }
         if (oldVersion < 5) {
             db.execSQL("""
@@ -229,6 +234,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("created_at", review.createdAt)
                     put("title", review.title)
                     put("cover_path", review.coverPath)
+                    if (review.standaloneGroupId == null) putNull("standalone_group_id") else put("standalone_group_id", review.standaloneGroupId)
                 }
                 db.insertWithOnConflict("reviews", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             }
@@ -239,7 +245,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
     }
 
     @Synchronized fun allReviews(): List<ReviewEntry> = readableDatabase.rawQuery(
-        "SELECT id, video_id, content, rating, created_at, title, cover_path FROM reviews ORDER BY created_at DESC, id DESC", null
+        "SELECT id, video_id, content, rating, created_at, title, cover_path, standalone_group_id FROM reviews ORDER BY created_at DESC, id DESC", null
     ).use { cursor ->
         buildList {
             while (cursor.moveToNext()) {
@@ -252,14 +258,15 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                         rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating")),
                         createdAt = cursor.getLong(cursor.getColumnIndexOrThrow("created_at")),
                         title = cursor.getString(cursor.getColumnIndexOrThrow("title")),
-                        coverPath = cursor.getString(cursor.getColumnIndexOrThrow("cover_path"))
+                        coverPath = cursor.getString(cursor.getColumnIndexOrThrow("cover_path")),
+                        standaloneGroupId = cursor.getColumnIndexOrThrow("standalone_group_id").let { if (cursor.isNull(it)) null else cursor.getLong(it) }
                     )
                 )
             }
         }
     }
 
-    @Synchronized fun addReview(videoId: Long?, content: String, rating: Float, createdAt: Long, title: String = "", coverPath: String? = null): Long {
+    @Synchronized fun addReview(videoId: Long?, content: String, rating: Float, createdAt: Long, title: String = "", coverPath: String? = null, standaloneGroupId: Long? = null): Long {
         val values = ContentValues().apply {
             if (videoId == null) putNull("video_id") else put("video_id", videoId)
             put("content", content)
@@ -267,17 +274,19 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             put("created_at", createdAt)
             put("title", title)
             put("cover_path", coverPath)
+            if (standaloneGroupId == null) putNull("standalone_group_id") else put("standalone_group_id", standaloneGroupId)
         }
         return writableDatabase.insert("reviews", null, values)
     }
 
-    @Synchronized fun updateReview(id: Long, videoId: Long?, content: String, rating: Float, title: String = "", coverPath: String? = null) {
+    @Synchronized fun updateReview(id: Long, videoId: Long?, content: String, rating: Float, title: String = "", coverPath: String? = null, standaloneGroupId: Long? = null) {
         val values = ContentValues().apply {
             if (videoId == null) putNull("video_id") else put("video_id", videoId)
             put("content", content)
             put("rating", rating.coerceIn(0f, 5f))
             put("title", title)
             put("cover_path", coverPath)
+            if (standaloneGroupId == null) putNull("standalone_group_id") else put("standalone_group_id", standaloneGroupId)
         }
         writableDatabase.update("reviews", values, "id=?", arrayOf(id.toString()))
     }
