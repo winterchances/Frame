@@ -4015,7 +4015,7 @@ private fun PosterCard(
 @Composable
 private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Boolean = false) {
     Column(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(if (video.thumbPath.isNullOrBlank()) PosterBrush(video.bgIndex) else Color(0xFFECEDEF))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
@@ -4039,7 +4039,14 @@ private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
         } else {
             val decoded = withContext(Dispatchers.IO) {
                 thumbnailBitmapCache.get(path) ?: runCatching {
-                    BitmapFactory.decodeFile(path)?.also { thumbnailBitmapCache.put(path, it) }
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(path, bounds)
+                    val maxDimension = maxOf(bounds.outWidth, bounds.outHeight)
+                    val sampleSize = generateSequence(1) { it * 2 }
+                        .takeWhile { maxDimension / it > 900 }
+                        .lastOrNull() ?: 1
+                    val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                    BitmapFactory.decodeFile(path, options)?.also { thumbnailBitmapCache.put(path, it) }
                 }.getOrNull()
             }
             decoded?.asImageBitmap()
