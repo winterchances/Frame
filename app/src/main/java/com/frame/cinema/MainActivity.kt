@@ -3029,7 +3029,7 @@ private fun RecordsPage(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            "展开",
+                                            if (expanded) "收起" else "展开",
                                             fontSize = 13.sp,
                                             color = if (entries.isEmpty()) Color(0xFFBBBBBB) else Color(0xFF555555),
                                             fontWeight = FontWeight.Medium
@@ -3170,17 +3170,6 @@ private fun RecordsPage(
                         val coverBitmap = remember(entry.coverPath) {
                             entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
                         }
-                        val standaloneChevronRotation by animateFloatAsState(
-                            targetValue = if (expanded) 0f else -90f,
-                            animationSpec = tween(
-                                durationMillis = if (expanded) 300 else 250,
-                                easing = if (expanded)
-                                    androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)
-                                else
-                                    androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
-                            ),
-                            label = "record-standalone-chevron-" + entry.id
-                        )
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -3259,7 +3248,7 @@ private fun RecordsPage(
                                             .noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("展开", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
+                                        Text(if (expanded) "收起" else "展开", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
                                     }
                                 }
                             }
