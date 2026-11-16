@@ -90,7 +90,14 @@ class NativeLibraryRepository(context: Context) {
     }
 
     fun deleteReview(id: Long) {
-        store.allReviews().firstOrNull { it.id == id }?.coverPath?.let { File(it).delete() }
+        val entry = store.allReviews().firstOrNull { it.id == id } ?: return
+        if (entry.standaloneGroupId == null && entry.videoId == null) {
+            store.allReviews().filter { it.standaloneGroupId == id }.forEach { child ->
+                child.coverPath?.let { File(it).delete() }
+                store.deleteReview(child.id)
+            }
+        }
+        entry.coverPath?.let { File(it).delete() }
         store.deleteReview(id)
     }
 
