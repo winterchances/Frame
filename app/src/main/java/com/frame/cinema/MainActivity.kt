@@ -2990,13 +2990,13 @@ private fun RecordsPage(
                             verticalAlignment = Alignment.Top
                         ) {
                             Box(
-                                Modifier.size(96.dp, 128.dp)
+                                Modifier.size(80.dp, 106.dp)
                                     .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(PosterBrush(video.bgIndex))
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
-                                Modifier.weight(1f).height(128.dp)
+                                Modifier.weight(1f).height(106.dp)
                             ) {
                                 Text(
                                     displayVideoName(video.name),
