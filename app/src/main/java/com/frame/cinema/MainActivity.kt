@@ -2451,7 +2451,7 @@ private fun LibraryPage(
                     ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
                 }
             }
-            stickyHeader(key = "library-filter-header") {
+            item(key = "library-filter-header", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 LibraryFilterHeader(
                     categories = categories, status = status, category = category,
                     categoryScrollState = stickyCategoryScrollState,
