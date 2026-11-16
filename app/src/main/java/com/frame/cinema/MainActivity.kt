@@ -2934,7 +2934,7 @@ private fun RecordsPage(
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.Top
                         ) {
                             Box(
@@ -3172,7 +3172,7 @@ private fun RecordsPage(
                         }
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.Top
                         ) {
                             Box(
