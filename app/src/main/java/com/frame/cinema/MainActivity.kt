@@ -2460,6 +2460,15 @@ private fun LibraryPage(
                     onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() }
                 )
             }
+            stickyHeader(key = "library-filter-header") {
+                LibraryFilterHeader(
+                    categories = categories, status = status, category = category,
+                    categoryScrollState = stickyCategoryScrollState,
+                    onStatus = onStatus, onCategory = onCategory,
+                    alpha = 0f,
+                    onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() }
+                )
+            }
             if (filtered.isEmpty()) {
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                     EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
