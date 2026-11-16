@@ -1215,7 +1215,8 @@ private fun FrameNativeApp(
                                 .height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White),
+                                .background(Color.White)
+                                .padding(horizontal = 20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             BasicTextField(
