@@ -3193,10 +3193,14 @@ private fun RecordsPage(
                             onTargetHandled()
                         }
                     }
-                    val entryBackground by androidx.compose.animation.animateColorAsState(
-                        if (entryHighlight) Color(0xFFDDF3EC) else Color.White,
+                    val standaloneTitle = entry.title.ifBlank { "未命名" }
+                    val coverBitmap = remember(entry.coverPath) {
+                        entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
+                    }
+                    val entryTextColor by androidx.compose.animation.animateColorAsState(
+                        if (entryHighlight) ThemeTeal else Color(0xFF555555),
                         animationSpec = tween(420),
-                        label = "standalone-review-highlight-${entry.id}"
+                        label = "standalone-review-text-highlight-${entry.id}"
                     )
                     Column(
                         Modifier.fillMaxWidth()
@@ -3204,22 +3208,16 @@ private fun RecordsPage(
                             .padding(bottom = 16.dp)
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
-                            .bringIntoViewRequester(entryBringIntoView)
-                            .background(entryBackground)
-                            .noRippleClickable { onEdit(entry) }
+                            .background(Color.White)
                             .padding(16.dp)
                     ) {
-                        val standaloneTitle = entry.title.ifBlank { "未命名" }
-                        val coverBitmap = remember(entry.coverPath) {
-                            entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
-                        }
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.Top
                         ) {
                             Box(
-                                Modifier.size(96.dp, 128.dp)
+                                Modifier.size(80.dp, 106.dp)
                                     .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(Color(0xFFECEDEF)),
@@ -3231,9 +3229,7 @@ private fun RecordsPage(
                                     Icon(Icons.Outlined.Image, null, tint = Color(0xFFB5B5B5), modifier = Modifier.size(25.dp))
                                 }
                             }
-                            Column(
-                                Modifier.weight(1f).height(128.dp)
-                            ) {
+                            Column(Modifier.weight(1f).height(106.dp)) {
                                 Text(
                                     standaloneTitle,
                                     modifier = Modifier.fillMaxWidth(),
@@ -3248,68 +3244,133 @@ private fun RecordsPage(
                                 Spacer(Modifier.weight(1f))
                                 RatingStars(
                                     entry.rating,
-                                    16.dp,
+                                    14.dp,
                                     onRate = {},
-                                    spacing = 2.dp,
+                                    spacing = 1.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Box(
-                                    Modifier.clip(RoundedCornerShape(90.dp))
-                                        .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(90.dp))
-                                        .padding(5.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                        fontSize = 12.sp,
-                                        lineHeight = 14.sp,
-                                        color = Color(0xFF999999),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                    )
-                                }
+                                Text(
+                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                    color = Color(0xFF999999),
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                )
                                 Spacer(Modifier.weight(1f))
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Box(
-                                        Modifier.weight(1f).height(28.dp)
-                                            .clip(RoundedCornerShape(7.dp))
-                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
-                                            .noRippleClickable { onEdit(entry) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("记录", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
-                                    }
-                                    Box(
-                                        Modifier.weight(1f).height(28.dp)
-                                            .clip(RoundedCornerShape(7.dp))
-                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
-                                            .noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(if (expanded) "收起" else "展开", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
-                                    }
-                                }
                             }
                         }
+                        Spacer(Modifier.height(16.dp))
+                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                        Spacer(Modifier.height(16.dp))
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "观影感想",
+                                color = Color(0xFF555555),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "1 条",
+                                color = Color(0xFF999999),
+                                fontSize = 12.sp,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Box(
+                                Modifier.size(30.dp).noRippleClickable { onCreate(null) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = "新增感想",
+                                    tint = Color(0xFF777777),
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                            Box(
+                                Modifier.size(30.dp).noRippleClickable {
+                                    setStandaloneReviewExpanded(entry.id, !expanded)
+                                },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.ExpandMore,
+                                    contentDescription = if (expanded) "收起感想" else "展开感想",
+                                    tint = Color(0xFF777777),
+                                    modifier = Modifier.size(20.dp).rotate(if (expanded) 180f else 0f)
+                                )
+                            }
+                        }
+                        val timelineTopSpacing by animateDpAsState(
+                            targetValue = if (expanded) 12.dp else 0.dp,
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = androidx.compose.animation.core.FastOutSlowInEasing
+                            ),
+                            label = "standalone-timeline-spacing-${entry.id}"
+                        )
+                        Spacer(Modifier.height(timelineTopSpacing))
                         AnimatedVisibility(
                             visible = expanded,
-                            enter = expandVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
-                                fadeIn(tween(220)) + slideInVertically(
+                            enter = expandVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                            ) + fadeIn(tween(220)) +
+                                slideInVertically(
                                     initialOffsetY = { it / 8 },
                                     animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
                                 ),
-                            exit = shrinkVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
-                                fadeOut(tween(220)) + slideOutVertically(
+                            exit = shrinkVertically(
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                            ) + fadeOut(tween(220)) +
+                                slideOutVertically(
                                     targetOffsetY = { it / 8 },
                                     animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                )
+                                ),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(entry.content, color = Color(0xFF555555), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .drawBehind {
+                                        val axisX = 7.dp.toPx()
+                                        val dotCenterY = 15.dp.toPx()
+                                        drawCircle(
+                                            color = ThemeTeal,
+                                            radius = 4.dp.toPx(),
+                                            center = Offset(axisX, dotCenterY)
+                                        )
+                                    }
+                            ) {
+                                Spacer(Modifier.width(14.dp))
+                                Column(
+                                    Modifier.weight(1f)
+                                        .padding(start = 10.dp, top = 8.dp, bottom = 8.dp)
+                                        .bringIntoViewRequester(entryBringIntoView)
+                                        .noRippleClickable { onEdit(entry) }
+                                ) {
+                                    Text(
+                                        SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                        color = Color(0xFF999999),
+                                        fontSize = 11.sp,
+                                        lineHeight = 14.sp,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    )
+                                    Text(
+                                        entry.content,
+                                        color = entryTextColor,
+                                        fontSize = 14.sp,
+                                        lineHeight = 21.sp,
+                                        modifier = Modifier.padding(top = 5.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
