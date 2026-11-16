@@ -305,7 +305,7 @@ private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库
 private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
-private enum class RecordSortMode { ADDED, NAME, WATCHED, RATING }
+private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -1398,6 +1398,12 @@ private fun FrameNativeApp(
                                 "按添加时间", recordSortMode == RecordSortMode.ADDED, recordSortDirection,
                                 onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING },
                                 onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING }
+                            )
+                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
+                            SortOptionRow(
+                                "按记录时间", recordSortMode == RecordSortMode.RECORD_TIME, recordSortDirection,
+                                onAscending = { recordSortMode = RecordSortMode.RECORD_TIME; recordSortDirection = SortDirection.ASCENDING },
+                                onDescending = { recordSortMode = RecordSortMode.RECORD_TIME; recordSortDirection = SortDirection.DESCENDING }
                             )
                             Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
@@ -2923,6 +2929,11 @@ private fun RecordsPage(
         }.sortedWith { a, b ->
             val primary = when (sortMode) {
                 RecordSortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
+                RecordSortMode.RECORD_TIME -> {
+                    val aRecordTime = reviewsByVideo[a.id].orEmpty().maxOfOrNull { it.createdAt } ?: a.lastPlayedAt
+                    val bRecordTime = reviewsByVideo[b.id].orEmpty().maxOfOrNull { it.createdAt } ?: b.lastPlayedAt
+                    aRecordTime.compareTo(bRecordTime)
+                }
                 RecordSortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
                 RecordSortMode.RATING -> a.rating.compareTo(b.rating)
                 RecordSortMode.WATCHED -> a.lastPlayedAt.compareTo(b.lastPlayedAt)
@@ -2940,8 +2951,16 @@ private fun RecordsPage(
             }
         }
     }
-    val standaloneReviews = remember(reviews) {
-        reviews.filter { it.videoId == null && it.standaloneGroupId == null }.sortedByDescending { it.createdAt }
+    val standaloneReviews = remember(reviews, sortMode, sortDirection) {
+        val roots = reviews.filter { it.videoId == null && it.standaloneGroupId == null }
+        if (sortMode == RecordSortMode.RECORD_TIME) {
+            roots.sortedWith { a, b ->
+                val comparison = a.createdAt.compareTo(b.createdAt)
+                if (sortDirection == SortDirection.ASCENDING) comparison else -comparison
+            }
+        } else {
+            roots.sortedByDescending { it.createdAt }
+        }
     }
     val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
     LaunchedEffect(targetReviewId, displayVideos, standaloneReviews) {
