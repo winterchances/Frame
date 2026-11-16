@@ -986,18 +986,19 @@ private fun FrameNativeApp(
         }
         }
 
-        val sheetSlideOffsetPx = with(LocalDensity.current) { 24.dp.roundToPx() }
+        // The shared sheet uses its measured full height for a complete entrance/exit.
+        // Keep the existing background scale animation unchanged.
 
         Box(Modifier.fillMaxSize().zIndex(4f)) {
             AnimatedVisibility(
                 visibleState = sheetVisibility,
-                enter = fadeIn(tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
-                exit = fadeOut(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))),
+                enter = fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                exit = fadeOut(tween(220, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
                 modifier = Modifier.zIndex(2f)
             ) {
                 Box(
                     Modifier.fillMaxSize().blur(8.dp * maxOf(clearDialogProgress, importDialogProgress))
-                        .background(Color.Black.copy(alpha = .4f * (1f - maxOf(clearDialogProgress, importDialogProgress))))
+                        .background(Color.Black.copy(alpha = .28f * (1f - maxOf(clearDialogProgress, importDialogProgress))))
                         .clickable(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -1016,11 +1017,11 @@ private fun FrameNativeApp(
                     Modifier.align(Alignment.BottomCenter)
                         .animateEnterExit(
                             enter = slideInVertically(
-                                animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))
-                            ) { sheetSlideOffsetPx } + fadeIn(tween(340)),
+                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                            ) { fullHeight -> fullHeight } + fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
                             exit = slideOutVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
-                            ) { sheetSlideOffsetPx }
+                                animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)
+                            ) { fullHeight -> fullHeight }
                         )
                         .fillMaxWidth()
                         .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
@@ -1971,7 +1972,7 @@ private fun FrameNativeApp(
             }
         }
         if (showClearDataDialog || clearDialogProgress > 0f) {
-            Box(Modifier.fillMaxSize().zIndex(5f).background(Color.Black.copy(alpha = .4f * clearDialogProgress)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().zIndex(5f).background(Color.Black.copy(alpha = .28f * clearDialogProgress)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) {
                 androidx.compose.animation.AnimatedVisibility(visible = showClearDataDialog,
                     enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
                     exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
@@ -1987,7 +1988,7 @@ private fun FrameNativeApp(
             }
         }
         if (showImportDataDialog || importDialogProgress > 0f) {
-            Box(Modifier.fillMaxSize().zIndex(7f).background(Color.Black.copy(alpha = .4f * importDialogProgress)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().zIndex(7f).background(Color.Black.copy(alpha = .28f * importDialogProgress)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) {
                 androidx.compose.animation.AnimatedVisibility(visible = showImportDataDialog,
                     enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
                     exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
