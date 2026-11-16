@@ -2314,7 +2314,7 @@ private fun HomePage(
         }
 
         AnimatedVisibility(
-            visible = showTopBar,
+            visible = showTopBar && homeTitleAlphaState.value <= 0f,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.TopCenter)
@@ -3295,7 +3295,7 @@ private fun RecordsPage(
         }
 
         AnimatedVisibility(
-            visible = showTopBar,
+            visible = showTopBar && recordsTitleAlphaState.value <= 0f,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.TopCenter)
