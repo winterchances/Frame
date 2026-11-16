@@ -3155,7 +3155,7 @@ private fun RecordsPage(
                         Spacer(Modifier.height(timelineTopSpacing))
                         entries.forEachIndexed { index, entry ->
                             val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
-                            val entryHighlight = entry.id == targetReviewId
+                            val entryHighlight = entry.id == targetReviewId || reviews.any { it.id == targetReviewId && it.standaloneGroupId == entry.id }
                             val expandDelay = index * 60
                             val collapseDelay = (entries.size - index - 1) * 60
                             LaunchedEffect(targetReviewId, expanded) {
@@ -3400,40 +3400,45 @@ private fun RecordsPage(
                                 ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                Modifier.fillMaxWidth()
-                                    .drawBehind {
-                                        val axisX = 7.dp.toPx()
-                                        val dotCenterY = 15.dp.toPx()
-                                        drawCircle(
-                                            color = ThemeTeal,
-                                            radius = 4.dp.toPx(),
-                                            center = Offset(axisX, dotCenterY)
-                                        )
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                (listOf(entry) + reviews.filter { it.standaloneGroupId == entry.id }.sortedByDescending { it.createdAt })
+                                    .forEach { timelineEntry ->
+                                        Row(
+                                            Modifier.fillMaxWidth()
+                                                .drawBehind {
+                                                    val axisX = 7.dp.toPx()
+                                                    val dotCenterY = 15.dp.toPx()
+                                                    drawCircle(
+                                                        color = ThemeTeal,
+                                                        radius = 4.dp.toPx(),
+                                                        center = Offset(axisX, dotCenterY)
+                                                    )
+                                                }
+                                        ) {
+                                            Spacer(Modifier.width(14.dp))
+                                            Column(
+                                                Modifier.weight(1f)
+                                                    .padding(start = 10.dp, top = 8.dp, bottom = 8.dp)
+                                                    .then(if (timelineEntry.id == entry.id) Modifier.bringIntoViewRequester(entryBringIntoView) else Modifier)
+                                                    .noRippleClickable { onEdit(timelineEntry) }
+                                            ) {
+                                                Text(
+                                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(timelineEntry.createdAt)),
+                                                    color = Color(0xFF999999),
+                                                    fontSize = 11.sp,
+                                                    lineHeight = 14.sp,
+                                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                                )
+                                                Text(
+                                                    timelineEntry.content,
+                                                    color = entryTextColor,
+                                                    fontSize = 14.sp,
+                                                    lineHeight = 21.sp,
+                                                    modifier = Modifier.padding(top = 5.dp)
+                                                )
+                                            }
+                                        }
                                     }
-                            ) {
-                                Spacer(Modifier.width(14.dp))
-                                Column(
-                                    Modifier.weight(1f)
-                                        .padding(start = 10.dp, top = 8.dp, bottom = 8.dp)
-                                        .bringIntoViewRequester(entryBringIntoView)
-                                        .noRippleClickable { onEdit(entry) }
-                                ) {
-                                    Text(
-                                        SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                        color = Color(0xFF999999),
-                                        fontSize = 11.sp,
-                                        lineHeight = 14.sp,
-                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                    )
-                                    Text(
-                                        entry.content,
-                                        color = entryTextColor,
-                                        fontSize = 14.sp,
-                                        lineHeight = 21.sp,
-                                        modifier = Modifier.padding(top = 5.dp)
-                                    )
-                                }
                             }
                         }
                     }
