@@ -480,6 +480,7 @@ private fun FrameNativeApp(
     var editReviewCoverPath by remember { mutableStateOf<String?>(null) }
     var editReviewId by remember { mutableStateOf<Long?>(null) }
     var editReviewVideoId by remember { mutableStateOf<Long?>(null) }
+    var showReviewVideoActions by remember { mutableStateOf(true) }
     var newCategory by remember { mutableStateOf("") }
     var sort by remember { mutableStateOf(SortMode.ADDED) }
     var sortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
@@ -570,7 +571,8 @@ private fun FrameNativeApp(
         categories = repository.categories()
         weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
     }
-    fun startNewReview(video: VideoItem? = null) {
+    fun startNewReview(video: VideoItem? = null, showVideoActions: Boolean = true) {
+        showReviewVideoActions = showVideoActions
         selected = video
         editReviewId = null
         editReviewVideoId = video?.id
@@ -1660,7 +1662,7 @@ private fun FrameNativeApp(
                             val canSetVideoRating = editReviewId == null &&
                                 editReviewVideoId != null &&
                                 reviewEntries.none { it.videoId == editReviewVideoId }
-                        if (editReviewId == null) {
+                        if (editReviewId == null && showReviewVideoActions) {
                             Row(
                                 Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(20.dp)
@@ -1958,7 +1960,7 @@ private fun FrameNativeApp(
                         .zIndex(2f)
                 ) {
                     ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
-                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video) }
+                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video, showVideoActions = false) }
                     ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
                     ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
                     ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
