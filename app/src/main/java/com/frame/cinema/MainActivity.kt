@@ -4015,7 +4015,7 @@ private fun PosterCard(
 @Composable
 private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Boolean = false) {
     Column(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(if (video.thumbPath.isNullOrBlank()) PosterBrush(video.bgIndex) else Color(0xFFECEDEF))) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
