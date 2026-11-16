@@ -2526,7 +2526,9 @@ private fun LibraryPage(
                     onStatus = onStatus, onCategory = onCategory,
                     alpha = 0f,
                     onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() },
-                    horizontalPadding = 0.dp
+                    horizontalPadding = 0.dp,
+                    categoryBottomPadding = 0.dp,
+                    containerBottomPadding = if (compact) 6.dp else 0.dp
                 )
             }
             if (filtered.isEmpty()) {
@@ -2534,9 +2536,6 @@ private fun LibraryPage(
                     EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
                 }
             } else {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                    Spacer(Modifier.height(5.dp))
-                }
                 items(filtered, key = { it.id }) { video ->
                     PosterCard(
                         video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
@@ -2584,7 +2583,9 @@ private fun LibraryFilterHeader(
     onStatus: (String) -> Unit, onCategory: (String) -> Unit,
     alpha: Float, onBoundsChanged: (Rect) -> Unit,
     modifier: Modifier = Modifier,
-    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp
+    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp,
+    categoryBottomPadding: androidx.compose.ui.unit.Dp = 10.dp,
+    containerBottomPadding: androidx.compose.ui.unit.Dp = 1.dp
 ) {
     Column(
         modifier.fillMaxWidth()
@@ -2592,7 +2593,7 @@ private fun LibraryFilterHeader(
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .background(PageBg)
             .statusBarsPadding()
-            .padding(start = horizontalPadding, end = horizontalPadding, top = 9.dp, bottom = 1.dp)
+            .padding(start = horizontalPadding, end = horizontalPadding, top = 9.dp, bottom = containerBottomPadding)
     ) {
         Row(
             Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 14.dp),
@@ -2606,7 +2607,7 @@ private fun LibraryFilterHeader(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 10.dp).horizontalScroll(categoryScrollState),
+            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = categoryBottomPadding).horizontalScroll(categoryScrollState),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             categories.forEach { value ->
