@@ -563,7 +563,7 @@ private fun FrameNativeApp(
             contextMenuFabBounds = null
         }
     }
-    val backdropBlur = maxOf(5.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
+    val backdropBlur = maxOf(5.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 5.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() {
@@ -932,7 +932,7 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
-            Box(Modifier.fillMaxSize().blur(12.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress))) {
+            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress))) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
                     BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
                 }
@@ -1015,7 +1015,7 @@ private fun FrameNativeApp(
                 modifier = Modifier.zIndex(2f)
             ) {
                 Box(
-                    Modifier.fillMaxSize().blur(8.dp * maxOf(clearDialogProgress, importDialogProgress))
+                    Modifier.fillMaxSize().blur(5.dp * maxOf(clearDialogProgress, importDialogProgress))
                         .background(Color.Black.copy(alpha = .28f * (1f - maxOf(clearDialogProgress, importDialogProgress))))
                         .clickable(
                             indication = null,
@@ -1949,7 +1949,7 @@ private fun FrameNativeApp(
                 val maxMenuY = (maxHeight - menuHeight - safeBottom).coerceAtLeast(safeTop)
                 val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
                     else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .4f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
                 Box(
                     Modifier.offset(x = cardLeft, y = cardTop)
                         .width(cardWidth)
