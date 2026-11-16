@@ -258,7 +258,7 @@ private val MutedText = Color(0xFF888888)
 private val Glass = Color.White.copy(alpha = .85f)
 
 private val thumbnailBitmapCache = object : LruCache<String, Bitmap>(
-    (Runtime.getRuntime().maxMemory() / 1024L / 8L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    (Runtime.getRuntime().maxMemory() / 1024L / 4L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 ) {
     override fun sizeOf(key: String, value: Bitmap): Int = (value.byteCount / 1024).coerceAtLeast(1)
 }
@@ -4156,7 +4156,7 @@ private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
                     BitmapFactory.decodeFile(path, bounds)
                     val maxDimension = maxOf(bounds.outWidth, bounds.outHeight)
                     val sampleSize = generateSequence(1) { it * 2 }
-                        .takeWhile { maxDimension / it > 900 }
+                        .takeWhile { maxDimension / it > 600 }
                         .lastOrNull() ?: 1
                     val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
                     BitmapFactory.decodeFile(path, options)?.also { thumbnailBitmapCache.put(path, it) }
