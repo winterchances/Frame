@@ -2934,21 +2934,21 @@ private fun RecordsPage(
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.Top
                         ) {
                             Box(
-                                Modifier.size(75.dp, 100.dp)
+                                Modifier.size(96.dp, 128.dp)
                                     .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(PosterBrush(video.bgIndex))
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
-                                Modifier.weight(1f).height(100.dp)
+                                Modifier.weight(1f).height(128.dp)
                             ) {
                                 Text(
                                     displayVideoName(video.name),
-                                    modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
@@ -2965,71 +2965,88 @@ private fun RecordsPage(
                                     spacing = 2.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                    fontSize = 12.sp,
-                                    lineHeight = 15.sp,
-                                    color = Color(0xFF999999),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
+                                Spacer(Modifier.height(4.dp))
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Box(
+                                        Modifier.weight(1f).clip(RoundedCornerShape(90.dp))
+                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(90.dp))
+                                            .padding(5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
+                                            fontSize = 12.sp,
+                                            lineHeight = 14.sp,
+                                            color = Color(0xFF999999),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                        )
+                                    }
+                                    Box(
+                                        Modifier.clip(RoundedCornerShape(90.dp))
+                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(90.dp))
+                                            .padding(5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            "感想 ${entries.size} 条",
+                                            fontSize = 12.sp,
+                                            lineHeight = 14.sp,
+                                            color = Color(0xFF999999),
+                                            maxLines = 1,
+                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.weight(1f))
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        Modifier.weight(1f).height(28.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
+                                            .noRippleClickable { onCreate(video) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("记录", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
+                                    }
+                                    Box(
+                                        Modifier.weight(1f).height(28.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
+                                            .then(
+                                                if (entries.isNotEmpty()) Modifier.noRippleClickable {
+                                                    setVideoReviewsExpanded(video.id, !expanded)
+                                                } else Modifier
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            "展开",
+                                            fontSize = 13.sp,
+                                            color = if (entries.isEmpty()) Color(0xFFBBBBBB) else Color(0xFF555555),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
                             }
                         }
-                        val reviewHeaderBottomPadding by animateDpAsState(
+                        val timelineTopSpacing by animateDpAsState(
                             targetValue = if (entries.isNotEmpty() && expanded) 12.dp else 0.dp,
                             animationSpec = tween(
                                 durationMillis = 300,
                                 easing = androidx.compose.animation.core.FastOutSlowInEasing
                             ),
-                            label = "record-review-header-spacing-${video.id}"
+                            label = "record-timeline-spacing-${video.id}"
                         )
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .padding(start = 4.dp, top = 16.dp, bottom = reviewHeaderBottomPadding),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                "感想 · ${entries.size}条",
-                                color = Color(0xFF888888),
-                                fontSize = 12.sp,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Box(
-                                Modifier.size(30.dp).noRippleClickable { onCreate(video) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Outlined.Add, "添加感想", tint = MutedText, modifier = Modifier.size(16.dp))
-                            }
-                            val chevronRotation by animateFloatAsState(
-                                targetValue = if (entries.isEmpty() || !expanded) -90f else 0f,
-                                animationSpec = tween(
-                                    durationMillis = if (expanded && entries.isNotEmpty()) 300 else 250,
-                                    easing = if (expanded && entries.isNotEmpty())
-                                        androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f)
-                                    else
-                                        androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f)
-                                ),
-                                label = "record-video-chevron-" + video.id
-                            )
-                            Box(
-                                Modifier.size(30.dp).then(
-                                    if (entries.isNotEmpty()) Modifier.noRippleClickable {
-                                        setVideoReviewsExpanded(video.id, !expanded)
-                                    } else Modifier
-                                ),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    Icons.Outlined.ExpandMore,
-                                    if (entries.isEmpty()) "暂无感想" else if (expanded) "收起感想" else "展开感想",
-                                    tint = if (entries.isEmpty()) Color(0xFFBBBBBB) else MutedText,
-                                    modifier = Modifier.rotate(chevronRotation).size(18.dp).offset(x = 3.dp, y = 0.dp)
-                                )
-                            }
-                        }
+                        Spacer(Modifier.height(timelineTopSpacing))
                         entries.forEachIndexed { index, entry ->
                             val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
                             val entryHighlight = entry.id == targetReviewId
@@ -3166,11 +3183,11 @@ private fun RecordsPage(
                         )
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.Top
                         ) {
                             Box(
-                                Modifier.size(75.dp, 100.dp)
+                                Modifier.size(96.dp, 128.dp)
                                     .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(Color(0xFFECEDEF)),
@@ -3183,11 +3200,11 @@ private fun RecordsPage(
                                 }
                             }
                             Column(
-                                Modifier.weight(1f).height(100.dp)
+                                Modifier.weight(1f).height(128.dp)
                             ) {
                                 Text(
                                     standaloneTitle,
-                                    modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (entry.title.isBlank()) MutedText else Color(0xFF222222),
@@ -3204,28 +3221,47 @@ private fun RecordsPage(
                                     spacing = 2.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                    fontSize = 12.sp,
-                                    lineHeight = 15.sp,
-                                    color = Color(0xFF999999),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
-                            }
-                            Box(
-                                Modifier.size(30.dp).noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    Icons.Outlined.ExpandMore,
-                                    if (expanded) "收起正文" else "展开正文",
-                                    tint = MutedText,
-                                    modifier = Modifier.rotate(standaloneChevronRotation).size(18.dp)
-                                        .offset(x = 3.dp, y = 0.dp)
-                                )
+                                Spacer(Modifier.height(4.dp))
+                                Box(
+                                    Modifier.clip(RoundedCornerShape(90.dp))
+                                        .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(90.dp))
+                                        .padding(5.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                        fontSize = 12.sp,
+                                        lineHeight = 14.sp,
+                                        color = Color(0xFF999999),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    )
+                                }
+                                Spacer(Modifier.weight(1f))
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        Modifier.weight(1f).height(28.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
+                                            .noRippleClickable { onEdit(entry) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("记录", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
+                                    }
+                                    Box(
+                                        Modifier.weight(1f).height(28.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
+                                            .noRippleClickable { setStandaloneReviewExpanded(entry.id, !expanded) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("展开", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
+                                    }
+                                }
                             }
                         }
                         AnimatedVisibility(
