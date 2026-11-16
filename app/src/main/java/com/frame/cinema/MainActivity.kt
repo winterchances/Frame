@@ -2982,7 +2982,6 @@ private fun RecordsPage(
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
-                            .noRippleClickable { onEdit(entry) }
                             .padding(16.dp)
                     ) {
                         Row(
@@ -3210,6 +3209,7 @@ private fun RecordsPage(
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
+                            .noRippleClickable { onEdit(entry) }
                             .padding(16.dp)
                     ) {
                         Row(
