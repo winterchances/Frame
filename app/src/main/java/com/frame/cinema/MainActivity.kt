@@ -563,7 +563,7 @@ private fun FrameNativeApp(
             contextMenuFabBounds = null
         }
     }
-    val backdropBlur = maxOf(8.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
+    val backdropBlur = maxOf(5.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 12.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() {
