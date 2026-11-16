@@ -867,9 +867,10 @@ private fun FrameNativeApp(
                                         parentSheet = SheetType.NONE
                                         sheet = SheetType.REVIEW_CREATE_OPTIONS
                                     } else {
-                                        startNewReview(video)
+                                        startNewReview(video, showVideoActions = false)
                                     }
                                 },
+                                onCreateStandalone = { startNewReview(null, showVideoActions = false) },
                                 onEdit = { openReviewEditor(it) },
                                 onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
                                 onTargetHandled = { targetReviewId = null }
@@ -2774,6 +2775,7 @@ private fun RecordsPage(
     onSearch: () -> Unit,
     onSort: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
+    onCreateStandalone: () -> Unit,
     onEdit: (ReviewEntry) -> Unit,
     onRateVideo: (VideoItem, Float) -> Unit,
     onTargetHandled: () -> Unit
@@ -3291,7 +3293,7 @@ private fun RecordsPage(
                             )
                             Spacer(Modifier.weight(1f))
                             Box(
-                                Modifier.size(30.dp).noRippleClickable { onCreate(null) },
+                                Modifier.size(30.dp).noRippleClickable { onCreateStandalone() },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
