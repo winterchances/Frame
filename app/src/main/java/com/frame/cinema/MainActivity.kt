@@ -2473,7 +2473,7 @@ private fun LibraryPage(
     val filtered = remember(videos, status, category) {
         videos.filter {
             (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
-                (category == "全部分类" || (category == "我的最爱" && it.isFav) || it.category == category)
+                ((category == "全部分类" && it.category == "全部分类") || (category == "我的最爱" && it.isFav) || (category != "全部分类" && category != "我的最爱" && it.category == category))
         }
     }
     val columns = if (compact) 3 else 2
@@ -2617,7 +2617,7 @@ private fun LibraryFilterHeader(
                     color = if (category == value) ThemeTeal else Color.White,
                     shadowElevation = 0.dp,
                 ) {
-                    val label = when (value) { "全部分类" -> "全部分类"; "我的最爱" -> "收藏"; else -> value }
+                    val label = when (value) { "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
                     Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 }
             }
