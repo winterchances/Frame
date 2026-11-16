@@ -855,7 +855,17 @@ private fun FrameNativeApp(
                                 contextMenuReturnProgress,
                                 { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds },
                                 { viewport -> contextMenuViewportBounds = viewport },
-                                { header -> contextMenuStickyHeaderBounds = header }
+                                { header -> contextMenuStickyHeaderBounds = header },
+                                { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
+                                { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
+                                { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { item ->
+                                    repository.update(when (target) {
+                                        "未看" -> item.copy(progress = 0f, status = "all")
+                                        "在看" -> item.copy(status = "playing")
+                                        else -> item.copy(progress = 100f, status = "watched")
+                                    })
+                                } }; refresh() },
+                                { ids -> ids.forEach(repository::delete); refresh() }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
@@ -2449,8 +2459,22 @@ private fun LibraryPage(
     onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
-    onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit
+    onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
+    onBatchMove: (Set<Long>, String) -> Unit,
+    onBatchFavorite: (Set<Long>, Boolean) -> Unit,
+    onBatchStatus: (Set<Long>, String) -> Unit,
+    onBatchDelete: (Set<Long>) -> Unit
 ) {
+    var multiSelectMode by remember { mutableStateOf(false) }
+    var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var moreMenuExpanded by remember { mutableStateOf(false) }
+    var batchMenuExpanded by remember { mutableStateOf(false) }
+    var showMoveDialog by remember { mutableStateOf(false) }
+    var showStatusDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val selectedCount = selectedVideoIds.size
+    val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
+    val availableMoveCategories = categories.filterNot { it == "我的最爱" }
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
@@ -2472,7 +2496,7 @@ private fun LibraryPage(
     }
     val filtered = remember(videos, status, category) {
         videos.filter {
-            (status == "全部" || (status == "在看" && it.progress in .01f..99.99f) || (status == "已看" && it.progress >= 100f)) &&
+            (status == "全部" || (status == "在看" && (it.status == "playing" || it.progress in .01f..99.99f)) || (status == "已看" && (it.status == "watched" || it.progress >= 100f))) &&
                 ((category == "全部分类" && it.category == "全部分类") || (category == "我的最爱" && it.isFav) || (category != "全部分类" && category != "我的最爱" && it.category == category))
         }
     }
@@ -2537,12 +2561,29 @@ private fun LibraryPage(
                 }
             } else {
                 items(filtered, key = { it.id }) { video ->
-                    PosterCard(
-                        video, compact, onPlay, { bounds -> onLongVideo(video, bounds) },
-                        Modifier.fillMaxWidth(),
-                        alpha = 1f,
-                        onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
-                    )
+                    Box(Modifier.fillMaxWidth()) {
+                        PosterCard(
+                            video, compact,
+                            onPlay = { if (multiSelectMode) {
+                                selectedVideoIds = if (video.id in selectedVideoIds) selectedVideoIds - video.id else selectedVideoIds + video.id
+                            } else onPlay(video) },
+                            onLongPress = { bounds -> onLongVideo(video, bounds) },
+                            modifier = Modifier.fillMaxWidth(),
+                            alpha = 1f,
+                            onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
+                        )
+                        if (multiSelectMode) {
+                            Box(
+                                Modifier.align(Alignment.TopEnd).padding(7.dp).size(25.dp)
+                                    .clip(CircleShape)
+                                    .background(if (video.id in selectedVideoIds) ThemeTeal else Color.Black.copy(alpha = .42f))
+                                    .border(1.5.dp, Color.White, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (video.id in selectedVideoIds) Icon(Icons.Outlined.Check, null, tint = Color.White, modifier = Modifier.size(17.dp))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2553,13 +2594,47 @@ private fun LibraryPage(
                     alpha = titleAlphaState.value
                 }
                 .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
-            ActionIcon(FrameGridIcon, "布局管理", onGrid)
-            ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
+            if (multiSelectMode) {
+                Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 21.sp, fontWeight = FontWeight.Bold, color = MainText, maxLines = 1)
+                TextButton(onClick = {
+                    val visibleIds = filtered.map { it.id }.toSet()
+                    selectedVideoIds = if (visibleIds.isNotEmpty() && visibleIds.all { it in selectedVideoIds }) selectedVideoIds - visibleIds else selectedVideoIds + visibleIds
+                }, contentPadding = PaddingValues(horizontal = 5.dp)) {
+                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 13.sp)
+                }
+                Box {
+                    TextButton(onClick = { batchMenuExpanded = true }, contentPadding = PaddingValues(horizontal = 5.dp)) {
+                        Text("批量操作", color = if (selectedCount > 0) ThemeTeal else MutedText, fontSize = 13.sp)
+                    }
+                    DropdownMenu(expanded = batchMenuExpanded, onDismissRequest = { batchMenuExpanded = false }) {
+                        DropdownMenuItem(text = { Text("移动分类") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showMoveDialog = true })
+                        DropdownMenuItem(text = { Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite); selectedVideoIds = emptySet(); multiSelectMode = false })
+                        DropdownMenuItem(text = { Text("修改播放状态") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showStatusDialog = true })
+                        DropdownMenuItem(text = { Text("批量删除", color = Color(0xFFE05A5A)) }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showDeleteDialog = true })
+                    }
+                }
+                TextButton(onClick = { selectedVideoIds = emptySet(); multiSelectMode = false }, contentPadding = PaddingValues(horizontal = 3.dp)) {
+                    Text("完成", color = MainText, fontSize = 13.sp)
+                }
+            } else {
+                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
+                ActionIcon(FrameGridIcon, "布局管理", onGrid)
+                ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
+                Box {
+                    ActionIcon(Icons.Outlined.MoreVert, "更多操作", { moreMenuExpanded = true })
+                    DropdownMenu(expanded = moreMenuExpanded, onDismissRequest = { moreMenuExpanded = false }) {
+                        DropdownMenuItem(text = { Text("批量选择") }, onClick = {
+                            moreMenuExpanded = false
+                            multiSelectMode = true
+                            selectedVideoIds = emptySet()
+                        })
+                    }
+                }
+            }
         }
         LibraryFilterHeader(
             categories = categories, status = status, category = category,
@@ -2573,6 +2648,56 @@ private fun LibraryPage(
                     } else 0f
                 }
         )
+        if (showMoveDialog) {
+            AlertDialog(
+                onDismissRequest = { showMoveDialog = false },
+                title = { Text("移动到分类") },
+                text = {
+                    Column {
+                        availableMoveCategories.forEach { target ->
+                            TextButton(onClick = {
+                                onBatchMove(selectedVideoIds, target)
+                                selectedVideoIds = emptySet(); multiSelectMode = false; showMoveDialog = false
+                            }, modifier = Modifier.fillMaxWidth()) {
+                                Text(if (target == "全部分类") "未分类" else target, color = MainText)
+                            }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { showMoveDialog = false }) { Text("取消") } }
+            )
+        }
+        if (showStatusDialog) {
+            AlertDialog(
+                onDismissRequest = { showStatusDialog = false },
+                title = { Text("修改播放状态") },
+                text = {
+                    Column {
+                        listOf("未看", "在看", "已看").forEach { target ->
+                            TextButton(onClick = {
+                                onBatchStatus(selectedVideoIds, target)
+                                selectedVideoIds = emptySet(); multiSelectMode = false; showStatusDialog = false
+                            }, modifier = Modifier.fillMaxWidth()) { Text(target, color = MainText) }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { showStatusDialog = false }) { Text("取消") } }
+            )
+        }
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("删除所选视频？") },
+                text = { Text("确定删除 $selectedCount 个视频吗？相关感想也会一并删除，此操作无法撤销。") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onBatchDelete(selectedVideoIds)
+                        selectedVideoIds = emptySet(); multiSelectMode = false; showDeleteDialog = false
+                    }) { Text("删除", color = Color(0xFFE05A5A)) }
+                },
+                dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
+            )
+        }
     }
 }
 
