@@ -2122,7 +2122,7 @@ private fun HomePage(
                         .onGloballyPositioned {
                             homeTitleHeightPx.intValue = it.size.height
                             if (homeTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
-                                homeTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                                homeTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                             }
                         }
                         .graphicsLayer { alpha = 0f }
@@ -2387,7 +2387,7 @@ private fun LibraryPage(
                         .onGloballyPositioned {
                             libraryTitleHeightPx.intValue = it.size.height
                             if (libraryTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
-                                libraryTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                                libraryTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                             }
                         }
                         .graphicsLayer { alpha = 0f }
@@ -2585,7 +2585,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                         .onGloballyPositioned {
                             recentTitleHeightPx.intValue = it.size.height
                             if (recentTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
-                                recentTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                                recentTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                             }
                         }
                         .graphicsLayer { alpha = 0f }
@@ -2872,7 +2872,7 @@ private fun RecordsPage(
                     .onGloballyPositioned {
                         recordsTitleHeightPx.intValue = it.size.height
                         if (recordsTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
-                            recordsTitleTopPx.floatValue = it.positionInWindow().y + with(density) { 40.dp.toPx() }
+                            recordsTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                         }
                     }
                     .graphicsLayer { alpha = 0f }
