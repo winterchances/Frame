@@ -59,8 +59,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.geometry.Rect
@@ -1003,7 +1001,7 @@ private fun FrameNativeApp(
                         ) { sheet = SheetType.NONE }
                 )
             }
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().zIndex(3f)) {
                 AnimatedVisibility(
                     visibleState = sheetVisibility,
                     enter = androidx.compose.animation.EnterTransition.None,
@@ -2131,7 +2129,7 @@ private fun HomePage(
                 Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds().verticalEdgeFade(homeTopFadeStartPx, homeBottomFadeEndPx, homeFadeLengthPx), contentPadding = PaddingValues(bottom = 88.dp)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item(key = "home-large-title") {
                 Box(
                     Modifier.zIndex(1f)
@@ -2368,36 +2366,6 @@ private fun rememberSoftListFlingBehavior(): FlingBehavior {
     }
 }
 
-private fun Modifier.verticalEdgeFade(
-    topFadeStartPx: Float,
-    bottomFadeEndPx: Float,
-    fadeLengthPx: Float
-): Modifier = this
-    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-    .drawWithContent {
-        drawContent()
-        val height = size.height
-        if (height <= 0f || fadeLengthPx <= 0f) return@drawWithContent
-        val topStart = topFadeStartPx.coerceIn(0f, height)
-        val topEnd = (topStart + fadeLengthPx).coerceIn(topStart, height)
-        val bottomEnd = bottomFadeEndPx.coerceIn(0f, height)
-        val bottomStart = (bottomEnd - fadeLengthPx).coerceIn(topEnd, bottomEnd)
-        val safeHeight = height.coerceAtLeast(1f)
-        val brush = Brush.verticalGradient(
-            colorStops = arrayOf(
-                0f to Color.Transparent,
-                (topStart / safeHeight) to Color.Transparent,
-                (topEnd / safeHeight) to Color.Black,
-                (bottomStart / safeHeight) to Color.Black,
-                (bottomEnd / safeHeight) to Color.Transparent,
-                1f to Color.Transparent
-            ),
-            startY = 0f,
-            endY = height
-        )
-        drawRect(brush = brush, blendMode = BlendMode.DstIn)
-    }
-
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -2451,7 +2419,7 @@ private fun LibraryPage(
         }
     }
     Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
-        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds().verticalEdgeFade(libraryStickyHeaderHeightPx.intValue.toFloat(), libraryBottomFadeEndPx, libraryFadeLengthPx), contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp)) {
+        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp)) {
             item(key = "library-title") {
                 Row(
                     Modifier.fillMaxWidth()
@@ -2653,7 +2621,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
         }
     }
     Box(Modifier.fillMaxSize().clipToBounds()) {
-        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds().verticalEdgeFade(recentTopFadeStartPx, recentBottomFadeEndPx, recentFadeLengthPx), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
                     Modifier.fillMaxWidth()
@@ -2944,7 +2912,7 @@ private fun RecordsPage(
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().clipToBounds().verticalEdgeFade(recordsTopFadeStartPx, recordsBottomFadeEndPx, recordsFadeLengthPx), contentPadding = PaddingValues(bottom = 88.dp)) {
+        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f)
