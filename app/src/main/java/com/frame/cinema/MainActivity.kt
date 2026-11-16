@@ -2590,8 +2590,8 @@ private fun LibraryPage(
         Row(
             Modifier.fillMaxWidth()
                 .graphicsLayer {
-                    translationY = -libraryTitleScrollDistancePx.value
-                    alpha = titleAlphaState.value
+                    translationY = if (multiSelectMode) 0f else -libraryTitleScrollDistancePx.value
+                    alpha = if (multiSelectMode) 1f else titleAlphaState.value
                 }
                 .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2643,7 +2643,9 @@ private fun LibraryPage(
             alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
                 .graphicsLayer {
-                    translationY = if (listState.firstVisibleItemIndex == 0) {
+                    translationY = if (multiSelectMode) {
+                        libraryTitleHeightPx.intValue.toFloat()
+                    } else if (listState.firstVisibleItemIndex == 0) {
                         (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
                     } else 0f
                 }
