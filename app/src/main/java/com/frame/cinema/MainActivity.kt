@@ -2567,7 +2567,7 @@ private fun LibraryPage(
                             onPlay = { if (multiSelectMode) {
                                 selectedVideoIds = if (video.id in selectedVideoIds) selectedVideoIds - video.id else selectedVideoIds + video.id
                             } else onPlay(video) },
-                            onLongPress = { bounds -> onLongVideo(video, bounds) },
+                            onLong = { bounds -> onLongVideo(video, bounds) },
                             modifier = Modifier.fillMaxWidth(),
                             alpha = 1f,
                             onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
