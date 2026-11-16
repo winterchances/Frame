@@ -2473,6 +2473,10 @@ private fun LibraryPage(
     var showStatusDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
+    BackHandler(enabled = multiSelectMode) {
+        selectedVideoIds = emptySet()
+        multiSelectMode = false
+    }
     val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
     val availableMoveCategories = categories.filterNot { it == "我的最爱" }
     val softListFlingBehavior = rememberSoftListFlingBehavior()
