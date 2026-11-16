@@ -1078,14 +1078,14 @@ private fun FrameNativeApp(
                         ) {
                             SortOptionRow(
                                 "按添加时间", sort == SortMode.ADDED, sortDirection,
-                                onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                                onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                                onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING },
+                                onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING }
                             )
                             Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按名称", sort == SortMode.NAME, sortDirection,
-                                onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                                onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                                onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING },
+                                onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING }
                             )
                         }
                     }
@@ -1369,26 +1369,26 @@ private fun FrameNativeApp(
                         ) {
                             SortOptionRow(
                                 "按添加时间", recordSortMode == RecordSortMode.ADDED, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                                onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                                onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING },
+                                onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING }
                             )
                             Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按名称", recordSortMode == RecordSortMode.NAME, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                                onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                                onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING },
+                                onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING }
                             )
                             Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按看完时间", recordSortMode == RecordSortMode.WATCHED, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                                onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                                onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING },
+                                onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING }
                             )
                             Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             SortOptionRow(
                                 "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING; sheet = SheetType.NONE },
-                                onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING; sheet = SheetType.NONE }
+                                onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING },
+                                onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING }
                             )
                         }
                     }
@@ -4161,6 +4161,25 @@ private fun SortOptionRow(
     onAscending: () -> Unit,
     onDescending: () -> Unit
 ) {
+    val ascendingSelected = isSelected && direction == SortDirection.ASCENDING
+    val indicatorOffset by animateDpAsState(
+        targetValue = if (ascendingSelected) 0.dp else 50.dp,
+        animationSpec = tween(
+            300,
+            easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)
+        ),
+        label = "sort-direction-indicator"
+    )
+    val ascendingText by androidx.compose.animation.animateColorAsState(
+        targetValue = if (ascendingSelected) Color.White else Color(0xFFAAAAAA),
+        animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "sort-ascending-text"
+    )
+    val descendingText by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isSelected && direction == SortDirection.DESCENDING) Color.White else Color(0xFFAAAAAA),
+        animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "sort-descending-text"
+    )
     Row(
         Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -4172,47 +4191,30 @@ private fun SortOptionRow(
             fontSize = 16.sp,
             fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
         )
-        Row {
-            val ascendingSelected = isSelected && direction == SortDirection.ASCENDING
-            val ascendingBackground by androidx.compose.animation.animateColorAsState(
-                targetValue = if (ascendingSelected) ThemeTeal else Color.Transparent,
-                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                label = "sort-ascending-background"
-            )
-            val ascendingText by androidx.compose.animation.animateColorAsState(
-                targetValue = if (ascendingSelected) Color.White else Color(0xFFAAAAAA),
-                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                label = "sort-ascending-text"
-            )
+        Box(
+            Modifier.width(96.dp).height(28.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
             Box(
-                Modifier.clip(RoundedCornerShape(90.dp))
-                    .background(ascendingBackground)
-                    .noRippleClickable { onAscending() }
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("正序", color = ascendingText, fontSize = 13.sp, fontWeight = if (ascendingSelected) FontWeight.Bold else FontWeight.Normal)
-            }
-            Spacer(Modifier.width(4.dp))
-            val descendingSelected = isSelected && direction == SortDirection.DESCENDING
-            val descendingBackground by androidx.compose.animation.animateColorAsState(
-                targetValue = if (descendingSelected) ThemeTeal else Color.Transparent,
-                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                label = "sort-descending-background"
+                Modifier.offset(x = indicatorOffset)
+                    .size(width = 46.dp, height = 28.dp)
+                    .clip(RoundedCornerShape(90.dp))
+                    .background(ThemeTeal)
             )
-            val descendingText by androidx.compose.animation.animateColorAsState(
-                targetValue = if (descendingSelected) Color.White else Color(0xFFAAAAAA),
-                animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                label = "sort-descending-text"
-            )
-            Box(
-                Modifier.clip(RoundedCornerShape(90.dp))
-                    .background(descendingBackground)
-                    .noRippleClickable { onDescending() }
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("倒序", color = descendingText, fontSize = 13.sp, fontWeight = if (descendingSelected) FontWeight.Bold else FontWeight.Normal)
+            Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(width = 46.dp, height = 28.dp).noRippleClickable { onAscending() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("正序", color = ascendingText, fontSize = 13.sp, fontWeight = if (ascendingSelected) FontWeight.Bold else FontWeight.Normal)
+                }
+                Spacer(Modifier.width(4.dp))
+                Box(
+                    Modifier.size(width = 46.dp, height = 28.dp).noRippleClickable { onDescending() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("倒序", color = descendingText, fontSize = 13.sp, fontWeight = if (isSelected && direction == SortDirection.DESCENDING) FontWeight.Bold else FontWeight.Normal)
+                }
             }
         }
     }
