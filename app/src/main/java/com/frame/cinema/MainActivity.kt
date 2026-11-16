@@ -3879,7 +3879,6 @@ private fun ActionIcon(
     }
 }
 
-@Composable
 private fun titleFadeAlpha(
     scrollOffsetPx: Float,
     titleTopAtRestPx: Float,
@@ -3890,6 +3889,7 @@ private fun titleFadeAlpha(
     return (1f - scrollOffsetPx / fadeDistancePx).coerceIn(0f, 1f)
 }
 
+@Composable
 private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
