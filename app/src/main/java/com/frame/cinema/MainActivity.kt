@@ -2134,7 +2134,7 @@ private fun HomePage(
 ) {
     val context = LocalContext.current
     val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.take(4) }
-    val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(6) }
+    val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(10) }
     val homeExpansionPreferences = remember {
         context.getSharedPreferences("frame_home_expansion", Context.MODE_PRIVATE)
     }
@@ -2200,7 +2200,7 @@ private fun HomePage(
                 Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
+        LazyColumn(state = listState, flingBehavior = rememberSoftListFlingBehavior(), modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item(key = "home-large-title") {
                 Box(
                     Modifier.zIndex(1f)
