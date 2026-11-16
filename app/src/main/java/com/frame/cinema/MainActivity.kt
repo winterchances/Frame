@@ -1199,7 +1199,7 @@ private fun FrameNativeApp(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
-                                        if (cat == "我的最爱") "我的收藏" else cat,
+                                        when (cat) { "全部分类" -> "未分类"; "我的最爱" -> "我的收藏"; else -> cat },
                                         Modifier.weight(1f).padding(start = 12.dp),
                                         color = MainText,
                                         fontSize = 16.sp
