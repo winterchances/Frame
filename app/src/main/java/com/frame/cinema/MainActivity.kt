@@ -3009,82 +3009,71 @@ private fun RecordsPage(
                                 Spacer(Modifier.weight(1f))
                                 RatingStars(
                                     video.rating,
-                                    16.dp,
+                                    14.dp,
                                     onRate = { onRateVideo(video, it) },
-                                    spacing = 2.dp,
+                                    spacing = 1.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Box(
-                                        Modifier.weight(1f).clip(RoundedCornerShape(90.dp))
-                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(90.dp))
-                                            .padding(5.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            if (completed) video.date + " 看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                            fontSize = 12.sp,
-                                            lineHeight = 14.sp,
-                                            color = Color(0xFF999999),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                        )
-                                    }
-                                    Box(
-                                        Modifier.clip(RoundedCornerShape(90.dp))
-                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(90.dp))
-                                            .padding(5.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            "感想 ${entries.size} 条",
-                                            fontSize = 12.sp,
-                                            lineHeight = 14.sp,
-                                            color = Color(0xFF999999),
-                                            maxLines = 1,
-                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                        )
-                                    }
-                                }
                                 Spacer(Modifier.weight(1f))
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Box(
-                                        Modifier.weight(1f).height(28.dp)
-                                            .clip(RoundedCornerShape(7.dp))
-                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
-                                            .noRippleClickable { onCreate(video) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("记录", fontSize = 13.sp, color = Color(0xFF555555), fontWeight = FontWeight.Medium)
-                                    }
-                                    Box(
-                                        Modifier.weight(1f).height(28.dp)
-                                            .clip(RoundedCornerShape(7.dp))
-                                            .border(1.dp, Color(0xFFE4E4E4), RoundedCornerShape(7.dp))
-                                            .then(
-                                                if (entries.isNotEmpty()) Modifier.noRippleClickable {
-                                                    setVideoReviewsExpanded(video.id, !expanded)
-                                                } else Modifier
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            if (expanded) "收起" else "展开",
-                                            fontSize = 13.sp,
-                                            color = if (entries.isEmpty()) Color(0xFFBBBBBB) else Color(0xFF555555),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
+                                Text(
+                                    if (completed) video.date + " · 已看完" else "尚未看完 · ${video.progress.toInt()}%",
+                                    color = Color(0xFF999999),
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                )
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "观影感想",
+                                color = Color(0xFF555555),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "${entries.size} 条",
+                                color = Color(0xFF999999),
+                                fontSize = 12.sp,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Box(
+                                Modifier.size(30.dp).noRippleClickable { onCreate(video) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = "新增感想",
+                                    tint = Color(0xFF777777),
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                            Box(
+                                Modifier.size(30.dp)
+                                    .then(
+                                        if (entries.isNotEmpty()) Modifier.noRippleClickable {
+                                            setVideoReviewsExpanded(video.id, !expanded)
+                                        } else Modifier
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.ExpandMore,
+                                    contentDescription = if (expanded) "收起感想" else "展开感想",
+                                    tint = if (entries.isEmpty()) Color(0xFFCCCCCC) else Color(0xFF777777),
+                                    modifier = Modifier.size(20.dp).rotate(if (expanded) 180f else 0f)
+                                )
                             }
                         }
                         val timelineTopSpacing by animateDpAsState(
