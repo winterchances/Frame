@@ -2456,8 +2456,8 @@ private fun LibraryPage(
                 item { EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频") }
             } else {
                 item { Spacer(Modifier.height(5.dp)) }
-                filtered.chunked(columns).forEach { rowVideos ->
-                    item(key = "library-row-${rowVideos.first().id}") {
+                filtered.chunked(columns).forEachIndexed { rowIndex, rowVideos ->
+                    item(key = "library-row-$rowIndex") {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(gap),
@@ -2476,7 +2476,7 @@ private fun LibraryPage(
                             repeat(columns - rowVideos.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
-                    item(key = "library-row-gap-${rowVideos.first().id}") { Spacer(Modifier.height(gap)) }
+                    item(key = "library-row-gap-$rowIndex") { Spacer(Modifier.height(gap)) }
                 }
             }
         }
