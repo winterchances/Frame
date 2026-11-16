@@ -2427,7 +2427,7 @@ private fun LibraryPage(
             state = listState,
             flingBehavior = softListFlingBehavior,
             modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(),
-            contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = if (compact) 114.dp else 108.dp),
             horizontalArrangement = Arrangement.spacedBy(gap),
             verticalArrangement = Arrangement.spacedBy(gap)
         ) {
@@ -2441,7 +2441,7 @@ private fun LibraryPage(
                             }
                         }
                         .graphicsLayer { alpha = 0f }
-                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
+                        .padding(top = 40.dp, bottom = 15.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -2457,7 +2457,8 @@ private fun LibraryPage(
                     categoryScrollState = stickyCategoryScrollState,
                     onStatus = onStatus, onCategory = onCategory,
                     alpha = 0f,
-                    onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() }
+                    onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() },
+                    horizontalPadding = 0.dp
                 )
             }
             if (filtered.isEmpty()) {
@@ -2514,7 +2515,8 @@ private fun LibraryFilterHeader(
     categoryScrollState: androidx.compose.foundation.ScrollState,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit,
     alpha: Float, onBoundsChanged: (Rect) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp
 ) {
     Column(
         modifier.fillMaxWidth()
@@ -2522,7 +2524,7 @@ private fun LibraryFilterHeader(
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .background(PageBg)
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = 9.dp, bottom = 1.dp)
+            .padding(start = horizontalPadding, end = horizontalPadding, top = 9.dp, bottom = 1.dp)
     ) {
         Row(
             Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 14.dp),
