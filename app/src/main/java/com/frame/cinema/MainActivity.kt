@@ -46,6 +46,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.animateDecay
+import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -2340,6 +2343,26 @@ private fun HomePage(
     }
 }
 
+@Composable
+private fun rememberSoftListFlingBehavior(): FlingBehavior {
+    val decay = remember { exponentialDecay<Float>(frictionMultiplier = 0.8f) }
+    return remember(decay) {
+        object : FlingBehavior {
+            override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+                var lastValue = 0f
+                val animation = AnimationState(initialValue = 0f, initialVelocity = initialVelocity)
+                animation.animateDecay(decay) {
+                    val delta = value - lastValue
+                    val consumed = scrollBy(delta)
+                    lastValue = value
+                    if (abs(delta - consumed) > 0.5f) cancelAnimation()
+                }
+                return animation.velocity
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryPage(
@@ -2353,6 +2376,7 @@ private fun LibraryPage(
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit
 ) {
+    val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
     val titleSafetyGapPx = with(density) { 4.dp.toPx() }
@@ -2388,7 +2412,7 @@ private fun LibraryPage(
         }
     }
     Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp)) {
+        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = if (compact) 114.dp else 108.dp)) {
             item(key = "library-title") {
                 Row(
                     Modifier.fillMaxWidth()
@@ -2526,6 +2550,7 @@ private fun LibraryFilterHeader(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
+    val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
     val titleSafetyGapPx = with(density) { 4.dp.toPx() }
@@ -2586,7 +2611,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
         }
     }
     Box(Modifier.fillMaxSize().clipToBounds()) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
+        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
                     Modifier.fillMaxWidth()
@@ -2735,6 +2760,7 @@ private fun RecordsPage(
     onRateVideo: (VideoItem, Float) -> Unit,
     onTargetHandled: () -> Unit
 ) {
+    val softListFlingBehavior = rememberSoftListFlingBehavior()
     val context = LocalContext.current
     val recordExpansionPreferences = remember {
         context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
@@ -2873,7 +2899,7 @@ private fun RecordsPage(
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
             }
         }
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
+        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
             item(key = "records-large-title") {
                 Row(
                     Modifier.fillMaxWidth().zIndex(1f)
