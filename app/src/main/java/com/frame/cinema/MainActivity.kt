@@ -3031,9 +3031,11 @@ private fun RecordsPage(
                                 Spacer(Modifier.weight(1f))
                             }
                         }
+                        Spacer(Modifier.height(16.dp))
                         Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                        Spacer(Modifier.height(16.dp))
                         Row(
-                            Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
+                            Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
