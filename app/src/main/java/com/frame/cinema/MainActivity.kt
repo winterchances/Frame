@@ -494,6 +494,7 @@ private fun FrameNativeApp(
     var recordSearch by remember { mutableStateOf("") }
     var reviewVideoSearch by remember { mutableStateOf("") }
     var targetReviewId by remember { mutableStateOf<Long?>(null) }
+    var targetRecordVideoId by remember { mutableStateOf<Long?>(null) }
     var recordSortMode by remember { mutableStateOf(RecordSortMode.WATCHED) }
     var recordSortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
     var editName by remember { mutableStateOf("") }
@@ -924,6 +925,7 @@ private fun FrameNativeApp(
                                 videos = videos,
                                 reviews = reviewEntries,
                                 targetReviewId = targetReviewId,
+                                targetVideoId = targetRecordVideoId,
                                 sortMode = recordSortMode,
                                 sortDirection = recordSortDirection,
                                 onRecordSortModeChange = { recordSortMode = it },
@@ -945,7 +947,7 @@ private fun FrameNativeApp(
                                 onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
                                 onEdit = { openReviewEditor(it) },
                                 onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
-                                onTargetHandled = { targetReviewId = null }
+                                onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
                             )
                         }
                     }
@@ -1185,12 +1187,23 @@ private fun FrameNativeApp(
                                 entry.content.contains(recordQuery, true) || entry.title.contains(recordQuery, true) || videoName.contains(recordQuery, true)
                             }.take(30)
                         }
+                        val matchingUnreviewedVideos = remember(recordQuery, videos, reviewEntries) {
+                            if (recordQuery.isBlank()) emptyList() else {
+                                val reviewedVideoIds = reviewEntries.mapNotNull { it.videoId }.toSet()
+                                videos.filter { video ->
+                                    (video.status == "watched" || video.progress >= 100f) &&
+                                        video.id !in reviewedVideoIds &&
+                                        displayVideoName(video.name).contains(recordQuery, true)
+                                }.take(30)
+                            }
+                        }
+                        val recordSearchResultCount = matchingReviewEntries.size + matchingUnreviewedVideos.size
                         var recordSearchBottomSpacerPx by remember(recordSearch) { mutableFloatStateOf(0f) }
                         val searchSheetMidpointPx = with(LocalDensity.current) {
                             LocalConfiguration.current.screenHeightDp.dp.toPx() * .55f
                         }
                         matchingReviewEntries.forEachIndexed { index, entry ->
-                            val isLastShortResult = index == matchingReviewEntries.lastIndex && matchingReviewEntries.size <= 4
+                            val isLastShortResult = index == matchingReviewEntries.lastIndex && matchingUnreviewedVideos.isEmpty() && recordSearchResultCount in 1..4
                             key("review_search_${entry.id}") {
                                 val video = videoById[entry.videoId]
                                 AnimatedVisibility(
@@ -1267,7 +1280,67 @@ private fun FrameNativeApp(
                                 }
                             }
                         }
-                        if (!sheetKeyboardUp && matchingReviewEntries.size in 1..4) {
+                        matchingUnreviewedVideos.forEachIndexed { index, video ->
+                            val isLastShortResult = index == matchingUnreviewedVideos.lastIndex && recordSearchResultCount in 1..4
+                            key("video_search_${video.id}") {
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = fadeIn(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) +
+                                        androidx.compose.animation.slideInVertically(tween(260, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))) { it / 10 }
+                                ) {
+                                    Surface(
+                                        Modifier.fillMaxWidth().padding(top = 12.dp)
+                                            .then(
+                                                if (isLastShortResult) Modifier.onGloballyPositioned { coordinates ->
+                                                    if (!sheetKeyboardUp) {
+                                                        val desired = (coordinates.boundsInRoot().bottom + recordSearchBottomSpacerPx - searchSheetMidpointPx)
+                                                            .coerceIn(0f, searchSheetMidpointPx * .9f)
+                                                        if (abs(recordSearchBottomSpacerPx - desired) > 1f) recordSearchBottomSpacerPx = desired
+                                                    }
+                                                } else Modifier
+                                            )
+                                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .noRippleClickable {
+                                                targetReviewId = null
+                                                targetRecordVideoId = video.id
+                                                recordSearch = ""
+                                                sheet = SheetType.NONE
+                                            },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color.White,
+                                        shadowElevation = 0.dp
+                                    ) {
+                                        Row(
+                                            Modifier.fillMaxWidth().padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                Modifier.size(width = 84.dp, height = 58.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(PosterBrush(video.bgIndex))
+                                            ) {
+                                                Thumbnail(video, Modifier.fillMaxSize())
+                                            }
+                                            VideoCardTitle(
+                                                video.name,
+                                                color = MainText,
+                                                fontSize = 16.sp,
+                                                englishFontSize = 14.sp,
+                                                englishColor = Color(0xFF888888),
+                                                fontWeight = FontWeight.Medium,
+                                                lineHeight = 21.sp,
+                                                maxLines = 1,
+                                                showEnglish = true,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (!sheetKeyboardUp && recordSearchResultCount in 1..4) {
                             Spacer(Modifier.height(with(LocalDensity.current) { recordSearchBottomSpacerPx.toDp() }))
                         }
                     }
@@ -3146,6 +3219,7 @@ private fun RecordsPage(
     videos: List<VideoItem>,
     reviews: List<ReviewEntry>,
     targetReviewId: Long?,
+    targetVideoId: Long?,
     sortMode: RecordSortMode,
     sortDirection: SortDirection,
     onRecordSortModeChange: (RecordSortMode) -> Unit,
@@ -3282,7 +3356,15 @@ private fun RecordsPage(
         }
     }
     val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
-    LaunchedEffect(targetReviewId, displayVideos, standaloneReviews) {
+    LaunchedEffect(targetReviewId, targetVideoId, displayVideos, standaloneReviews) {
+        val videoTargetId = targetVideoId
+        if (videoTargetId != null) {
+            val videoIndex = displayVideos.indexOfFirst { it.id == videoTargetId }
+            if (videoIndex >= 0) {
+                listState.animateScrollToItem(5 + videoIndex)
+            } else onTargetHandled()
+            return@LaunchedEffect
+        }
         val targetId = targetReviewId ?: return@LaunchedEffect
         val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
         if (videoIndex >= 0) {
