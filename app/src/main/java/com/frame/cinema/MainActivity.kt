@@ -46,6 +46,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.AnimationState
@@ -2406,13 +2408,17 @@ private fun LibraryPage(
 ) {
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var showCategoryDrawer by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
-    BackHandler(enabled = multiSelectMode) {
+    BackHandler(enabled = multiSelectMode && !showCategoryDrawer) {
         selectedVideoIds = emptySet()
         onMultiSelectModeChange(false)
+    }
+    BackHandler(enabled = showCategoryDrawer) {
+        showCategoryDrawer = false
     }
     val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
     val availableMoveCategories = categories.filterNot { it == "我的最爱" }
@@ -2489,6 +2495,7 @@ private fun LibraryPage(
                     categories = categories, status = status, category = category,
                     categoryScrollState = stickyCategoryScrollState,
                     onStatus = onStatus, onCategory = onCategory,
+                    onOpenCategoryDrawer = { showCategoryDrawer = true },
                     alpha = 0f,
                     onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() },
                     horizontalPadding = 0.dp,
@@ -2618,6 +2625,7 @@ private fun LibraryPage(
             categories = categories, status = status, category = category,
             categoryScrollState = floatingCategoryScrollState,
             onStatus = onStatus, onCategory = onCategory,
+            onOpenCategoryDrawer = { showCategoryDrawer = true },
             alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
                 .graphicsLayer {
@@ -2678,6 +2686,103 @@ private fun LibraryPage(
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
             )
         }
+
+        BoxWithConstraints(Modifier.fillMaxSize().zIndex(20f)) {
+            AnimatedVisibility(
+                visible = showCategoryDrawer,
+                enter = fadeIn(tween(180)),
+                exit = fadeOut(tween(160)),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(
+                    Modifier.fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .noRippleClickable { showCategoryDrawer = false }
+                )
+            }
+            AnimatedVisibility(
+                visible = showCategoryDrawer,
+                enter = slideInHorizontally(
+                    initialOffsetX = { -it },
+                    animationSpec = tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                ) + fadeIn(tween(220)),
+                exit = slideOutHorizontally(
+                    targetOffsetX = { -it },
+                    animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                ) + fadeOut(tween(180)),
+                modifier = Modifier.align(Alignment.TopStart)
+            ) {
+                Column(
+                    Modifier.width(maxWidth * 0.75f)
+                        .fillMaxHeight()
+                        .padding(vertical = 40.dp)
+                        .shadow(12.dp, RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
+                        .clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
+                        .background(PageBg)
+                        .noRippleClickable { }
+                        .padding(horizontal = 18.dp, vertical = 20.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "分类管理",
+                            Modifier.weight(1f),
+                            color = MainText,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        ActionIcon(Icons.Outlined.Close, "关闭分类管理") { showCategoryDrawer = false }
+                    }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(categories, key = { it }) { value ->
+                            val count = when (value) {
+                                "全部分类" -> videos.count { it.category == "全部分类" }
+                                "我的最爱" -> videos.count { it.isFav }
+                                else -> videos.count { it.category == value }
+                            }
+                            val label = when (value) {
+                                "全部分类" -> "未分类"
+                                "我的最爱" -> "我的收藏"
+                                else -> value
+                            }
+                            val itemIcon = when (value) {
+                                "全部分类" -> Icons.Outlined.FolderOpen
+                                "我的最爱" -> Icons.Outlined.FavoriteBorder
+                                else -> Icons.Outlined.Folder
+                            }
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (category == value) Color.White else Color.Transparent)
+                                    .noRippleClickable {
+                                        onCategory(value)
+                                        showCategoryDrawer = false
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(itemIcon, contentDescription = null, tint = MainText, modifier = Modifier.size(21.dp))
+                                Text(
+                                    label,
+                                    Modifier.weight(1f).padding(start = 12.dp),
+                                    color = MainText,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -2686,6 +2791,7 @@ private fun LibraryFilterHeader(
     categories: List<String>, status: String, category: String,
     categoryScrollState: androidx.compose.foundation.ScrollState,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit,
+    onOpenCategoryDrawer: () -> Unit,
     alpha: Float, onBoundsChanged: (Rect) -> Unit,
     modifier: Modifier = Modifier,
     horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp,
@@ -2712,19 +2818,26 @@ private fun LibraryFilterHeader(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = categoryBottomPadding).horizontalScroll(categoryScrollState),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = categoryBottomPadding),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            categories.forEach { value ->
-                Surface(
-                    Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                        .noRippleClickable { onCategory(value) },
-                    shape = CircleShape,
-                    color = if (category == value) ThemeTeal else Color.White,
-                    shadowElevation = 0.dp,
-                ) {
-                    val label = when (value) { "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
-                    Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            ActionIcon(Icons.Outlined.FolderOpen, "分类总览", onOpenCategoryDrawer)
+            Spacer(Modifier.width(10.dp))
+            Row(
+                Modifier.weight(1f).horizontalScroll(categoryScrollState),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                categories.forEach { value ->
+                    Surface(
+                        Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .noRippleClickable { onCategory(value) },
+                        shape = CircleShape,
+                        color = if (category == value) ThemeTeal else Color.White,
+                        shadowElevation = 0.dp,
+                    ) {
+                        val label = when (value) { "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
+                        Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
                 }
             }
         }
