@@ -378,7 +378,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.beginTransaction()
         try {
             writableDatabase.delete("categories", null, null)
-            names.forEachIndexed { index, name ->
+            names.filterNot { it == "全部" }.distinct().forEachIndexed { index, name ->
                 writableDatabase.insert("categories", null, ContentValues().apply {
                     put("name", name); put("position", index)
                 })
