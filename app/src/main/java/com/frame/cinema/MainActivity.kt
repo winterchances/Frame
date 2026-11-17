@@ -3479,7 +3479,7 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Expand,
                                     if (expanded) "收起感想" else "展开感想",
-                                    if (entries.isEmpty()) Color(0xFFD0D6D4) else Color(0xFF899592),
+                                    Color(0xFFDDDDDD),
                                     modifier = Modifier.rotate(if (expanded) 180f else 0f)
                                 )
                             }
@@ -3715,7 +3715,7 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Download,
                                     "下载独立感想",
-                                    if (exportingStandaloneReviewId == entry.id) Color(0xFFD0D6D4) else Color(0xFF899592)
+                                    Color(0xFFDDDDDD)
                                 )
                             }
                             Box(
@@ -3725,7 +3725,7 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Add,
                                     "新增感想",
-                                    Color(0xFF899592)
+                                    Color(0xFFDDDDDD)
                                 )
                             }
                             Box(
@@ -3737,7 +3737,7 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Expand,
                                     if (expanded) "收起感想" else "展开感想",
-                                    Color(0xFF899592),
+                                    Color(0xFFDDDDDD),
                                     modifier = Modifier.rotate(if (expanded) 180f else 0f)
                                 )
                             }
