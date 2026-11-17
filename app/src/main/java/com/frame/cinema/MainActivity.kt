@@ -4366,18 +4366,14 @@ private fun createUnifiedReviewExportBitmap(
     val coverRect = android.graphics.RectF(
         margin, coverTop, margin + coverWidth, coverTop + coverHeight
     )
-    val coverPath = android.graphics.Path().apply {
+    val coverClipPath = android.graphics.Path().apply {
         addRoundRect(coverRect, 22f, 22f, android.graphics.Path.Direction.CW)
     }
     canvas.save()
-    canvas.clipPath(coverPath)
+    canvas.clipPath(coverClipPath)
     canvas.drawColor(android.graphics.Color.rgb(237, 242, 240))
-    val cover = coverPath.let {
-        coverPath // keep clipping path alive while decoding the image below
-        coverPath
-    }.let { coverPathValue ->
-        coverPathValue
-        coverPath?.let { path -> runCatching { BitmapFactory.decodeFile(path) }.getOrNull() }
+    val cover = coverPath?.let { path ->
+        runCatching { BitmapFactory.decodeFile(path) }.getOrNull()
     }
     if (cover != null) {
         val scale = maxOf(coverRect.width() / cover.width, coverRect.height() / cover.height)
@@ -4405,7 +4401,6 @@ private fun createUnifiedReviewExportBitmap(
     canvas.restore()
 
     val textLeft = margin + coverWidth + 48f
-    val titleWidth = width - margin - textLeft
     val heroLabelPaint = android.graphics.Paint(metaPaint).apply {
         color = android.graphics.Color.rgb(145, 158, 153)
         textSize = 22f
