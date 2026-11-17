@@ -2341,7 +2341,14 @@ private fun HomePage(
                                     Thumbnail(video, Modifier.fillMaxSize())
                                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, .4f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .8f)))))
                                     Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
-                                        Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                        VideoCardTitle(
+                                            video.name,
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            showEnglish = true
+                                        )
                                         Spacer(Modifier.height(2.dp))
                                         Text("播放至 ${formatTime((video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong())}", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                                         Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
@@ -4899,7 +4906,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = false)
+            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
