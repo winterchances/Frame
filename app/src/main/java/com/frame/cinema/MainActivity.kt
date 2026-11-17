@@ -4537,7 +4537,6 @@ private fun createUnifiedReviewExportBitmap(
         letterSpacing = 1.1f
     }
     canvas.drawText("一帧  ·  FRAME", width / 2f, contentHeight - 68f, footerPaint)
-    canvas.restore()
     return bitmap
 }
 
