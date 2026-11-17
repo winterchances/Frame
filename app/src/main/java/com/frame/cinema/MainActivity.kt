@@ -1955,7 +1955,7 @@ private fun FrameNativeApp(
                 exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
                 modifier = Modifier.align(Alignment.CenterStart).zIndex(1f)
             ) {
-                BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding()) {
+                BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                     Column(
                         Modifier.width(maxWidth * 0.75f).padding(start = 12.dp).fillMaxHeight().padding(vertical = 40.dp)
                             .shadow(12.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp))
@@ -1963,12 +1963,11 @@ private fun FrameNativeApp(
                     ) {
                         Row(Modifier.fillMaxWidth().padding(bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("分类管理", Modifier.weight(1f), color = MainText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                            Text(if (categoryEditMode) "完成" else "编辑",
-                                Modifier.noRippleClickable { categoryEditMode = !categoryEditMode; editingCategoryName = null }.padding(horizontal = 12.dp, vertical = 8.dp),
-                                color = ThemeTeal, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            ActionIcon(if (categoryEditMode) Icons.Outlined.Check else Icons.Outlined.Edit, if (categoryEditMode) "完成编辑" else "编辑分类", { categoryEditMode = !categoryEditMode; editingCategoryName = null })
+                            Spacer(Modifier.width(8.dp))
                             ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false; categoryEditMode = false; editingCategoryName = null })
                         }
-                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                             items(listOf("全部", "全部分类", "我的最爱"), key = { it }) { value ->
                                 val count = when (value) {
                                     "全部" -> videos.size
@@ -1993,15 +1992,13 @@ private fun FrameNativeApp(
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    if (categoryEditMode) Spacer(Modifier.size(21.dp))
-                                    else Icon(itemIcon, null, tint = MainText, modifier = Modifier.size(21.dp))
+                                    Icon(itemIcon, null, tint = MainText, modifier = Modifier.size(21.dp))
                                     Text(label, Modifier.weight(1f).padding(start = 12.dp), color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                                    if (categoryEditMode) Text("默认", color = Color(0xFFAAAAAA), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                    else Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                                    Text(count.toString(), color = MutedText, fontSize = 13.sp)
                                 }
                             }
                             item(key = "category-fixed-divider") {
-                                Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFF0F0F0)))
+                                Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFE6E6E6)))
                             }
                             items(categories.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct(), key = { it }) { value ->
                                 var dragRemainder by remember(value) { mutableFloatStateOf(0f) }
@@ -2036,7 +2033,7 @@ private fun FrameNativeApp(
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    if (categoryEditMode) Icon(Icons.Outlined.DragHandle, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
+                                    if (categoryEditMode) Icon(Icons.Outlined.Menu, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
                                     else Icon(Icons.Outlined.Folder, null, tint = MainText, modifier = Modifier.size(21.dp))
                                     if (editingCategoryName == value) {
                                         BasicTextField(
@@ -2046,7 +2043,7 @@ private fun FrameNativeApp(
                                             singleLine = true,
                                             textStyle = TextStyle(fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false))
                                         )
-                                        Box(Modifier.size(32.dp).noRippleClickable {
+                                        Box(Modifier.size(28.dp).noRippleClickable {
                                             val renamed = editingCategoryDraft.trim()
                                             when {
                                                 renamed.isEmpty() -> toast = "分类名称不能为空"
@@ -2062,13 +2059,13 @@ private fun FrameNativeApp(
                                                 }
                                             }
                                         }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.Check, "保存分类名称", tint = ThemeTeal, modifier = Modifier.size(20.dp))
+                                            Icon(Icons.Outlined.Check, "保存分类名称", tint = ThemeTeal, modifier = Modifier.size(18.dp))
                                         }
-                                        Box(Modifier.size(32.dp).noRippleClickable {
+                                        Box(Modifier.size(28.dp).noRippleClickable {
                                             editingCategoryName = null
                                             editingCategoryDraft = ""
                                         }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.Close, "取消重命名", tint = MutedText, modifier = Modifier.size(19.dp))
+                                            Icon(Icons.Outlined.Close, "取消重命名", tint = MutedText, modifier = Modifier.size(18.dp))
                                         }
                                     } else {
                                         Text(
@@ -2086,15 +2083,17 @@ private fun FrameNativeApp(
                                         )
                                     }
                                     if (categoryEditMode && editingCategoryName != value) {
-                                        Text("删除",
-                                            Modifier.noRippleClickable {
-                                                repository.saveCategories(categories - value)
-                                                videos.filter { it.category == value }.forEach { repository.update(it.copy(category = "全部分类")) }
-                                                if (category == value) category = "全部"
-                                                refresh()
-                                            }.padding(start = 12.dp, top = 10.dp, bottom = 10.dp),
-                                            color = Color(0xFFE65C5C), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                                    } else Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                                        Box(Modifier.size(28.dp).noRippleClickable {
+                                            repository.saveCategories(categories - value)
+                                            videos.filter { it.category == value }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                            if (category == value) category = "全部"
+                                            refresh()
+                                        }, contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Outlined.DeleteOutline, "删除分类", tint = Color(0xFFE65C5C), modifier = Modifier.size(18.dp))
+                                        }
+                                    } else if (editingCategoryName != value) {
+                                        Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                                    }
                                 }
                             }
                         }
@@ -3066,6 +3065,7 @@ private fun RecordsPage(
     val context = LocalContext.current
     val exportScope = rememberCoroutineScope()
     var exportingReviewVideoId by remember { mutableStateOf<Long?>(null) }
+    var exportingStandaloneReviewId by remember { mutableStateOf<Long?>(null) }
     val recordExpansionPreferences = remember {
         context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
     }
@@ -3387,10 +3387,10 @@ private fun RecordsPage(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    Icons.Outlined.Download,
+                                    Icons.Outlined.FileDownload,
                                     contentDescription = "下载观影记录",
                                     tint = if (exportingReviewVideoId == video.id) Color(0xFFCCCCCC) else Color(0xFF777777),
-                                    modifier = Modifier.size(19.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                             Box(
@@ -3625,6 +3625,37 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
+                            Box(
+                                Modifier.size(30.dp).then(
+                                    if (exportingStandaloneReviewId == null) Modifier.noRippleClickable {
+                                        exportingStandaloneReviewId = entry.id
+                                        exportScope.launch {
+                                            var bitmap: Bitmap? = null
+                                            val timelineEntries = listOf(entry) + reviews.filter { it.standaloneGroupId == entry.id }.sortedByDescending { it.createdAt }
+                                            val saved = try {
+                                                bitmap = withContext(Dispatchers.Default) {
+                                                    createStandaloneReviewExportBitmap(entry, timelineEntries)
+                                                }
+                                                saveVideoScreenshot(context, bitmap!!)
+                                            } catch (_: Exception) {
+                                                false
+                                            } finally {
+                                                bitmap?.recycle()
+                                                exportingStandaloneReviewId = null
+                                            }
+                                            Toast.makeText(context, if (saved) "观影记录图片已保存到图片/影匣" else "观影记录图片保存失败", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else Modifier
+                                ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.FileDownload,
+                                    contentDescription = "下载独立感想",
+                                    tint = if (exportingStandaloneReviewId == entry.id) Color(0xFFCCCCCC) else Color(0xFF777777),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                             Box(
                                 Modifier.size(30.dp).noRippleClickable { onCreateStandalone(entry.id) },
                                 contentAlignment = Alignment.Center
@@ -4324,19 +4355,13 @@ private fun createReviewExportBitmap(
         titleY += 62f
     }
     val infoPaint = android.graphics.Paint(metaPaint).apply { textSize = 26f }
-    val statusText = if (video.status == "watched" || video.progress >= 100f) {
-        "${video.date}  ·  已看完"
-    } else {
-        "${video.date}  ·  ${video.progress.toInt()}%"
-    }
-    canvas.drawText(statusText, textLeft, maxOf(titleY + 28f, coverTop + 190f), infoPaint)
     if (video.rating > 0f) {
         val ratingPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.rgb(210, 166, 82)
+            color = android.graphics.Color.rgb(127, 181, 177)
             textSize = 34f
             typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
         }
-        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", video.rating)}", textLeft, coverTop + 280f, ratingPaint)
+        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", video.rating)}", textLeft, coverTop + 220f, ratingPaint)
     }
 
     var cursorY = coverTop + coverHeight + 72f
@@ -4372,6 +4397,102 @@ private fun createReviewExportBitmap(
         letterSpacing = 1f
     }
     canvas.drawText("影匣  ·  FRAME", width / 2f, height - 68f, footerPaint)
+    return bitmap
+}
+
+
+private fun createStandaloneReviewExportBitmap(entry: ReviewEntry, timelineEntries: List<ReviewEntry>): Bitmap {
+    val width = 1080
+    val margin = 72f
+    val contentWidth = width - margin * 2
+    val titlePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(35, 35, 35); textSize = 48f
+        typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+    }
+    val bodyPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(75, 75, 75); textSize = 34f
+    }
+    val metaPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(145, 145, 145); textSize = 25f
+    }
+    val accentPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(127, 181, 177); strokeWidth = 5f
+        strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+    val titleLines = wrapReviewExportText(entry.title.ifBlank { "未命名" }, titlePaint, contentWidth - 330f)
+    val layouts = timelineEntries.map { item ->
+        Triple(SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(item.createdAt)),
+            wrapReviewExportText(item.content, bodyPaint, contentWidth - 54f), item)
+    }
+    val coverTop = 190f
+    val coverHeight = 350f
+    var y = coverTop + coverHeight + 72f + 54f
+    layouts.forEach { (_, lines, _) -> y += 42f + lines.size * 52f + 48f }
+    val height = (y + 180f).toInt().coerceAtLeast(1000)
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.rgb(248, 248, 246))
+    val cardPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+    canvas.drawRoundRect(android.graphics.RectF(28f, 28f, width - 28f, height - 28f), 30f, 30f, cardPaint)
+    val topLabel = android.graphics.Paint(metaPaint).apply {
+        color = android.graphics.Color.rgb(125, 155, 146); textSize = 24f; letterSpacing = 2f
+    }
+    canvas.drawText("FRAME  /  WATCH JOURNAL", margin, 112f, topLabel)
+    canvas.drawLine(margin, 140f, margin + 62f, 140f, accentPaint)
+    val coverRect = android.graphics.RectF(margin, coverTop, margin + 260f, coverTop + coverHeight)
+    val coverPath = android.graphics.Path().apply { addRoundRect(coverRect, 18f, 18f, android.graphics.Path.Direction.CW) }
+    canvas.save()
+    canvas.clipPath(coverPath)
+    canvas.drawColor(android.graphics.Color.rgb(238, 239, 239))
+    val cover = entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
+    if (cover != null) {
+        val scale = maxOf(coverRect.width() / cover.width, coverRect.height() / cover.height)
+        val matrix = android.graphics.Matrix().apply {
+            setScale(scale, scale)
+            postTranslate(coverRect.left + (coverRect.width() - cover.width * scale) / 2f,
+                coverRect.top + (coverRect.height() - cover.height * scale) / 2f)
+        }
+        canvas.drawBitmap(cover, matrix, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG or android.graphics.Paint.FILTER_BITMAP_FLAG))
+        cover.recycle()
+    } else {
+        val placeholder = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(175, 180, 180); textSize = 26f; textAlign = android.graphics.Paint.Align.CENTER
+        }
+        canvas.drawText("FRAME", coverRect.centerX(), coverRect.centerY(), placeholder)
+    }
+    canvas.restore()
+    val textLeft = margin + 300f
+    var titleY = coverTop + 58f
+    titleLines.forEach { line -> canvas.drawText(line, textLeft, titleY, titlePaint); titleY += 62f }
+    if (entry.rating > 0f) {
+        val ratingPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(127, 181, 177); textSize = 34f
+            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+        }
+        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", entry.rating)}", textLeft, coverTop + 220f, ratingPaint)
+    }
+    var cursorY = coverTop + coverHeight + 72f
+    canvas.drawLine(margin, cursorY, width - margin, cursorY, android.graphics.Paint().apply {
+        color = android.graphics.Color.rgb(238, 238, 238); strokeWidth = 2f
+    })
+    cursorY += 62f
+    canvas.drawText("观影感想", margin, cursorY, android.graphics.Paint(titlePaint).apply { textSize = 36f })
+    canvas.drawText("${timelineEntries.size} 条", margin + 190f, cursorY, metaPaint)
+    cursorY += 54f
+    layouts.forEachIndexed { index, (date, lines, _) ->
+        canvas.drawCircle(margin + 8f, cursorY - 8f, 7f, accentPaint)
+        canvas.drawText(date, margin + 34f, cursorY, metaPaint)
+        cursorY += 48f
+        lines.forEach { line -> canvas.drawText(line, margin + 34f, cursorY, bodyPaint); cursorY += 52f }
+        cursorY += 38f
+        if (index != layouts.lastIndex) canvas.drawLine(margin + 34f, cursorY - 12f, width - margin, cursorY - 12f,
+            android.graphics.Paint().apply { color = android.graphics.Color.rgb(242, 242, 242); strokeWidth = 1.5f })
+    }
+    val footer = android.graphics.Paint(metaPaint).apply {
+        textSize = 22f; textAlign = android.graphics.Paint.Align.CENTER
+        color = android.graphics.Color.rgb(165, 165, 165); letterSpacing = 1f
+    }
+    canvas.drawText("影匣  ·  FRAME", width / 2f, height - 68f, footer)
     return bitmap
 }
 
@@ -4830,7 +4951,7 @@ private fun AnimatedDropdownPopup(
 
     if (visibilityState.currentState || visibilityState.targetState) {
         Popup(
-            alignment = Alignment.Center,
+            alignment = Alignment.TopEnd,
             offset = androidx.compose.ui.unit.IntOffset.Zero,
             onDismissRequest = onDismissRequest,
             properties = PopupProperties(focusable = true)
@@ -4852,14 +4973,10 @@ private fun AnimatedDropdownPopup(
             ) {
                 Column(
                     modifier = modifier
-                        .shadow(
-                            3.dp,
-                            menuShape,
-                            ambientColor = Color.Black.copy(alpha = .045f),
-                            spotColor = Color.Black.copy(alpha = .045f)
-                        )
+                        .shadow(8.dp, menuShape, ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .06f))
                         .clip(menuShape)
-                        .background(Color.White),
+                        .background(Color.White)
+                        .border(0.7.dp, Color(0xFFE6E6E6), menuShape),
                     content = content
                 )
             }
@@ -4874,7 +4991,7 @@ private fun CustomSortMenuItem(
     onClick: () -> Unit
 ) {
     Row(
-        Modifier.fillMaxWidth().height(48.dp)
+        Modifier.fillMaxWidth().height(42.dp)
             .noRippleClickable { onClick() }
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
