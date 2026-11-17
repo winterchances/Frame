@@ -42,6 +42,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.animateDpAsState
@@ -61,6 +63,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -2393,7 +2397,6 @@ private fun LibraryPage(
 ) {
     var multiSelectMode by remember { mutableStateOf(false) }
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var moreMenuExpanded by remember { mutableStateOf(false) }
     var batchMenuExpanded by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
@@ -2553,21 +2556,30 @@ private fun LibraryPage(
                 }
             } else {
                 Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
+                ActionIcon(
+                    Icons.Outlined.Checklist,
+                    "批量选择",
+                    {
+                        selectedVideoIds = emptySet()
+                        multiSelectMode = true
+                    }
+                )
                 Box {
                     ActionIcon(FrameGridIcon, "视图与排序", { showSortMenu = true })
-                    DropdownMenu(
+                    AnimatedDropdownPopup(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false },
-                        modifier = Modifier.width(224.dp)
+                        offset = androidx.compose.ui.unit.IntOffset(0, with(density) { 36.dp.roundToPx() }),
+                        modifier = Modifier.width(192.dp)
                             .shadow(8.dp, RoundedCornerShape(16.dp))
-                            .background(Color.White, RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White)
                     ) {
-                        CustomSortMenuItem("2列大图（舒适）", !compact) {
+                        CustomSortMenuItem("2列大图", !compact) {
                             onCompactChange(false)
                             showSortMenu = false
                         }
-                        CustomSortMenuItem("3列小图（紧凑）", compact) {
+                        CustomSortMenuItem("3列小图", compact) {
                             onCompactChange(true)
                             showSortMenu = false
                         }
@@ -2597,16 +2609,6 @@ private fun LibraryPage(
                             onSortDirectionChange(SortDirection.DESCENDING)
                             showSortMenu = false
                         }
-                    }
-                }
-                Box {
-                    ActionIcon(Icons.Outlined.MoreVert, "更多操作", { moreMenuExpanded = true })
-                    DropdownMenu(expanded = moreMenuExpanded, onDismissRequest = { moreMenuExpanded = false }) {
-                        DropdownMenuItem(text = { Text("批量选择") }, onClick = {
-                            moreMenuExpanded = false
-                            multiSelectMode = true
-                            selectedVideoIds = emptySet()
-                        })
                     }
                 }
             }
@@ -4480,6 +4482,46 @@ private fun RatingStars(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun AnimatedDropdownPopup(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    offset: androidx.compose.ui.unit.IntOffset = androidx.compose.ui.unit.IntOffset.Zero,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val visibilityState = remember { MutableTransitionState(false) }
+    visibilityState.targetState = expanded
+
+    if (visibilityState.currentState || visibilityState.targetState) {
+        Popup(
+            alignment = Alignment.TopEnd,
+            offset = offset,
+            onDismissRequest = onDismissRequest,
+            properties = PopupProperties(focusable = true)
+        ) {
+            AnimatedVisibility(
+                visibleState = visibilityState,
+                enter = fadeIn(animationSpec = tween(280)) +
+                    scaleIn(
+                        initialScale = 0.86f,
+                        transformOrigin = TransformOrigin(1f, 0f),
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+                    ),
+                exit = fadeOut(animationSpec = tween(180)) +
+                    scaleOut(
+                        targetScale = 0.92f,
+                        transformOrigin = TransformOrigin(1f, 0f),
+                        animationSpec = tween(180)
+                    )
+            ) {
+                Column(modifier = modifier, content = content)
             }
         }
     }
