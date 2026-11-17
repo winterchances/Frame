@@ -3076,7 +3076,7 @@ private fun RecordActionGlyph(
 ) {
     androidx.compose.foundation.Canvas(
         modifier = modifier
-            .size(17.dp)
+            .size(if (type == RecordActionGlyphType.Expand) 17.dp else 15.dp)
             .semantics { contentDescription = description }
     ) {
         val scale = size.width / 24f
@@ -3540,7 +3540,7 @@ private fun RecordsPage(
                                 Row(
                                     Modifier.fillMaxWidth().drawBehind {
                                         val axisX = 7.dp.toPx()
-                                        val dotCenterY = 15.dp.toPx()
+                                        val dotCenterY = 8.dp.toPx()
                                         val lineWidth = 1.dp.toPx()
                                         val lineColor = ThemeTeal
                                         if (entries.size > 1) {
@@ -3786,7 +3786,7 @@ private fun RecordsPage(
                                             Modifier.fillMaxWidth()
                                                 .drawBehind {
                                                     val axisX = 7.dp.toPx()
-                                                    val dotCenterY = 15.dp.toPx()
+                                                    val dotCenterY = 8.dp.toPx()
                                                     drawCircle(
                                                         color = ThemeTeal,
                                                         radius = 4.dp.toPx(),
