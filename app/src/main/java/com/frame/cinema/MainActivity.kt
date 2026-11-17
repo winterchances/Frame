@@ -2434,7 +2434,6 @@ private fun LibraryPage(
     var moreMenuExpanded by remember { mutableStateOf(false) }
     var batchMenuExpanded by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
-    var showGridMenu by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -2593,33 +2592,27 @@ private fun LibraryPage(
                 Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
                 Box {
-                    ActionIcon(FrameGridIcon, "布局管理", { showGridMenu = true })
+                    ActionIcon(FrameGridIcon, "视图与排序", { showSortMenu = true })
                     DropdownMenu(
-                        expanded = showGridMenu,
-                        onDismissRequest = { showGridMenu = false },
-                        modifier = Modifier.width(208.dp)
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier.width(224.dp)
                             .shadow(8.dp, RoundedCornerShape(16.dp))
                             .background(Color.White, RoundedCornerShape(16.dp))
                     ) {
                         CustomSortMenuItem("2列大图（舒适）", !compact) {
                             onCompactChange(false)
-                            showGridMenu = false
+                            showSortMenu = false
                         }
                         CustomSortMenuItem("3列小图（紧凑）", compact) {
                             onCompactChange(true)
-                            showGridMenu = false
+                            showSortMenu = false
                         }
-                    }
-                }
-                Box {
-                    ActionIcon(FrameSortIcon, "排序", { showSortMenu = true }, iconSize = 18.dp)
-                    DropdownMenu(
-                        expanded = showSortMenu,
-                        onDismissRequest = { showSortMenu = false },
-                        modifier = Modifier.width(184.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp))
-                            .background(Color.White, RoundedCornerShape(16.dp))
-                    ) {
+                        HorizontalDivider(
+                            color = Color(0xFFF0F0F0),
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
                         CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) {
                             onSortModeChange(SortMode.ADDED)
                             showSortMenu = false
