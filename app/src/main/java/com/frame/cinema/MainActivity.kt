@@ -457,6 +457,8 @@ private fun FrameNativeApp(
     var libraryMultiSelectMode by remember { mutableStateOf(false) }
     var showCategoryDrawer by remember { mutableStateOf(false) }
     var categoryEditMode by remember { mutableStateOf(false) }
+    var editingCategoryName by remember { mutableStateOf<String?>(null) }
+    var editingCategoryDraft by remember { mutableStateOf("") }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
@@ -1958,9 +1960,9 @@ private fun FrameNativeApp(
                         Row(Modifier.fillMaxWidth().padding(bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("分类管理", Modifier.weight(1f), color = MainText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             Text(if (categoryEditMode) "完成" else "编辑",
-                                Modifier.noRippleClickable { categoryEditMode = !categoryEditMode }.padding(horizontal = 12.dp, vertical = 8.dp),
+                                Modifier.noRippleClickable { categoryEditMode = !categoryEditMode; editingCategoryName = null }.padding(horizontal = 12.dp, vertical = 8.dp),
                                 color = ThemeTeal, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false; categoryEditMode = false })
+                            ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false; categoryEditMode = false; editingCategoryName = null })
                         }
                         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             items(listOf("全部", "全部分类", "我的最爱"), key = { it }) { value ->
@@ -2003,7 +2005,7 @@ private fun FrameNativeApp(
                                 val count = videos.count { it.category == value }
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp).animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
-                                        .then(if (categoryEditMode) Modifier.pointerInput(value) {
+                                        .then(if (categoryEditMode && editingCategoryName != value) Modifier.pointerInput(value) {
                                             detectDragGesturesAfterLongPress(onDragEnd = { dragRemainder = 0f }, onDragCancel = { dragRemainder = 0f }) { change, dragAmount ->
                                                 change.consume()
                                                 dragRemainder += dragAmount.y
@@ -2032,8 +2034,54 @@ private fun FrameNativeApp(
                                 ) {
                                     if (categoryEditMode) Icon(Icons.Outlined.DragHandle, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
                                     else Icon(Icons.Outlined.Folder, null, tint = MainText, modifier = Modifier.size(21.dp))
-                                    Text(value, Modifier.weight(1f).padding(start = 12.dp), color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    if (categoryEditMode) {
+                                    if (editingCategoryName == value) {
+                                        BasicTextField(
+                                            value = editingCategoryDraft,
+                                            onValueChange = { editingCategoryDraft = it },
+                                            modifier = Modifier.weight(1f).padding(start = 12.dp),
+                                            singleLine = true,
+                                            textStyle = TextStyle(fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                        )
+                                        Box(Modifier.size(32.dp).noRippleClickable {
+                                            val renamed = editingCategoryDraft.trim()
+                                            when {
+                                                renamed.isEmpty() -> toast = "分类名称不能为空"
+                                                renamed != value && renamed in categories -> toast = "分类名称已存在"
+                                                else -> {
+                                                    val renamedCategories = categories.map { if (it == value) renamed else it }
+                                                    repository.saveCategories(renamedCategories)
+                                                    videos.filter { it.category == value }.forEach { repository.update(it.copy(category = renamed)) }
+                                                    if (category == value) category = renamed
+                                                    editingCategoryName = null
+                                                    editingCategoryDraft = ""
+                                                    refresh()
+                                                }
+                                            }
+                                        }, contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Outlined.Check, "保存分类名称", tint = ThemeTeal, modifier = Modifier.size(20.dp))
+                                        }
+                                        Box(Modifier.size(32.dp).noRippleClickable {
+                                            editingCategoryName = null
+                                            editingCategoryDraft = ""
+                                        }, contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Outlined.Close, "取消重命名", tint = MutedText, modifier = Modifier.size(19.dp))
+                                        }
+                                    } else {
+                                        Text(
+                                            value,
+                                            Modifier.weight(1f).padding(start = 12.dp).then(
+                                                if (categoryEditMode) Modifier.pointerInput(value) {
+                                                    detectTapGestures(onDoubleTap = {
+                                                        editingCategoryName = value
+                                                        editingCategoryDraft = value
+                                                    })
+                                                } else Modifier
+                                            ),
+                                            color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                    if (categoryEditMode && editingCategoryName != value) {
                                         Text("删除",
                                             Modifier.noRippleClickable {
                                                 repository.saveCategories(categories - value)
