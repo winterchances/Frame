@@ -4341,7 +4341,7 @@ private fun wrapReviewExportText(
 }
 
 private val ChineseEnglishTitleRegex = Regex(
-    "^(.+?[\\p{IsHan}\\p{N}，。！？；：、（）【】《》「」『』…—～·!?.,:;])\\s+([\\p{IsLatin}\\p{M}\\p{N}\\[（(「『“‘][\\p{IsLatin}\\p{M}\\p{N}\\s&＆'’.,:;!?()\\[\\]{}+_\\-/]*)$"
+    "^(.+?)\\s+([\\p{IsLatin}\\p{M}\\p{N}\\[（(「『“‘][\\p{IsLatin}\\p{M}\\p{N}\\s&＆'’.,:;!?()\\[\\]{}+_\\-/]*)$"
 )
 
 private fun splitChineseEnglishTitle(title: String): Pair<String, String?> {
