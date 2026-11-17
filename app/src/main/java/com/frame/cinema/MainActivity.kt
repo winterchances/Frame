@@ -3467,7 +3467,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Download,
                                     "下载观影记录",
                                     Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(y = (-6.5).dp)
+                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3478,7 +3478,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Add,
                                     "新增感想",
                                     Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(y = (-6.5).dp)
+                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3494,7 +3494,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Expand,
                                     if (expanded) "收起感想" else "展开感想",
                                     Color(0xFFDDDDDD),
-                                    modifier = Modifier.offset(y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
+                                    modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
                                 )
                             }
                         }
@@ -3730,7 +3730,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Download,
                                     "下载独立感想",
                                     Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(y = (-6.5).dp)
+                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3741,7 +3741,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Add,
                                     "新增感想",
                                     Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(y = (-6.5).dp)
+                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3754,7 +3754,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Expand,
                                     if (expanded) "收起感想" else "展开感想",
                                     Color(0xFFDDDDDD),
-                                    modifier = Modifier.offset(y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
+                                    modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
                                 )
                             }
                         }
