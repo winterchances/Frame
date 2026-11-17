@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaScannerConnection
+import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.Environment
 import android.view.TextureView
@@ -2548,7 +2549,10 @@ private fun LibraryPage(
         selectedVideoIds = emptySet()
         onMultiSelectModeChange(false)
     }
-    val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
+    val selectedVideos = videos.filter { it.id in selectedVideoIds }
+    val selectedAreAllFavorite = selectedVideos.let { it.isNotEmpty() && it.all { video -> video.isFav } }
+    val commonSelectedCategory = selectedVideos.map { it.category }.distinct().singleOrNull()
+    val commonSelectedStatus = selectedVideos.map { it.status }.distinct().singleOrNull()
     val availableMoveCategories = categories.filterNot { it == "我的最爱" }
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
@@ -2718,31 +2722,75 @@ private fun LibraryPage(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
         ) {
             Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                    .height(64.dp)
-                    .shadow(8.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = .08f), spotColor = Color.Black.copy(alpha = .10f))
-                    .clip(RoundedCornerShape(18.dp)).background(Color.White),
+                Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 16.dp)
+                    .height(58.dp)
+                    .shadow(8.dp, RoundedCornerShape(90.dp), ambientColor = Color.Black.copy(alpha = .08f), spotColor = Color.Black.copy(alpha = .10f))
+                    .clip(RoundedCornerShape(90.dp)).background(Color.White),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showMoveDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.FolderOpen, null, tint = MainText, modifier = Modifier.size(20.dp))
-                    Text("移动分类", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
+                Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    Column(Modifier.fillMaxSize().noRippleClickable { showMoveDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Icon(Icons.Outlined.FolderOpen, null, tint = MainText, modifier = Modifier.size(19.dp))
+                        Text("移动分类", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
+                    }
+                    AnimatedDropdownPopup(
+                        expanded = showMoveDialog,
+                        onDismissRequest = { showMoveDialog = false },
+                        alignment = Alignment.BottomCenter,
+                        offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -8.dp.roundToPx()) },
+                        modifier = Modifier.width(192.dp)
+                    ) {
+                        availableMoveCategories.forEach { target ->
+                            CustomSortMenuItem(
+                                if (target == "全部分类") "未分类" else target,
+                                commonSelectedCategory == target
+                            ) {
+                                onBatchMove(selectedVideoIds, target)
+                                selectedVideoIds = emptySet()
+                                onMultiSelectModeChange(false)
+                                showMoveDialog = false
+                            }
+                        }
+                    }
                 }
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
                     onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
                     selectedVideoIds = emptySet()
                     onMultiSelectModeChange(false)
                 }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.FavoriteBorder, null, tint = MainText, modifier = Modifier.size(20.dp))
-                    Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
+                    Icon(Icons.Outlined.FavoriteBorder, null, tint = MainText, modifier = Modifier.size(19.dp))
+                    Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
                 }
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showStatusDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.CheckCircleOutline, null, tint = MainText, modifier = Modifier.size(20.dp))
-                    Text("修改状态", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
+                Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    Column(Modifier.fillMaxSize().noRippleClickable { showStatusDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Icon(Icons.Outlined.CheckCircleOutline, null, tint = MainText, modifier = Modifier.size(19.dp))
+                        Text("修改状态", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
+                    }
+                    AnimatedDropdownPopup(
+                        expanded = showStatusDialog,
+                        onDismissRequest = { showStatusDialog = false },
+                        alignment = Alignment.BottomCenter,
+                        offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -8.dp.roundToPx()) },
+                        modifier = Modifier.width(192.dp)
+                    ) {
+                        listOf("未看", "在看", "已看").forEach { target ->
+                            val targetStatus = when (target) {
+                                "未看" -> "all"
+                                "在看" -> "playing"
+                                else -> "watched"
+                            }
+                            CustomSortMenuItem(target, commonSelectedStatus == targetStatus) {
+                                onBatchStatus(selectedVideoIds, target)
+                                selectedVideoIds = emptySet()
+                                onMultiSelectModeChange(false)
+                                showStatusDialog = false
+                            }
+                        }
+                    }
                 }
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showDeleteDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.DeleteOutline, null, tint = Color(0xFFFF3B30), modifier = Modifier.size(20.dp))
-                    Text("批量移除", fontSize = 11.sp, color = Color(0xFFFF3B30), modifier = Modifier.padding(top = 3.dp))
+                    Icon(Icons.Outlined.DeleteOutline, null, tint = Color(0xFFFF3B30), modifier = Modifier.size(19.dp))
+                    Text("批量移除", fontSize = 11.sp, color = Color(0xFFFF3B30), modifier = Modifier.padding(top = 1.dp))
                 }
             }
         }
@@ -2761,42 +2809,6 @@ private fun LibraryPage(
                     } else 0f
                 }
         )
-        if (showMoveDialog) {
-            AlertDialog(
-                onDismissRequest = { showMoveDialog = false },
-                title = { Text("移动到分类") },
-                text = {
-                    Column {
-                        availableMoveCategories.forEach { target ->
-                            TextButton(onClick = {
-                                onBatchMove(selectedVideoIds, target)
-                                selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showMoveDialog = false
-                            }, modifier = Modifier.fillMaxWidth()) {
-                                Text(if (target == "全部分类") "未分类" else target, color = MainText)
-                            }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { showMoveDialog = false }) { Text("取消") } }
-            )
-        }
-        if (showStatusDialog) {
-            AlertDialog(
-                onDismissRequest = { showStatusDialog = false },
-                title = { Text("修改播放状态") },
-                text = {
-                    Column {
-                        listOf("未看", "在看", "已看").forEach { target ->
-                            TextButton(onClick = {
-                                onBatchStatus(selectedVideoIds, target)
-                                selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showStatusDialog = false
-                            }, modifier = Modifier.fillMaxWidth()) { Text(target, color = MainText) }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { showStatusDialog = false }) { Text("取消") } }
-            )
-        }
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
@@ -3449,7 +3461,7 @@ private fun RecordsPage(
                                             var bitmap: Bitmap? = null
                                             val saved = try {
                                                 bitmap = withContext(Dispatchers.Default) {
-                                                    createReviewExportBitmap(video, entries)
+                                                    createReviewExportBitmap(context, video, entries)
                                                 }
                                                 saveVideoScreenshot(context, bitmap!!)
                                             } catch (_: Exception) {
@@ -4364,6 +4376,7 @@ private fun splitReviewExportTitle(title: String): Pair<String, String?> =
     splitChineseEnglishTitle(title)
 
 private fun createReviewExportBitmap(
+    context: Context,
     video: VideoItem,
     entries: List<ReviewEntry>
 ): Bitmap {
@@ -4377,9 +4390,20 @@ private fun createReviewExportBitmap(
         dateFormat.format(Date(entry.createdAt)) to
             wrapReviewExportText(entry.content, bodyPaint, 850f)
     }
+    val highResolutionCover = runCatching {
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, video.contentUri)
+            retriever.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                ?: retriever.getFrameAtTime(0L)
+        } finally {
+            retriever.release()
+        }
+    }.getOrNull()
     return createUnifiedReviewExportBitmap(
         title = displayVideoName(video.name),
         coverPath = video.thumbPath,
+        coverBitmap = highResolutionCover,
         rating = video.rating,
         reviews = layouts
     )
@@ -4411,6 +4435,7 @@ private fun createUnifiedReviewExportBitmap(
     title: String,
     coverPath: String?,
     rating: Float,
+    coverBitmap: Bitmap? = null,
     reviews: List<Pair<String, List<String>>>
 ): Bitmap {
     val width = 1080
@@ -4498,7 +4523,7 @@ private fun createUnifiedReviewExportBitmap(
     canvas.save()
     canvas.clipPath(coverClipPath)
     canvas.drawColor(android.graphics.Color.rgb(237, 242, 240))
-    val cover = coverPath?.let { path ->
+    val cover = coverBitmap ?: coverPath?.let { path ->
         runCatching { BitmapFactory.decodeFile(path) }.getOrNull()
     }
     if (cover != null) {
@@ -4532,8 +4557,7 @@ private fun createUnifiedReviewExportBitmap(
         textSize = 22f
         letterSpacing = 1.2f
     }
-    canvas.drawText("A FRAME, A MOMENT.", textLeft, coverTop + 34f, heroLabelPaint)
-    var titleY = coverTop + 105f
+    var titleY = coverTop + 58f
     titleLines.forEach { line ->
         canvas.drawText(line, textLeft, titleY, titlePaint)
         titleY += 60f
@@ -4558,9 +4582,10 @@ private fun createUnifiedReviewExportBitmap(
     }
     val notePaint = android.graphics.Paint(metaPaint).apply {
         color = android.graphics.Color.rgb(155, 164, 161)
-        textSize = 22f
+        textSize = 27f
+        typeface = android.graphics.Typeface.create("serif", android.graphics.Typeface.NORMAL)
     }
-    canvas.drawText("取一帧，记一瞬", textLeft, coverTop + coverHeight - 24f, notePaint)
+    canvas.drawText("A frame, A moment.", textLeft, coverTop + coverHeight - 24f, notePaint)
 
     val dividerPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(232, 238, 235)
@@ -5090,6 +5115,7 @@ private fun AnimatedDropdownPopup(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     offset: androidx.compose.ui.unit.IntOffset = androidx.compose.ui.unit.IntOffset.Zero,
+    alignment: Alignment = Alignment.TopEnd,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val visibilityState = remember { MutableTransitionState(false) }
@@ -5103,8 +5129,8 @@ private fun AnimatedDropdownPopup(
 
     if (visibilityState.currentState || visibilityState.targetState) {
         Popup(
-            alignment = Alignment.TopEnd,
-            offset = androidx.compose.ui.unit.IntOffset.Zero,
+            alignment = alignment,
+            offset = offset,
             onDismissRequest = onDismissRequest,
             properties = PopupProperties(focusable = true)
         ) {
