@@ -816,6 +816,12 @@ private fun FrameNativeApp(
                 )
             }
     ) {
+        Box(
+            Modifier.fillMaxSize().graphicsLayer {
+                scaleX = 1f - .02f * sheetProgress
+                scaleY = 1f - .02f * sheetProgress
+            }
+        ) {
         androidx.compose.animation.AnimatedContent(
             targetState = playing,
             contentKey = { it },
@@ -840,12 +846,7 @@ private fun FrameNativeApp(
         ) { targetPlaying ->
           if (targetPlaying == null) {
             Box(
-                Modifier.fillMaxSize().background(PageBg)
-                    .graphicsLayer {
-                        scaleX = 1f - .05f * sheetProgress
-                        scaleY = 1f - .05f * sheetProgress
-                    }
-                    .blur(backdropBlur)
+                Modifier.fillMaxSize().background(PageBg).blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
@@ -1061,9 +1062,10 @@ private fun FrameNativeApp(
                 }
         }
         }
+        }
 
         // The shared sheet uses its measured full height for a complete entrance/exit.
-        // Keep the existing background scale animation unchanged.
+        // The complete background layer (page, bottom navigation and adjacent FAB) scales together.
 
         Box(Modifier.fillMaxSize().zIndex(4f)) {
             AnimatedVisibility(
