@@ -2714,10 +2714,11 @@ private fun LibraryPage(
             ) {
                 Column(
                     Modifier.width(maxWidth * 0.75f)
+                        .padding(start = 12.dp)
                         .fillMaxHeight()
                         .padding(vertical = 40.dp)
-                        .shadow(12.dp, RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
-                        .clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
+                        .shadow(12.dp, RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(24.dp))
                         .background(PageBg)
                         .noRippleClickable { }
                         .padding(horizontal = 18.dp, vertical = 20.dp)
