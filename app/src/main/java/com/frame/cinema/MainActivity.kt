@@ -3378,7 +3378,7 @@ private fun RecordsPage(
                                             }
                                             Toast.makeText(
                                                 context,
-                                                if (saved) "观影记录图片已保存到图片/影匣" else "观影记录图片保存失败",
+                                                if (saved) "观影记录图片已保存到图片/一帧" else "观影记录图片保存失败",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -3643,7 +3643,7 @@ private fun RecordsPage(
                                                 bitmap?.recycle()
                                                 exportingStandaloneReviewId = null
                                             }
-                                            Toast.makeText(context, if (saved) "观影记录图片已保存到图片/影匣" else "观影记录图片保存失败", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, if (saved) "观影记录图片已保存到图片/一帧" else "观影记录图片保存失败", Toast.LENGTH_SHORT).show()
                                         }
                                     } else Modifier
                                 ),
@@ -3875,7 +3875,7 @@ private fun NativePlayerOverlay(
         screenshotScope.launch {
             val saved = runCatching { saveVideoScreenshot(context, bitmap) }.getOrDefault(false)
             bitmap.recycle()
-            Toast.makeText(context, if (saved) "截图已保存到图片/影匣" else "截图保存失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (saved) "截图已保存到图片/一帧" else "截图保存失败", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -4395,7 +4395,7 @@ private fun createReviewExportBitmap(
         color = android.graphics.Color.rgb(165, 165, 165)
         letterSpacing = 1f
     }
-    canvas.drawText("影匣  ·  FRAME", width / 2f, height - 68f, footerPaint)
+    canvas.drawText("一帧  ·  FRAME", width / 2f, height - 68f, footerPaint)
     return bitmap
 }
 
@@ -4491,20 +4491,20 @@ private fun createStandaloneReviewExportBitmap(entry: ReviewEntry, timelineEntri
         textSize = 22f; textAlign = android.graphics.Paint.Align.CENTER
         color = android.graphics.Color.rgb(165, 165, 165); letterSpacing = 1f
     }
-    canvas.drawText("影匣  ·  FRAME", width / 2f, height - 68f, footer)
+    canvas.drawText("一帧  ·  FRAME", width / 2f, height - 68f, footer)
     return bitmap
 }
 
 private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap: Bitmap): Boolean =
     withContext(Dispatchers.IO) {
-        val fileName = "影匣_${SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())}.jpg"
+        val fileName = "一帧_${SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())}.jpg"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, fileName)
                 put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                 put(
                     android.provider.MediaStore.Images.Media.RELATIVE_PATH,
-                    "${Environment.DIRECTORY_PICTURES}/影匣"
+                    "${Environment.DIRECTORY_PICTURES}/一帧"
                 )
                 put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
             }
@@ -4529,7 +4529,7 @@ private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap
         } else {
             val directory = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                "影匣"
+                "一帧"
             )
             if (!directory.exists() && !directory.mkdirs()) return@withContext false
             val file = File(directory, fileName)
