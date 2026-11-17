@@ -3038,7 +3038,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             Thumbnail(video, Modifier.fillMaxSize())
         }
         Box(Modifier.weight(1f).height(84.dp)) {
-            Column(Modifier.fillMaxSize().padding(end = 12.dp), verticalArrangement = Arrangement.SpaceBetween) {                Text(
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {                Text(
                     displayVideoName(video.name),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
