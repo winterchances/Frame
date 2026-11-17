@@ -2509,57 +2509,8 @@ private fun LibraryPage(
                 ) {
                     Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                     ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
-                    Box {
-                        ActionIcon(FrameGridIcon, "布局管理", { showGridMenu = true })
-                        DropdownMenu(
-                            expanded = showGridMenu,
-                            onDismissRequest = { showGridMenu = false },
-                            modifier = Modifier.width(208.dp)
-                                .shadow(8.dp, RoundedCornerShape(16.dp))
-                                .background(Color.White, RoundedCornerShape(16.dp))
-                        ) {
-                            CustomSortMenuItem("2列大图（舒适）", !compact) {
-                                onCompactChange(false)
-                                showGridMenu = false
-                            }
-                            CustomSortMenuItem("3列小图（紧凑）", compact) {
-                                onCompactChange(true)
-                                showGridMenu = false
-                            }
-                        }
-                    }
-                    Box {
-                        ActionIcon(FrameSortIcon, "排序", { showSortMenu = true }, iconSize = 18.dp)
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false },
-                            modifier = Modifier.width(184.dp)
-                                .shadow(8.dp, RoundedCornerShape(16.dp))
-                                .background(Color.White, RoundedCornerShape(16.dp))
-                        ) {
-                            CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) {
-                                onSortModeChange(SortMode.ADDED)
-                                showSortMenu = false
-                            }
-                            CustomSortMenuItem("按名称", sort == SortMode.NAME) {
-                                onSortModeChange(SortMode.NAME)
-                                showSortMenu = false
-                            }
-                            HorizontalDivider(
-                                color = Color(0xFFF0F0F0),
-                                thickness = 0.5.dp,
-                                modifier = Modifier.padding(horizontal = 12.dp)
-                            )
-                            CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) {
-                                onSortDirectionChange(SortDirection.ASCENDING)
-                                showSortMenu = false
-                            }
-                            CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) {
-                                onSortDirectionChange(SortDirection.DESCENDING)
-                                showSortMenu = false
-                            }
-                        }
-                    }
+                    Spacer(Modifier.size(36.dp))
+                    Spacer(Modifier.size(36.dp))
                 }
             }
             item(key = "library-filter-header", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
@@ -2641,8 +2592,57 @@ private fun LibraryPage(
             } else {
                 Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                 ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
-                ActionIcon(FrameGridIcon, "布局管理", onGrid)
-                ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
+                Box {
+                    ActionIcon(FrameGridIcon, "布局管理", { showGridMenu = true })
+                    DropdownMenu(
+                        expanded = showGridMenu,
+                        onDismissRequest = { showGridMenu = false },
+                        modifier = Modifier.width(208.dp)
+                            .shadow(8.dp, RoundedCornerShape(16.dp))
+                            .background(Color.White, RoundedCornerShape(16.dp))
+                    ) {
+                        CustomSortMenuItem("2列大图（舒适）", !compact) {
+                            onCompactChange(false)
+                            showGridMenu = false
+                        }
+                        CustomSortMenuItem("3列小图（紧凑）", compact) {
+                            onCompactChange(true)
+                            showGridMenu = false
+                        }
+                    }
+                }
+                Box {
+                    ActionIcon(FrameSortIcon, "排序", { showSortMenu = true }, iconSize = 18.dp)
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier.width(184.dp)
+                            .shadow(8.dp, RoundedCornerShape(16.dp))
+                            .background(Color.White, RoundedCornerShape(16.dp))
+                    ) {
+                        CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) {
+                            onSortModeChange(SortMode.ADDED)
+                            showSortMenu = false
+                        }
+                        CustomSortMenuItem("按名称", sort == SortMode.NAME) {
+                            onSortModeChange(SortMode.NAME)
+                            showSortMenu = false
+                        }
+                        HorizontalDivider(
+                            color = Color(0xFFF0F0F0),
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                        CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) {
+                            onSortDirectionChange(SortDirection.ASCENDING)
+                            showSortMenu = false
+                        }
+                        CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) {
+                            onSortDirectionChange(SortDirection.DESCENDING)
+                            showSortMenu = false
+                        }
+                    }
+                }
                 Box {
                     ActionIcon(Icons.Outlined.MoreVert, "更多操作", { moreMenuExpanded = true })
                     DropdownMenu(expanded = moreMenuExpanded, onDismissRequest = { moreMenuExpanded = false }) {
