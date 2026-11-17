@@ -313,7 +313,7 @@ private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
 private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -463,6 +463,7 @@ private fun FrameNativeApp(
     var categoryEditMode by remember { mutableStateOf(false) }
     var editingCategoryName by remember { mutableStateOf<String?>(null) }
     var editingCategoryDraft by remember { mutableStateOf("") }
+    var pendingCategoryDelete by remember { mutableStateOf<String?>(null) }
     val categoryRenameFocusRequester = remember { FocusRequester() }
     LaunchedEffect(editingCategoryName) { if (editingCategoryName != null) categoryRenameFocusRequester.requestFocus() }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
@@ -1067,8 +1068,8 @@ private fun FrameNativeApp(
         Box(Modifier.fillMaxSize().zIndex(4f)) {
             AnimatedVisibility(
                 visibleState = sheetVisibility,
-                enter = fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
-                exit = fadeOut(tween(220, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
+                enter = fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                exit = fadeOut(tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
                 modifier = Modifier.zIndex(2f)
             ) {
                 Box(
@@ -1772,6 +1773,19 @@ private fun FrameNativeApp(
                     SheetType.DELETE_RECENT -> SheetContent("删除这条播放记录？") {
                         SheetAction("删除播放记录", danger = true, bottomPadding = 0.dp) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
                     }
+                    SheetType.DELETE_CATEGORY -> SheetContent("确定删除该分类？") {
+                        SheetAction("删除该分类", danger = true, bottomPadding = 0.dp) {
+                            val target = pendingCategoryDelete
+                            if (target != null) {
+                                repository.saveCategories(categories - target)
+                                videos.filter { it.category == target }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                if (category == target) category = "全部"
+                                pendingCategoryDelete = null
+                                refresh()
+                            }
+                            sheet = SheetType.NONE
+                        }
+                    }
                     SheetType.NONE -> Unit
                 }
                 }
@@ -1938,8 +1952,7 @@ private fun FrameNativeApp(
             }
         }
 
-    if (showCategoryDrawer || categoryDrawerProgress > 0f) {
-        Box(Modifier.fillMaxSize().zIndex(10f)) {
+    Box(Modifier.fillMaxSize().zIndex(10f)) {
             AnimatedVisibility(
                 visible = showCategoryDrawer,
                 enter = fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
@@ -1953,8 +1966,8 @@ private fun FrameNativeApp(
             }
             AnimatedVisibility(
                 visible = showCategoryDrawer,
-                enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
-                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
+                enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeOut(tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
                 modifier = Modifier.align(Alignment.CenterStart).zIndex(1f)
             ) {
                 BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -2000,7 +2013,9 @@ private fun FrameNativeApp(
                                 }
                             }
                             item(key = "category-fixed-divider") {
-                                Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFE6E6E6)))
+                                Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                    Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFE6E6E6)))
+                                }
                             }
                             items(categories.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct(), key = { it }) { value ->
                                 var dragRemainder by remember(value) { mutableFloatStateOf(0f) }
@@ -2035,8 +2050,10 @@ private fun FrameNativeApp(
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    if (categoryEditMode) Icon(Icons.Outlined.Menu, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
-                                    else Icon(Icons.Outlined.Folder, null, tint = MainText, modifier = Modifier.size(21.dp))
+                                    Box(Modifier.size(21.dp), contentAlignment = Alignment.Center) {
+                                        if (categoryEditMode) Icon(Icons.Outlined.Menu, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
+                                        else Icon(Icons.Outlined.Folder, null, tint = MainText, modifier = Modifier.size(21.dp))
+                                    }
                                     if (editingCategoryName == value) {
                                         BasicTextField(
                                             value = editingCategoryDraft,
@@ -2060,14 +2077,14 @@ private fun FrameNativeApp(
                                                     refresh()
                                                 }
                                             }
-                                        }, contentAlignment = Alignment.Center) {
+                                        }, contentAlignment = Alignment.CenterEnd) {
                                             Icon(Icons.Outlined.Check, "保存分类名称", tint = ThemeTeal, modifier = Modifier.size(18.dp))
                                         }
                                         Box(Modifier.size(28.dp).noRippleClickable {
                                             editingCategoryName = null
                                             editingCategoryDraft = ""
-                                        }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.Close, "取消重命名", tint = MutedText, modifier = Modifier.size(18.dp))
+                                        }, contentAlignment = Alignment.CenterEnd) {
+                                            Icon(Icons.Outlined.Close, "取消重命名", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
                                         }
                                     } else {
                                         Text(
@@ -2086,12 +2103,10 @@ private fun FrameNativeApp(
                                     }
                                     if (categoryEditMode && editingCategoryName != value) {
                                         Box(Modifier.size(28.dp).noRippleClickable {
-                                            repository.saveCategories(categories - value)
-                                            videos.filter { it.category == value }.forEach { repository.update(it.copy(category = "全部分类")) }
-                                            if (category == value) category = "全部"
-                                            refresh()
-                                        }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.DeleteOutline, "删除分类", tint = Color(0xFFE65C5C), modifier = Modifier.size(18.dp))
+                                            pendingCategoryDelete = value
+                                            sheet = SheetType.DELETE_CATEGORY
+                                        }, contentAlignment = Alignment.CenterEnd) {
+                                            Icon(Icons.Outlined.DeleteOutline, "删除分类", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
                                         }
                                     } else if (editingCategoryName != value) {
                                         Text(count.toString(), color = MutedText, fontSize = 13.sp)
@@ -2124,7 +2139,6 @@ private fun FrameNativeApp(
                 }
             }
         }
-    }
 
     }
 
