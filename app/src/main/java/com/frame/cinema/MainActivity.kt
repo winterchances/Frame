@@ -4401,8 +4401,7 @@ private fun createUnifiedReviewExportBitmap(
         contentBottom += entryHeight + 12f
     }
     val contentHeight = (contentBottom + 150f).toInt().coerceAtLeast(1050)
-    val exportHeight = 1440
-    val contentScale = minOf(1f, exportHeight.toFloat() / contentHeight)
+    val exportHeight = maxOf(1440, contentHeight)
 
     val bitmap = Bitmap.createBitmap(width, exportHeight, Bitmap.Config.ARGB_8888)
     val canvas = android.graphics.Canvas(bitmap)
@@ -4416,8 +4415,6 @@ private fun createUnifiedReviewExportBitmap(
         32f, 32f, cardPaint
     )
 
-    canvas.save()
-    canvas.scale(contentScale, contentScale, width / 2f, 0f)
 
     val eyebrowPaint = android.graphics.Paint(metaPaint).apply {
         color = android.graphics.Color.rgb(112, 151, 143)
