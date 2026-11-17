@@ -2646,14 +2646,14 @@ private fun LibraryPage(
         ) {
             if (multiSelectMode) {
                 TextButton(onClick = { selectedVideoIds = emptySet(); onMultiSelectModeChange(false) }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text("取消", color = ThemeTeal, fontSize = 14.sp)
+                    Text("取消", color = ThemeTeal, fontSize = 16.sp)
                 }
-                Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, textAlign = TextAlign.Center, maxLines = 1)
+                Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MainText, textAlign = TextAlign.Center, maxLines = 1)
                 TextButton(onClick = {
                     val visibleIds = filtered.map { it.id }.toSet()
                     selectedVideoIds = if (visibleIds.isNotEmpty() && visibleIds.all { it in selectedVideoIds }) selectedVideoIds - visibleIds else selectedVideoIds + visibleIds
                 }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 14.sp)
+                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 16.sp)
                 }
             } else {
                 Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
