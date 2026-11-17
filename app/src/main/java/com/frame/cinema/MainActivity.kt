@@ -3044,15 +3044,15 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             Thumbnail(video, Modifier.fillMaxSize())
         }
         Box(Modifier.weight(1f).height(84.dp)) {
-            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {                Text(
-                    displayVideoName(video.name),
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {                VideoCardTitle(
+                    video.name,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
                     color = Color(0xFF222222),
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    showEnglish = true,
                     lineHeight = 21.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("总时长${formatClock(video.durationMs)}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
@@ -3375,16 +3375,15 @@ private fun RecordsPage(
                             Column(
                                 Modifier.weight(1f).height(106.dp)
                             ) {
-                                Text(
-                                    displayVideoName(video.name),
+                                VideoCardTitle(
+                                    video.name,
                                     modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
                                     lineHeight = 22.sp,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    maxLines = 1,
+                                    showEnglish = true
                                 )
                                 Spacer(Modifier.weight(1f))
                                 RatingStars(
@@ -4726,6 +4725,54 @@ private fun displayVideoName(name: String): String {
     return displayName.ifBlank { "未命名" }
 }
 
+private fun splitDisplayVideoTitle(title: String): Pair<String, String?> {
+    val cleanTitle = displayVideoName(title).trim()
+    val match = Regex("^(.+\\p{IsHan})\\s+([A-Za-z][A-Za-z0-9\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$").matchEntire(cleanTitle)
+    return if (match != null) {
+        match.groupValues[1].trim() to match.groupValues[2].trim().takeIf { it.isNotEmpty() }
+    } else {
+        cleanTitle to null
+    }
+}
+
+@Composable
+private fun VideoCardTitle(
+    name: String,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    color: Color,
+    fontWeight: FontWeight,
+    maxLines: Int,
+    showEnglish: Boolean,
+    modifier: Modifier = Modifier,
+    lineHeight: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified
+) {
+    val (primaryTitle, englishTitle) = splitDisplayVideoTitle(name)
+    Column(modifier) {
+        Text(
+            primaryTitle,
+            color = color,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            lineHeight = lineHeight,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+        )
+        if (showEnglish && !englishTitle.isNullOrBlank()) {
+            Text(
+                englishTitle,
+                color = color,
+                fontSize = fontSize,
+                fontWeight = fontWeight,
+                lineHeight = lineHeight,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = FontFamily.Serif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+            )
+        }
+    }
+}
+
 @Composable
 private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
@@ -4852,7 +4899,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            Text(displayVideoName(video.name), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = false)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
@@ -4890,7 +4937,15 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
             }
             if (video.isFav) Text("♥", color = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(7.dp))
         }
-        Text(displayVideoName(video.name), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF222222), maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        VideoCardTitle(
+            video.name,
+            fontSize = 13.sp,
+            color = Color(0xFF222222),
+            fontWeight = FontWeight.Medium,
+            maxLines = if (compact) 1 else 1,
+            showEnglish = !compact,
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
 
