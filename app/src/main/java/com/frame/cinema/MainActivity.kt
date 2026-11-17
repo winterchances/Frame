@@ -672,7 +672,7 @@ private fun FrameNativeApp(
     ) { uri ->
         if (uri != null) {
             try {
-                val json = com.google.gson.Gson().toJson(LibraryBackup(videos, repository.reviews()))
+                val json = com.google.gson.Gson().toJson(LibraryBackup(repository.backupVideos(), repository.reviews()))
                 val output = context.contentResolver.openOutputStream(uri)
                     ?: throw java.io.IOException("无法打开目标文件")
                 output.bufferedWriter(Charsets.UTF_8).use { it.write(json) }
@@ -865,7 +865,7 @@ private fun FrameNativeApp(
                                         else -> item.copy(progress = 100f, status = "watched")
                                     })
                                 } }; refresh() },
-                                { ids -> ids.forEach(repository::delete); refresh() }
+                                { ids -> ids.forEach(repository::removeFromLibrary); refresh() }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
@@ -2038,7 +2038,7 @@ private fun FrameNativeApp(
                     ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
                     ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
                     ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
-                    ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.delete(video.id); refresh(); contextMenuOpen = false }
+                    ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.removeFromLibrary(video.id); refresh(); contextMenuOpen = false }
                 }
             }
         }
@@ -2617,7 +2617,7 @@ private fun LibraryPage(
                         DropdownMenuItem(text = { Text("移动分类") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showMoveDialog = true })
                         DropdownMenuItem(text = { Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite); selectedVideoIds = emptySet(); multiSelectMode = false })
                         DropdownMenuItem(text = { Text("修改播放状态") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showStatusDialog = true })
-                        DropdownMenuItem(text = { Text("批量删除", color = Color(0xFFE05A5A)) }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showDeleteDialog = true })
+                        DropdownMenuItem(text = { Text("批量移除", color = Color(0xFFE05A5A)) }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showDeleteDialog = true })
                     }
                 }
                 TextButton(onClick = { selectedVideoIds = emptySet(); multiSelectMode = false }, contentPadding = PaddingValues(horizontal = 3.dp)) {
@@ -2693,13 +2693,13 @@ private fun LibraryPage(
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                title = { Text("删除所选视频？") },
-                text = { Text("确定删除 $selectedCount 个视频吗？相关感想也会一并删除，此操作无法撤销。") },
+                title = { Text("移出所选视频？") },
+                text = { Text("确定将 $selectedCount 个视频移出片库吗？视频感想、评分、观看时长和封面缓存都会保留。") },
                 confirmButton = {
                     TextButton(onClick = {
                         onBatchDelete(selectedVideoIds)
                         selectedVideoIds = emptySet(); multiSelectMode = false; showDeleteDialog = false
-                    }) { Text("删除", color = Color(0xFFE05A5A)) }
+                    }) { Text("移出片库", color = Color(0xFFE05A5A)) }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
             )
