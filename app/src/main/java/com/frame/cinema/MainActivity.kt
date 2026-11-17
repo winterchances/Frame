@@ -366,6 +366,7 @@ class MainActivity : ComponentActivity() {
                                 player = controller,
                                 openPlayerRequest = openPlayerRequest,
                                 onPlay = { item -> startNativePlayback(item) },
+                                onPlayAt = { item, positionMs -> startNativePlayback(item, positionMs) },
                                 onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
                                 onOrientation = { requested ->
                                     requestedOrientation = if (requested) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -396,7 +397,7 @@ class MainActivity : ComponentActivity() {
         if (intent.action == ACTION_OPEN_PLAYER) openPlayerRequest.intValue++
     }
 
-    private fun startNativePlayback(item: VideoItem) {
+    private fun startNativePlayback(item: VideoItem, positionMs: Long? = null) {
         val controller = player ?: return
         val iconBytes = appIconBytes
         val metadataBuilder = MediaMetadata.Builder()
@@ -411,7 +412,8 @@ class MainActivity : ComponentActivity() {
             .build()
         controller.setMediaItem(mediaItem)
         controller.prepare()
-        if (item.progress >= 99f || item.status == "watched") controller.seekTo(0L)
+        if (positionMs != null) controller.seekTo(positionMs.coerceAtLeast(0L))
+        else if (item.progress >= 99f || item.status == "watched") controller.seekTo(0L)
         else if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
         controller.play()
     }
@@ -437,6 +439,7 @@ private fun FrameNativeApp(
     player: Player,
     openPlayerRequest: State<Int>,
     onPlay: (VideoItem) -> Unit,
+    onPlayAt: (VideoItem, Long) -> Unit,
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
     onKeepAwake: (Boolean) -> Unit,
@@ -653,6 +656,14 @@ private fun FrameNativeApp(
         playing = item
         onSystemBarsVisible(false)
         onPlay(item)
+    }
+    fun playVideoAt(item: VideoItem, positionMs: Long) {
+        speedIndex = 0
+        controlsVisible = true
+        locked = false
+        playing = item
+        onSystemBarsVisible(false)
+        onPlayAt(item, positionMs)
     }
     fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
         playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
@@ -947,6 +958,7 @@ private fun FrameNativeApp(
                                 onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
                                 onEdit = { openReviewEditor(it) },
                                 onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
+                                onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                 onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
                             )
                         }
@@ -982,6 +994,15 @@ private fun FrameNativeApp(
                 },
                 onWatchTime = { deltaMs ->
                     playing?.let { repository.recordWatchTime(it.id, deltaMs) }
+                },
+                onSaveTimestampRecord = { positionMs, content ->
+                    playing?.let { currentVideo ->
+                        if (repository.addTimestampReview(currentVideo.id, content, positionMs)) {
+                            reviewEntries = repository.reviews()
+                        } else {
+                            notify("记录内容不能为空")
+                        }
+                    }
                 }
             )
           }
@@ -3246,6 +3267,7 @@ private fun RecordsPage(
     onCreateStandalone: (Long) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
     onRateVideo: (VideoItem, Float) -> Unit,
+    onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
     val softListFlingBehavior = rememberSoftListFlingBehavior()
@@ -3706,13 +3728,35 @@ private fun RecordsPage(
                                             .bringIntoViewRequester(entryBringIntoView)
                                             .noRippleClickable { onEdit(entry) }
                                     ) {
-                                        Text(
-                                            SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                            color = Color(0xFF999999),
-                                            fontSize = 11.sp,
-                                            lineHeight = 14.sp,
-                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Text(
+                                                SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                                color = Color(0xFF999999),
+                                                fontSize = 11.sp,
+                                                lineHeight = 14.sp,
+                                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                            )
+                                            entry.playbackPositionMs?.let { positionMs ->
+                                                Text(
+                                                    "|",
+                                                    color = Color(0xFF999999),
+                                                    fontSize = 11.sp,
+                                                    lineHeight = 14.sp,
+                                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                                )
+                                                Text(
+                                                    formatTime(positionMs),
+                                                    modifier = Modifier.noRippleClickable { onSeekToTimestamp(video, positionMs) },
+                                                    color = ThemeTeal,
+                                                    fontSize = 11.sp,
+                                                    lineHeight = 14.sp,
+                                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                                )
+                                            }
+                                        }
                                         Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 5.dp))
                                     }
                                 }
@@ -4070,7 +4114,8 @@ private fun NativePlayerOverlay(
     onClose: () -> Unit, onToggleControls: () -> Unit, onAutoHideControls: () -> Unit, onToggleLock: () -> Unit,
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onProgress: (Long, Long) -> Unit,
-    onWatchTime: (Long) -> Unit
+    onWatchTime: (Long) -> Unit,
+    onSaveTimestampRecord: (Long, String) -> Unit
 ) {
     val context = LocalContext.current
     val screenshotScope = rememberCoroutineScope()
@@ -4135,6 +4180,20 @@ private fun NativePlayerOverlay(
     var dragStartPosition by remember { mutableLongStateOf(0L) }
     var dragStartVolume by remember { mutableFloatStateOf(player.volume) }
     var dragStartBrightness by remember { mutableFloatStateOf(0f) }
+    var timestampNoteSheetVisible by remember(item.id) { mutableStateOf(false) }
+    var timestampNoteText by remember(item.id) { mutableStateOf("") }
+    var timestampPositionMs by remember(item.id) { mutableLongStateOf(0L) }
+    val timestampNoteFocusRequester = remember(item.id) { FocusRequester() }
+
+    BackHandler(enabled = timestampNoteSheetVisible) {
+        timestampNoteSheetVisible = false
+    }
+    LaunchedEffect(timestampNoteSheetVisible) {
+        if (timestampNoteSheetVisible) {
+            delay(120)
+            timestampNoteFocusRequester.requestFocus()
+        }
+    }
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -4379,6 +4438,12 @@ private fun NativePlayerOverlay(
                                 player.play()
                             } else if (player.isPlaying) player.pause() else player.play()
                         }
+                        PlayerIconButton(Icons.Outlined.AddComment, "记录此刻") {
+                            timestampPositionMs = player.currentPosition.coerceAtLeast(0L)
+                            player.pause()
+                            timestampNoteText = ""
+                            timestampNoteSheetVisible = true
+                        }
                         Spacer(Modifier.weight(1f))
                         Box(
                             Modifier.clip(RoundedCornerShape(8.dp))
@@ -4416,12 +4481,72 @@ private fun NativePlayerOverlay(
             }
         }
         AnimatedVisibility(
-            visible = centerMessage.isNotEmpty() && !locked,
+            visible = centerMessage.isNotEmpty() && !locked && !timestampNoteSheetVisible,
             modifier = Modifier.align(Alignment.Center).zIndex(10f),
             enter = fadeIn(tween(180)), exit = fadeOut(tween(180))
         ) {
             Box(Modifier.clip(CircleShape).background(Color.Black.copy(alpha = .68f)).padding(horizontal = 22.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
                 Text(centerMessage, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+        }
+        if (timestampNoteSheetVisible) {
+            Box(Modifier.fillMaxSize().zIndex(20f)) {
+                Box(
+                    Modifier.fillMaxSize()
+                        .background(Color.Black.copy(alpha = .32f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { timestampNoteSheetVisible = false }
+                )
+                Column(
+                    Modifier.align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .imePadding()
+                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                        .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .background(PageBg)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, top = 26.dp, bottom = 30.dp)
+                ) {
+                    SheetHeading("记录此刻")
+                    BasicTextField(
+                        value = timestampNoteText,
+                        onValueChange = { timestampNoteText = it },
+                        modifier = Modifier.fillMaxWidth()
+                            .heightIn(min = 110.dp)
+                            .focusRequester(timestampNoteFocusRequester)
+                            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White)
+                            .padding(15.dp),
+                        textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp),
+                        decorationBox = { inner ->
+                            Box {
+                                if (timestampNoteText.isEmpty()) {
+                                    Text("写下此刻的想法……", color = MutedText, fontSize = 16.sp)
+                                }
+                                inner()
+                            }
+                        }
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    SheetAction("确认") {
+                        val content = timestampNoteText.trim()
+                        if (content.isEmpty()) {
+                            Toast.makeText(context, "请输入记录内容", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onSaveTimestampRecord(timestampPositionMs, content)
+                            timestampNoteSheetVisible = false
+                            timestampNoteText = ""
+                        }
+                    }
+                    SheetAction("取消", bottomPadding = 0.dp) {
+                        timestampNoteSheetVisible = false
+                        timestampNoteText = ""
+                    }
+                }
             }
         }
     }
@@ -4491,7 +4616,8 @@ private fun createReviewExportBitmap(
         typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
     }
     val layouts = entries.map { entry ->
-        dateFormat.format(Date(entry.createdAt)) to
+        (dateFormat.format(Date(entry.createdAt)) +
+            (entry.playbackPositionMs?.let { " | ${formatTime(it)}" } ?: "")) to
             wrapReviewExportText(entry.content, bodyPaint, 850f)
     }
     return createUnifiedReviewExportBitmap(
