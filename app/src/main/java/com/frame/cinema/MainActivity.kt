@@ -115,6 +115,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.zIndex
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -3041,6 +3043,53 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
         }
     }
 }
+private enum class RecordActionGlyphType { Download, Add, Expand }
+
+@Composable
+private fun RecordActionGlyph(
+    type: RecordActionGlyphType,
+    description: String,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.Canvas(
+        modifier = modifier
+            .size(17.dp)
+            .semantics { contentDescription = description }
+    ) {
+        val scale = size.width / 24f
+        val stroke = 1.3.dp.toPx()
+        fun point(x: Float, y: Float) = Offset(x * scale, y * scale)
+        fun line(x1: Float, y1: Float, x2: Float, y2: Float) {
+            drawLine(
+                color = tint,
+                start = point(x1, y1),
+                end = point(x2, y2),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round
+            )
+        }
+        when (type) {
+            RecordActionGlyphType.Download -> {
+                line(12f, 4.5f, 12f, 14.5f)
+                line(7.5f, 10.5f, 12f, 15f)
+                line(12f, 15f, 16.5f, 10.5f)
+                line(5f, 17.5f, 5f, 20f)
+                line(5f, 20f, 19f, 20f)
+                line(19f, 20f, 19f, 17.5f)
+            }
+            RecordActionGlyphType.Add -> {
+                line(12f, 5f, 12f, 19f)
+                line(5f, 12f, 19f, 12f)
+            }
+            RecordActionGlyphType.Expand -> {
+                line(6.5f, 9.5f, 12f, 15f)
+                line(12f, 15f, 17.5f, 9.5f)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecordsPage(
@@ -3386,22 +3435,20 @@ private fun RecordsPage(
                                 ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    Icons.Outlined.FileDownload,
-                                    contentDescription = "下载观影记录",
-                                    tint = if (exportingReviewVideoId == video.id) Color(0xFFCCCCCC) else Color(0xFF777777),
-                                    modifier = Modifier.size(18.dp)
+                                RecordActionGlyph(
+                                    RecordActionGlyphType.Download,
+                                    "下载观影记录",
+                                    if (exportingReviewVideoId == video.id) Color(0xFFD0D6D4) else Color(0xFF899592)
                                 )
                             }
                             Box(
                                 Modifier.size(30.dp).noRippleClickable { onCreate(video) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    Icons.Outlined.Add,
-                                    contentDescription = "新增感想",
-                                    tint = Color(0xFF777777),
-                                    modifier = Modifier.size(19.dp)
+                                RecordActionGlyph(
+                                    RecordActionGlyphType.Add,
+                                    "新增感想",
+                                    Color(0xFF899592)
                                 )
                             }
                             Box(
@@ -3413,11 +3460,11 @@ private fun RecordsPage(
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    Icons.Outlined.ExpandMore,
-                                    contentDescription = if (expanded) "收起感想" else "展开感想",
-                                    tint = if (entries.isEmpty()) Color(0xFFCCCCCC) else Color(0xFF777777),
-                                    modifier = Modifier.size(20.dp).rotate(if (expanded) 180f else 0f)
+                                RecordActionGlyph(
+                                    RecordActionGlyphType.Expand,
+                                    if (expanded) "收起感想" else "展开感想",
+                                    if (entries.isEmpty()) Color(0xFFD0D6D4) else Color(0xFF899592),
+                                    modifier = Modifier.rotate(if (expanded) 180f else 0f)
                                 )
                             }
                         }
@@ -3649,22 +3696,20 @@ private fun RecordsPage(
                                 ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    Icons.Outlined.FileDownload,
-                                    contentDescription = "下载独立感想",
-                                    tint = if (exportingStandaloneReviewId == entry.id) Color(0xFFCCCCCC) else Color(0xFF777777),
-                                    modifier = Modifier.size(18.dp)
+                                RecordActionGlyph(
+                                    RecordActionGlyphType.Download,
+                                    "下载独立感想",
+                                    if (exportingStandaloneReviewId == entry.id) Color(0xFFD0D6D4) else Color(0xFF899592)
                                 )
                             }
                             Box(
                                 Modifier.size(30.dp).noRippleClickable { onCreateStandalone(entry.id) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    Icons.Outlined.Add,
-                                    contentDescription = "新增感想",
-                                    tint = Color(0xFF777777),
-                                    modifier = Modifier.size(19.dp)
+                                RecordActionGlyph(
+                                    RecordActionGlyphType.Add,
+                                    "新增感想",
+                                    Color(0xFF899592)
                                 )
                             }
                             Box(
@@ -3673,11 +3718,11 @@ private fun RecordsPage(
                                 },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    Icons.Outlined.ExpandMore,
-                                    contentDescription = if (expanded) "收起感想" else "展开感想",
-                                    tint = Color(0xFF777777),
-                                    modifier = Modifier.size(20.dp).rotate(if (expanded) 180f else 0f)
+                                RecordActionGlyph(
+                                    RecordActionGlyphType.Expand,
+                                    if (expanded) "收起感想" else "展开感想",
+                                    Color(0xFF899592),
+                                    modifier = Modifier.rotate(if (expanded) 180f else 0f)
                                 )
                             }
                         }
