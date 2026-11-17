@@ -1633,14 +1633,16 @@ private fun FrameNativeApp(
                             }
                             Spacer(Modifier.height(16.dp))
                         } else if (linkedVideo != null) {
-                            Text(
-                                displayVideoName(linkedVideo.name),
+                            VideoCardTitle(
+                                linkedVideo.name,
                                 color = MainText,
                                 fontSize = 14.sp,
+                                englishFontSize = 12.sp,
+                                englishColor = Color(0xFF888888),
                                 fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                showEnglish = true,
+                                textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(16.dp))
@@ -1751,14 +1753,16 @@ private fun FrameNativeApp(
                                                     .clip(RoundedCornerShape(10.dp))
                                                     .background(PosterBrush(video.bgIndex))
                                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
-                                            Text(
-                                                displayVideoName(video.name),
+                                            VideoCardTitle(
+                                                video.name,
                                                 color = MainText,
                                                 fontSize = 15.sp,
+                                                englishFontSize = 13.sp,
+                                                englishColor = Color(0xFF888888),
                                                 fontWeight = FontWeight.Medium,
                                                 lineHeight = 21.sp,
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis,
+                                                maxLines = 1,
+                                                showEnglish = true,
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }
@@ -4768,16 +4772,18 @@ private fun VideoCardTitle(
     maxLines: Int,
     showEnglish: Boolean,
     modifier: Modifier = Modifier,
-    lineHeight: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified
+    lineHeight: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     val (primaryTitle, englishTitle) = splitDisplayVideoTitle(name)
-    Column(modifier) {
+    Column(modifier, horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
         Text(
             primaryTitle,
             color = color,
             fontSize = fontSize,
             fontWeight = fontWeight,
             lineHeight = lineHeight,
+            textAlign = textAlign,
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4789,6 +4795,7 @@ private fun VideoCardTitle(
                 fontSize = englishFontSize,
                 fontWeight = fontWeight,
                 lineHeight = lineHeight,
+                textAlign = textAlign,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(fontFamily = FontFamily.Serif, platformStyle = PlatformTextStyle(includeFontPadding = false))
