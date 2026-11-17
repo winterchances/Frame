@@ -786,8 +786,9 @@ private fun FrameNativeApp(
 
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
     val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
-    LaunchedEffect(sheet) {
-        sheetVisibility.targetState = sheet != SheetType.NONE
+    val showNestedCategorySheet = showCategoryDrawer && (sheet == SheetType.DELETE_CATEGORY || sheet == SheetType.NEW_CATEGORY)
+    LaunchedEffect(sheet, showCategoryDrawer) {
+        sheetVisibility.targetState = sheet != SheetType.NONE && !showNestedCategorySheet
         if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
     BackHandler(enabled = showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
@@ -958,6 +959,7 @@ private fun FrameNativeApp(
                                 onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
                                 onEdit = { openReviewEditor(it) },
                                 onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
+                                onPlayVideo = { video -> playVideo(video) },
                                 onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                 onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
                             )
@@ -1897,32 +1899,36 @@ private fun FrameNativeApp(
                             modifier = Modifier.fillMaxWidth().height(52.dp)
                                 .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 16.dp),
+                                .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 20.dp),
                             singleLine = true,
                             decorationBox = { inner ->
-                                if (newCategoryName.isEmpty()) Text("输入分类名称", color = MutedText, fontSize = 16.sp)
-                                inner()
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                                    if (newCategoryName.isEmpty()) Text("输入分类名称", color = MutedText, fontSize = 16.sp)
+                                    inner()
+                                }
                             },
                             textStyle = TextStyle(fontSize = 16.sp, lineHeight = 18.sp, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false))
                         )
-                        Spacer(Modifier.height(16.dp))
-                        SheetAction("确认", bottomPadding = 12.dp) {
-                            val name = newCategoryName.trim()
-                            when {
-                                name.isEmpty() -> toast = "分类名称不能为空"
-                                name in categories -> toast = "分类名称已存在"
-                                else -> {
-                                    repository.saveCategories(categories + name)
-                                    newCategoryName = ""
-                                    refresh()
-                                    sheet = SheetType.NONE
+                        Spacer(Modifier.height(12.dp))
+                        SheetActionPair(
+                            onConfirm = {
+                                val name = newCategoryName.trim()
+                                when {
+                                    name.isEmpty() -> toast = "分类名称不能为空"
+                                    name in categories -> toast = "分类名称已存在"
+                                    else -> {
+                                        repository.saveCategories(categories + name)
+                                        newCategoryName = ""
+                                        refresh()
+                                        sheet = SheetType.NONE
+                                    }
                                 }
+                            },
+                            onCancel = {
+                                newCategoryName = ""
+                                sheet = SheetType.NONE
                             }
-                        }
-                        SheetAction("取消", bottomPadding = 0.dp) {
-                            newCategoryName = ""
-                            sheet = SheetType.NONE
-                        }
+                        )
                     }
                     SheetType.NONE -> Unit
                 }
@@ -2253,6 +2259,80 @@ private fun FrameNativeApp(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            if (showNestedCategorySheet) {
+                Box(Modifier.fillMaxSize().zIndex(2f)) {
+                    Box(
+                        Modifier.fillMaxSize()
+                            .background(Color.Black.copy(alpha = .28f))
+                            .noRippleClickable { sheet = SheetType.NONE }
+                    )
+                    Column(
+                        Modifier.align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .imePadding()
+                            .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                            .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                            .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                            .background(PageBg)
+                            .verticalScroll(rememberScrollState())
+                            .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 30.dp)
+                    ) {
+                        if (sheet == SheetType.DELETE_CATEGORY) {
+                            SheetContent("确定删除该分类？") {
+                                SheetAction("删除该分类", danger = true, bottomPadding = 0.dp) {
+                                    val target = pendingCategoryDelete
+                                    if (target != null) {
+                                        repository.saveCategories(categories - target)
+                                        videos.filter { it.category == target }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                        if (category == target) category = "全部"
+                                        pendingCategoryDelete = null
+                                        refresh()
+                                    }
+                                    sheet = SheetType.NONE
+                                }
+                            }
+                        } else {
+                            SheetHeading("新建分类")
+                            BasicTextField(
+                                value = newCategoryName,
+                                onValueChange = { newCategoryName = it },
+                                modifier = Modifier.fillMaxWidth().height(52.dp)
+                                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                    .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 20.dp),
+                                singleLine = true,
+                                decorationBox = { inner ->
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                                        if (newCategoryName.isEmpty()) Text("输入分类名称", color = MutedText, fontSize = 16.sp)
+                                        inner()
+                                    }
+                                },
+                                textStyle = TextStyle(fontSize = 16.sp, lineHeight = 18.sp, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            SheetActionPair(
+                                onConfirm = {
+                                    val name = newCategoryName.trim()
+                                    when {
+                                        name.isEmpty() -> toast = "分类名称不能为空"
+                                        name in categories -> toast = "分类名称已存在"
+                                        else -> {
+                                            repository.saveCategories(categories + name)
+                                            newCategoryName = ""
+                                            refresh()
+                                            sheet = SheetType.NONE
+                                        }
+                                    }
+                                },
+                                onCancel = {
+                                    newCategoryName = ""
+                                    sheet = SheetType.NONE
+                                }
+                            )
                         }
                     }
                 }
@@ -2753,7 +2833,10 @@ private fun LibraryPage(
             }
             if (filtered.isEmpty()) {
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                    EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
+                    EmptyHint(
+                        if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频",
+                        topPadding = (16.dp - gap).coerceAtLeast(0.dp)
+                    )
                 }
             } else {
                 items(filtered, key = { it.id }) { video ->
@@ -2844,6 +2927,14 @@ private fun LibraryPage(
                     .clip(RoundedCornerShape(90.dp)).background(Color.White),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
+                    onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
+                    selectedVideoIds = emptySet()
+                    onMultiSelectModeChange(false)
+                }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Outlined.FavoriteBorder, null, tint = MainText, modifier = Modifier.size(19.dp))
+                    Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
+                }
                 Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                     Column(Modifier.fillMaxSize().noRippleClickable { showMoveDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                         Icon(Icons.Outlined.FolderOpen, null, tint = MainText, modifier = Modifier.size(19.dp))
@@ -2853,8 +2944,8 @@ private fun LibraryPage(
                         expanded = showMoveDialog,
                         onDismissRequest = { showMoveDialog = false },
                         alignment = Alignment.BottomCenter,
-                        offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -8.dp.roundToPx()) },
-                        modifier = Modifier.width(192.dp)
+                        offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
+                        modifier = Modifier.width(160.dp)
                     ) {
                         availableMoveCategories.forEach { target ->
                             CustomSortMenuItem(
@@ -2869,14 +2960,6 @@ private fun LibraryPage(
                         }
                     }
                 }
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
-                    onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
-                    selectedVideoIds = emptySet()
-                    onMultiSelectModeChange(false)
-                }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.FavoriteBorder, null, tint = MainText, modifier = Modifier.size(19.dp))
-                    Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
-                }
                 Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                     Column(Modifier.fillMaxSize().noRippleClickable { showStatusDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                         Icon(Icons.Outlined.CheckCircleOutline, null, tint = MainText, modifier = Modifier.size(19.dp))
@@ -2886,8 +2969,8 @@ private fun LibraryPage(
                         expanded = showStatusDialog,
                         onDismissRequest = { showStatusDialog = false },
                         alignment = Alignment.BottomCenter,
-                        offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -8.dp.roundToPx()) },
-                        modifier = Modifier.width(192.dp)
+                        offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
+                        modifier = Modifier.width(160.dp)
                     ) {
                         listOf("未看", "在看", "已看").forEach { target ->
                             val targetStatus = when (target) {
@@ -3267,6 +3350,7 @@ private fun RecordsPage(
     onCreateStandalone: (Long) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
     onRateVideo: (VideoItem, Float) -> Unit,
+    onPlayVideo: (VideoItem) -> Unit,
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
@@ -3519,6 +3603,7 @@ private fun RecordsPage(
                                     .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(PosterBrush(video.bgIndex))
+                                    .noRippleClickable { onPlayVideo(video) }
                             ) { Thumbnail(video, Modifier.fillMaxSize()) }
                             Column(
                                 Modifier.weight(1f).height(106.dp)
@@ -4438,12 +4523,6 @@ private fun NativePlayerOverlay(
                                 player.play()
                             } else if (player.isPlaying) player.pause() else player.play()
                         }
-                        PlayerIconButton(Icons.Outlined.AddComment, "记录此刻") {
-                            timestampPositionMs = player.currentPosition.coerceAtLeast(0L)
-                            player.pause()
-                            timestampNoteText = ""
-                            timestampNoteSheetVisible = true
-                        }
                         Spacer(Modifier.weight(1f))
                         Box(
                             Modifier.clip(RoundedCornerShape(8.dp))
@@ -4452,6 +4531,13 @@ private fun NativePlayerOverlay(
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        Spacer(Modifier.width(15.dp))
+                        PlayerIconButton(Icons.Outlined.AddComment, "记录此刻") {
+                            timestampPositionMs = player.currentPosition.coerceAtLeast(0L)
+                            player.pause()
+                            timestampNoteText = ""
+                            timestampNoteSheetVisible = true
                         }
                     }
                 }
@@ -4531,21 +4617,23 @@ private fun NativePlayerOverlay(
                             }
                         }
                     )
-                    Spacer(Modifier.height(20.dp))
-                    SheetAction("确认") {
-                        val content = timestampNoteText.trim()
-                        if (content.isEmpty()) {
-                            Toast.makeText(context, "请输入记录内容", Toast.LENGTH_SHORT).show()
-                        } else {
-                            onSaveTimestampRecord(timestampPositionMs, content)
+                    Spacer(Modifier.height(12.dp))
+                    SheetActionPair(
+                        onConfirm = {
+                            val content = timestampNoteText.trim()
+                            if (content.isEmpty()) {
+                                Toast.makeText(context, "请输入记录内容", Toast.LENGTH_SHORT).show()
+                            } else {
+                                onSaveTimestampRecord(timestampPositionMs, content)
+                                timestampNoteSheetVisible = false
+                                timestampNoteText = ""
+                            }
+                        },
+                        onCancel = {
                             timestampNoteSheetVisible = false
                             timestampNoteText = ""
                         }
-                    }
-                    SheetAction("取消", bottomPadding = 0.dp) {
-                        timestampNoteSheetVisible = false
-                        timestampNoteText = ""
-                    }
+                    )
                 }
             }
         }
@@ -5256,8 +5344,12 @@ private fun PosterBrush(index: Int): Brush {
 }
 
 @Composable
-private fun EmptyHint(text: String, horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp) {
-    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding).padding(top = 16.dp, bottom = 20.dp))
+private fun EmptyHint(
+    text: String,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp,
+    topPadding: androidx.compose.ui.unit.Dp = 16.dp
+) {
+    Text(text, color = MutedText, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding).padding(top = topPadding, bottom = 20.dp))
 }
 
 @Composable
@@ -5523,6 +5615,42 @@ private fun SheetAction(
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+@Composable
+private fun SheetActionPair(
+    confirmText: String = "确认",
+    cancelText: String = "取消",
+    confirmDanger: Boolean = false,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+        Surface(
+            Modifier.weight(1f).height(52.dp)
+                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                .clip(RoundedCornerShape(16.dp)).noRippleClickable(onConfirm),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            shadowElevation = 0.dp
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(confirmText, color = if (confirmDanger) Color(0xFFFF3B30) else MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+            }
+        }
+        Surface(
+            Modifier.weight(1f).height(52.dp)
+                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                .clip(RoundedCornerShape(16.dp)).noRippleClickable(onCancel),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            shadowElevation = 0.dp
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(cancelText, color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+            }
         }
     }
 }
