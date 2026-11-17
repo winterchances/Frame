@@ -4369,8 +4369,7 @@ private fun createUnifiedReviewExportBitmap(
     val coverWidth = 292f
     val coverHeight = 390f
     val sectionTop = coverTop + coverHeight + 66f
-    val sectionHeaderBaseline = sectionTop + 46f
-    val firstReviewTop = sectionTop + 76f
+    val firstReviewTop = sectionTop + 42f
 
     val titlePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(38, 43, 42)
@@ -4394,12 +4393,12 @@ private fun createUnifiedReviewExportBitmap(
         strokeCap = android.graphics.Paint.Cap.ROUND
     }
     val titleLines = wrapReviewExportText(title, titlePaint, 560f)
-    val reviewCardHeights = reviews.map { (_, lines) ->
-        94f + lines.size * 48f
+    val timelineEntryHeights = reviews.map { (_, lines) ->
+        76f + lines.size * 48f
     }
     var contentBottom = firstReviewTop
-    reviewCardHeights.forEach { cardHeight ->
-        contentBottom += cardHeight + 18f
+    timelineEntryHeights.forEach { entryHeight ->
+        contentBottom += entryHeight + 12f
     }
     val height = (contentBottom + 150f).toInt().coerceAtLeast(1050)
 
@@ -4488,7 +4487,7 @@ private fun createUnifiedReviewExportBitmap(
         color = android.graphics.Color.rgb(155, 164, 161)
         textSize = 22f
     }
-    canvas.drawText("把看过的故事，留在这里。", textLeft, coverTop + coverHeight - 24f, notePaint)
+    canvas.drawText("取一帧，记一瞬", textLeft, coverTop + coverHeight - 24f, notePaint)
 
     val dividerPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(232, 238, 235)
@@ -4496,42 +4495,21 @@ private fun createUnifiedReviewExportBitmap(
     }
     canvas.drawLine(margin, sectionTop, width - margin, sectionTop, dividerPaint)
 
-    val sectionTitlePaint = android.graphics.Paint(titlePaint).apply {
-        textSize = 36f
-    }
-    canvas.drawText("观影感想", margin, sectionHeaderBaseline, sectionTitlePaint)
-    val countPaint = android.graphics.Paint(metaPaint).apply {
-        textSize = 23f
-    }
-    canvas.drawText("${reviews.size} 条记录", margin + 190f, sectionHeaderBaseline - 2f, countPaint)
-
     var cursorY = firstReviewTop
     reviews.forEachIndexed { index, (date, lines) ->
-        val cardHeight = reviewCardHeights[index]
-        val reviewRect = android.graphics.RectF(
-            margin, cursorY, width - margin, cursorY + cardHeight
-        )
-        val reviewCardPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.rgb(248, 250, 249)
+        val entryHeight = timelineEntryHeights[index]
+        val dotPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = accentColor
+            style = android.graphics.Paint.Style.FILL
         }
-        canvas.drawRoundRect(reviewRect, 18f, 18f, reviewCardPaint)
-        val borderPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.rgb(235, 241, 238)
-            style = android.graphics.Paint.Style.STROKE
-            strokeWidth = 1.5f
-        }
-        canvas.drawRoundRect(reviewRect, 18f, 18f, borderPaint)
-        canvas.drawLine(
-            margin + 22f, cursorY + 24f, margin + 22f, cursorY + 56f,
-            accentPaint
-        )
-        canvas.drawText(date, margin + 48f, cursorY + 43f, metaPaint)
-        var bodyY = cursorY + 88f
+        canvas.drawCircle(margin + 22f, cursorY + 24f, 7f, dotPaint)
+        canvas.drawText(date, margin + 48f, cursorY + 31f, metaPaint)
+        var bodyY = cursorY + 76f
         lines.forEach { line ->
             canvas.drawText(line, margin + 48f, bodyY, bodyPaint)
             bodyY += 48f
         }
-        cursorY += cardHeight + 18f
+        cursorY += entryHeight + 12f
     }
 
     val footerPaint = android.graphics.Paint(metaPaint).apply {
