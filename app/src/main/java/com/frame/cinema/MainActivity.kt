@@ -668,9 +668,8 @@ private fun FrameNativeApp(
         }
         sheet = SheetType.NONE
     }
-    val reviewCoverPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val reviewCoverPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             editReviewCoverUri = uri
         }
     }
@@ -1562,7 +1561,16 @@ private fun FrameNativeApp(
                         if (editReviewVideoId == null) {
                             if (editStandaloneGroupId != null) {
                                 val parentTitle = reviewEntries.firstOrNull { it.id == editStandaloneGroupId }?.title?.ifBlank { "未命名" } ?: "未命名"
-                                Text(parentTitle, color = MutedText, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                                Text(
+                                    parentTitle,
+                                    color = MainText,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                                )
                                 BasicTextField(
                                     editReview, { editReview = it },
                                     Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp)
@@ -1609,7 +1617,13 @@ private fun FrameNativeApp(
                                 Box(
                                     Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp))
                                         .background(Color(0xFFECEDEF))
-                                        .noRippleClickable { reviewCoverPicker.launch(arrayOf("image/*")) },
+                                        .noRippleClickable {
+                                            reviewCoverPicker.launch(
+                                                androidx.activity.result.PickVisualMediaRequest(
+                                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                )
+                                            )
+                                        },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (coverBitmap != null) Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -1690,11 +1704,12 @@ private fun FrameNativeApp(
                                     Text(
                                         linkedVideo?.let { displayVideoName(it.name) } ?: "关联视频",
                                         color = if (linkedVideo != null) Color.White else MainText,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
                                     )
                                 }
                                 Box(
@@ -1721,10 +1736,12 @@ private fun FrameNativeApp(
                             Text(
                                 displayVideoName(linkedVideo.name),
                                 color = MainText,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Normal,
+                                textAlign = TextAlign.Center,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(16.dp))
                         }
