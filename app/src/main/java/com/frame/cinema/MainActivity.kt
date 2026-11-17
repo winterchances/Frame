@@ -4536,7 +4536,7 @@ private fun AnimatedDropdownPopup(
     val visibilityState = remember { MutableTransitionState(false) }
     visibilityState.targetState = expanded
     val cornerRadius by animateDpAsState(
-        targetValue = if (expanded) 16.dp else 18.dp,
+        targetValue = if (expanded) 16.dp else 180.dp,
         animationSpec = tween(280),
         label = "sortMenuCornerRadius"
     )
