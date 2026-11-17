@@ -4340,14 +4340,22 @@ private fun wrapReviewExportText(
     return lines.ifEmpty { listOf("") }
 }
 
-private fun splitReviewExportTitle(title: String): Pair<String, String?> {
-    val match = Regex("^(.+\\p{IsHan})\\s+([A-Za-z][A-Za-z0-9\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$").matchEntire(title.trim())
+private val ChineseEnglishTitleRegex = Regex(
+    "^(.+?[\\p{IsHan}，。！？；：、（）【】《》「」『』…—～·!?.,:;])\\s+([\\p{IsLatin}\\p{M}\\p{N}\\[（(「『“‘][\\p{IsLatin}\\p{M}\\p{N}\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$"
+)
+
+private fun splitChineseEnglishTitle(title: String): Pair<String, String?> {
+    val cleanTitle = title.trim()
+    val match = ChineseEnglishTitleRegex.matchEntire(cleanTitle)
     return if (match != null) {
         match.groupValues[1].trim() to match.groupValues[2].trim().takeIf { it.isNotEmpty() }
     } else {
-        title.trim() to null
+        cleanTitle to null
     }
 }
+
+private fun splitReviewExportTitle(title: String): Pair<String, String?> =
+    splitChineseEnglishTitle(title)
 
 private fun createReviewExportBitmap(
     video: VideoItem,
@@ -4734,12 +4742,7 @@ private fun displayVideoName(name: String): String {
 
 private fun splitDisplayVideoTitle(title: String): Pair<String, String?> {
     val cleanTitle = displayVideoName(title).trim()
-    val match = Regex("^(.+\\p{IsHan})\\s+([A-Za-z][A-Za-z0-9\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$").matchEntire(cleanTitle)
-    return if (match != null) {
-        match.groupValues[1].trim() to match.groupValues[2].trim().takeIf { it.isNotEmpty() }
-    } else {
-        cleanTitle to null
-    }
+    return splitChineseEnglishTitle(cleanTitle)
 }
 
 @Composable
