@@ -3083,11 +3083,11 @@ private fun RecordActionGlyph(
 ) {
     androidx.compose.foundation.Canvas(
         modifier = modifier
-            .size(if (type == RecordActionGlyphType.Expand) 17.dp else 15.dp)
+            .size(16.dp)
             .semantics { contentDescription = description }
     ) {
         val scale = size.width / 24f
-        val stroke = 1.3.dp.toPx()
+        val stroke = 1.5.dp.toPx()
         fun point(x: Float, y: Float) = Offset(x * scale, y * scale)
         fun line(x1: Float, y1: Float, x2: Float, y2: Float) {
             drawLine(
@@ -3100,20 +3100,20 @@ private fun RecordActionGlyph(
         }
         when (type) {
             RecordActionGlyphType.Download -> {
-                line(12f, 4.5f, 12f, 14.5f)
-                line(7.5f, 10.5f, 12f, 15f)
-                line(12f, 15f, 16.5f, 10.5f)
-                line(5f, 17.5f, 5f, 20f)
-                line(5f, 20f, 19f, 20f)
-                line(19f, 20f, 19f, 17.5f)
+                line(12f, 3.5f, 12f, 14.5f)
+                line(7f, 10f, 12f, 15f)
+                line(12f, 15f, 17f, 10f)
+                line(4.5f, 17f, 4.5f, 20.5f)
+                line(4.5f, 20.5f, 19.5f, 20.5f)
+                line(19.5f, 20.5f, 19.5f, 17f)
             }
             RecordActionGlyphType.Add -> {
-                line(12f, 5f, 12f, 19f)
-                line(5f, 12f, 19f, 12f)
+                line(12f, 4.5f, 12f, 19.5f)
+                line(4.5f, 12f, 19.5f, 12f)
             }
             RecordActionGlyphType.Expand -> {
-                line(6.5f, 9.5f, 12f, 15f)
-                line(12f, 15f, 17.5f, 9.5f)
+                line(4.5f, 6.5f, 12f, 17.5f)
+                line(12f, 17.5f, 19.5f, 6.5f)
             }
         }
     }
