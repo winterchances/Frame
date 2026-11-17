@@ -4972,10 +4972,10 @@ private fun AnimatedDropdownPopup(
             ) {
                 Column(
                     modifier = modifier
-                        .shadow(8.dp, menuShape, ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .06f))
+                        .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
                         .clip(menuShape)
                         .background(Color.White)
-                        .border(0.7.dp, Color(0xFFE6E6E6), menuShape),
+                        .border(0.7.dp, Color(0xFFEEEEEE), menuShape),
                     content = content
                 )
             }
