@@ -892,6 +892,8 @@ private fun FrameNativeApp(
                                 targetReviewId = targetReviewId,
                                 sortMode = recordSortMode,
                                 sortDirection = recordSortDirection,
+                                onRecordSortModeChange = { recordSortMode = it },
+                                onRecordSortDirectionChange = { recordSortDirection = it },
                                 onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
                                 onCreate = { video ->
                                     if (video == null) {
@@ -2935,6 +2937,8 @@ private fun RecordsPage(
     targetReviewId: Long?,
     sortMode: RecordSortMode,
     sortDirection: SortDirection,
+    onRecordSortModeChange: (RecordSortMode) -> Unit,
+    onRecordSortDirectionChange: (SortDirection) -> Unit,
     onSearch: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
     onCreateStandalone: (Long) -> Unit,
