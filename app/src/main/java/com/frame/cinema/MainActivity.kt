@@ -1087,7 +1087,7 @@ private fun FrameNativeApp(
                         Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
                             SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                             SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
                         }
                         Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
@@ -1100,15 +1100,15 @@ private fun FrameNativeApp(
                                     fontSize = 11.sp
                                 )
                             }
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { exportDataLauncher.launch("Frame-backup.json") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导出数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { importDataLauncher.launch(arrayOf("application/json")) }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导入数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
@@ -1531,7 +1531,7 @@ private fun FrameNativeApp(
                             ) {
                                 Text("关联视频", color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                             Row(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable { startNewReview(null) }
