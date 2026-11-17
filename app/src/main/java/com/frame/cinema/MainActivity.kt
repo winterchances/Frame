@@ -4335,7 +4335,7 @@ private fun wrapReviewExportText(
 }
 
 private fun splitReviewExportTitle(title: String): Pair<String, String?> {
-    val match = Regex("^(.+\\\p{IsHan})\\s+([A-Za-z][A-Za-z0-9\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$").matchEntire(title.trim())
+    val match = Regex("^(.+\\p{IsHan})\\s+([A-Za-z][A-Za-z0-9\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$").matchEntire(title.trim())
     return if (match != null) {
         match.groupValues[1].trim() to match.groupValues[2].trim().takeIf { it.isNotEmpty() }
     } else {
