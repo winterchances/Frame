@@ -1939,7 +1939,7 @@ private fun FrameNativeApp(
             AnimatedVisibility(
                 visible = showCategoryDrawer,
                 enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
-                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)) + fadeOut(tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
+                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
                 modifier = Modifier.align(Alignment.CenterStart).zIndex(1f)
             ) {
                 BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding()) {
