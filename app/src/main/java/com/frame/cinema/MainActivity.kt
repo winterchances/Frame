@@ -4321,12 +4321,26 @@ private fun wrapReviewExportText(
             var remaining = paragraph
             while (remaining.isNotEmpty()) {
                 val count = paint.breakText(remaining, true, maxWidth, null).coerceAtLeast(1)
-                lines.add(remaining.substring(0, count))
-                remaining = remaining.substring(count)
+                var end = count
+                if (count < remaining.length && remaining.substring(0, count).any { it.isLetterOrDigit() }) {
+                    val boundary = remaining.substring(0, count).lastIndexOf(' ')
+                    if (boundary > 0) end = boundary
+                }
+                lines.add(remaining.substring(0, end).trimEnd())
+                remaining = remaining.substring(end).trimStart()
             }
         }
     }
     return lines.ifEmpty { listOf("") }
+}
+
+private fun splitReviewExportTitle(title: String): Pair<String, String?> {
+    val match = Regex("^(.+\\\p{IsHan})\\s+([A-Za-z][A-Za-z0-9\\s&'’.,:;!?()\\[\\]{}+_\\-/]*)$").matchEntire(title.trim())
+    return if (match != null) {
+        match.groupValues[1].trim() to match.groupValues[2].trim().takeIf { it.isNotEmpty() }
+    } else {
+        title.trim() to null
+    }
 }
 
 private fun createReviewExportBitmap(
@@ -4408,7 +4422,14 @@ private fun createUnifiedReviewExportBitmap(
         strokeWidth = 5f
         strokeCap = android.graphics.Paint.Cap.ROUND
     }
-    val titleLines = wrapReviewExportText(title, titlePaint, 560f)
+    val (chineseTitle, englishTitle) = splitReviewExportTitle(title)
+    val titleLines = wrapReviewExportText(chineseTitle, titlePaint, 560f)
+    val englishTitlePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(68, 75, 73)
+        textSize = 34f
+        typeface = android.graphics.Typeface.create("serif", android.graphics.Typeface.NORMAL)
+    }
+    val englishTitleLines = englishTitle?.let { wrapReviewExportText(it, englishTitlePaint, 560f) }.orEmpty()
     val timelineEntryHeights = reviews.map { (_, lines) ->
         76f + lines.size * 48f
     }
@@ -4438,7 +4459,14 @@ private fun createUnifiedReviewExportBitmap(
         letterSpacing = 2.2f
         typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
     }
-    canvas.drawText("FRAME  /  JOURNAL", margin, 108f, eyebrowPaint)
+    val eyebrow = "FRAME  〡  JOURNAL"
+    val eyebrowWidth = eyebrowPaint.measureText(eyebrow) +
+        eyebrowPaint.letterSpacing * (eyebrow.length - 1).coerceAtLeast(0)
+    val eyebrowScale = minOf(1f, (width - margin * 2f) / eyebrowWidth)
+    canvas.save()
+    canvas.scale(eyebrowScale, 1f, margin, 108f)
+    canvas.drawText(eyebrow, margin, 108f, eyebrowPaint)
+    canvas.restore()
     canvas.drawLine(margin, 137f, margin + 76f, 137f, accentPaint)
 
     val coverRect = android.graphics.RectF(
@@ -4490,6 +4518,13 @@ private fun createUnifiedReviewExportBitmap(
         canvas.drawText(line, textLeft, titleY, titlePaint)
         titleY += 60f
     }
+    if (englishTitleLines.isNotEmpty()) {
+        titleY += 2f
+        englishTitleLines.forEach { line ->
+            canvas.drawText(line, textLeft, titleY, englishTitlePaint)
+            titleY += 46f
+        }
+    }
     if (rating > 0f) {
         val ratingPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
             color = accentColor
@@ -4536,7 +4571,7 @@ private fun createUnifiedReviewExportBitmap(
         color = android.graphics.Color.rgb(151, 163, 159)
         letterSpacing = 1.1f
     }
-    canvas.drawText("一帧  ·  FRAME", width / 2f, contentHeight - 68f, footerPaint)
+    canvas.drawText("一帧  ·  FRAME", width / 2f, exportHeight - 96f, footerPaint)
     return bitmap
 }
 
