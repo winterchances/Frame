@@ -478,7 +478,7 @@ private fun FrameNativeApp(
         ordered
     }) }
     var status by remember { mutableStateOf("全部") }
-    var category by remember { mutableStateOf("全部分类") }
+    var category by remember { mutableStateOf("全部") }
     var compact by remember { mutableStateOf(true) }
     var showFab by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
@@ -1963,21 +1963,44 @@ private fun FrameNativeApp(
                             ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false; categoryEditMode = false })
                         }
                         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            items(categories, key = { it }) { value ->
-                                val isDefault = value == "全部分类" || value == "我的最爱"
+                            items(listOf("全部", "全部分类", "我的最爱"), key = { it }) { value ->
+                                val count = when (value) {
+                                    "全部" -> videos.size
+                                    "全部分类" -> videos.count { it.category == "全部分类" }
+                                    else -> videos.count { it.isFav }
+                                }
+                                val label = when (value) {
+                                    "全部" -> "全部"
+                                    "全部分类" -> "未分类"
+                                    else -> "收藏"
+                                }
+                                val itemIcon = when (value) {
+                                    "全部" -> Icons.Outlined.Apps
+                                    "全部分类" -> Icons.Outlined.FolderOpen
+                                    else -> Icons.Outlined.FavoriteBorder
+                                }
+                                Row(
+                                    Modifier.fillMaxWidth().height(52.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(if (!categoryEditMode && category == value) Color.White else Color.Transparent)
+                                        .then(if (!categoryEditMode) Modifier.noRippleClickable { category = value; showCategoryDrawer = false } else Modifier)
+                                        .padding(horizontal = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (categoryEditMode) Spacer(Modifier.size(21.dp))
+                                    else Icon(itemIcon, null, tint = MainText, modifier = Modifier.size(21.dp))
+                                    Text(label, Modifier.weight(1f).padding(start = 12.dp), color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    if (categoryEditMode) Text("默认", color = Color(0xFFAAAAAA), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    else Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                                }
+                            }
+                            item(key = "category-fixed-divider") {
+                                Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFF0F0F0)))
+                            }
+                            items(categories.filterNot { it == "全部分类" || it == "我的最爱" }, key = { it }) { value ->
                                 var dragRemainder by remember(value) { mutableFloatStateOf(0f) }
                                 val latestCategories = rememberUpdatedState(categories)
-                                val count = when (value) {
-                                    "全部分类" -> videos.count { it.category == "全部分类" }
-                                    "我的最爱" -> videos.count { it.isFav }
-                                    else -> videos.count { it.category == value }
-                                }
-                                val label = when (value) { "全部分类" -> "未分类"; "我的最爱" -> "我的收藏"; else -> value }
-                                val itemIcon = when (value) {
-                                    "全部分类" -> Icons.Outlined.FolderOpen
-                                    "我的最爱" -> Icons.Outlined.FavoriteBorder
-                                    else -> Icons.Outlined.Folder
-                                }
+                                val count = videos.count { it.category == value }
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp).animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         .then(if (categoryEditMode) Modifier.pointerInput(value) {
@@ -1989,7 +2012,7 @@ private fun FrameNativeApp(
                                                 if (step != 0) {
                                                     val currentCategories = latestCategories.value
                                                     val from = currentCategories.indexOf(value)
-                                                    val to = (from + step).coerceIn(0, currentCategories.lastIndex)
+                                                    val to = (from + step).coerceIn(1, currentCategories.lastIndex - 1)
                                                     if (from != to) {
                                                         val reordered = currentCategories.toMutableList()
                                                         val moved = reordered.removeAt(from)
@@ -2008,9 +2031,22 @@ private fun FrameNativeApp(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     if (categoryEditMode) Icon(Icons.Outlined.DragHandle, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
-                                    else Icon(itemIcon, null, tint = MainText, modifier = Modifier.size(21.dp))
-                                    Text(label, Modifier.weight(1f).padding(start = 12.dp), color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    else Icon(Icons.Outlined.Folder, null, tint = MainText, modifier = Modifier.size(21.dp))
+                                    Text(value, Modifier.weight(1f).padding(start = 12.dp), color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     if (categoryEditMode) {
+                                        Text("删除",
+                                            Modifier.noRippleClickable {
+                                                repository.saveCategories(categories - value)
+                                                videos.filter { it.category == value }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                                if (category == value) category = "全部"
+                                                refresh()
+                                            }.padding(start = 12.dp, top = 10.dp, bottom = 10.dp),
+                                            color = Color(0xFFE65C5C), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                    } else Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                                }
+                            }
+                        }
+                        if (categoryEditMode) {
                                         if (isDefault) Text("默认", color = Color(0xFFAAAAAA), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                         else Text("删除",
                                             Modifier.noRippleClickable {
@@ -2108,7 +2144,7 @@ private fun HomePage(
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val context = LocalContext.current
-    val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.take(4) }
+    val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.sortedByDescending { it.lastPlayedAt }.take(4) }
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(10) }
     val homeExpansionPreferences = remember {
         context.getSharedPreferences("frame_home_expansion", Context.MODE_PRIVATE)
@@ -2468,7 +2504,7 @@ private fun LibraryPage(
     val filtered = remember(videos, status, category) {
         videos.filter {
             (status == "全部" || (status == "在看" && (it.status == "playing" || it.progress in .01f..99.99f)) || (status == "已看" && (it.status == "watched" || it.progress >= 100f))) &&
-                ((category == "全部分类" && it.category == "全部分类") || (category == "我的最爱" && it.isFav) || (category != "全部分类" && category != "我的最爱" && it.category == category))
+                (category == "全部" || (category == "全部分类" && it.category == "全部分类") || (category == "我的最爱" && it.isFav) || (category != "全部" && category != "全部分类" && category != "我的最爱" && it.category == category))
         }
     }
     val columns = if (compact) 3 else 2
@@ -2751,7 +2787,7 @@ private fun LibraryFilterHeader(
                 Modifier.weight(1f).horizontalScroll(categoryScrollState),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                categories.forEach { value ->
+                (listOf("全部") + categories).forEach { value ->
                     Surface(
                         Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .noRippleClickable { onCategory(value) },
@@ -2759,7 +2795,7 @@ private fun LibraryFilterHeader(
                         color = if (category == value) ThemeTeal else Color.White,
                         shadowElevation = 0.dp,
                     ) {
-                        val label = when (value) { "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
+                        val label = when (value) { "全部" -> "全部"; "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
                         Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
                 }
