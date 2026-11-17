@@ -2047,20 +2047,6 @@ private fun FrameNativeApp(
                             }
                         }
                         if (categoryEditMode) {
-                                        if (isDefault) Text("默认", color = Color(0xFFAAAAAA), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                        else Text("删除",
-                                            Modifier.noRippleClickable {
-                                                repository.saveCategories(categories - value)
-                                                videos.filter { it.category == value }.forEach { repository.update(it.copy(category = "全部分类")) }
-                                                if (category == value) category = "全部分类"
-                                                refresh()
-                                            }.padding(start = 12.dp, top = 10.dp, bottom = 10.dp),
-                                            color = Color(0xFFE65C5C), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                                    } else Text(count.toString(), color = MutedText, fontSize = 13.sp)
-                                }
-                            }
-                        }
-                        if (categoryEditMode) {
                             Spacer(Modifier.height(16.dp))
                             Row(Modifier.fillMaxWidth().height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
