@@ -185,7 +185,10 @@ class NativeLibraryRepository(context: Context) {
     fun replaceAll(items: List<VideoItem>, reviews: List<ReviewEntry>? = null) {
         val oldThumbnails = store.allVideos().mapNotNull { it.thumbPath }.toSet()
         val restored = items.map { item ->
-            item.copy(thumbPath = item.thumbPath?.takeIf { path -> java.io.File(path).isFile })
+            item.copy(
+                thumbPath = item.thumbPath?.takeIf { path -> java.io.File(path).isFile },
+                category = if (item.category == "全部") "全部分类" else item.category
+            )
         }
         val retainedThumbnails = restored.mapNotNull { it.thumbPath }.toSet()
         val restoredCategories = (listOf("全部分类", "我的最爱") + restored.map { it.category }).distinct()
