@@ -2283,18 +2283,17 @@ private fun FrameNativeApp(
                             .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 30.dp)
                     ) {
                         if (sheet == SheetType.DELETE_CATEGORY) {
-                            SheetContent("确定删除该分类？") {
-                                SheetAction("删除该分类", danger = true, bottomPadding = 0.dp) {
-                                    val target = pendingCategoryDelete
-                                    if (target != null) {
-                                        repository.saveCategories(categories - target)
-                                        videos.filter { it.category == target }.forEach { repository.update(it.copy(category = "全部分类")) }
-                                        if (category == target) category = "全部"
-                                        pendingCategoryDelete = null
-                                        refresh()
-                                    }
-                                    sheet = SheetType.NONE
+                            SheetHeading("确定删除该分类？")
+                            SheetAction("删除该分类", danger = true, bottomPadding = 0.dp) {
+                                val target = pendingCategoryDelete
+                                if (target != null) {
+                                    repository.saveCategories(categories - target)
+                                    videos.filter { it.category == target }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                    if (category == target) category = "全部"
+                                    pendingCategoryDelete = null
+                                    refresh()
                                 }
+                                sheet = SheetType.NONE
                             }
                         } else {
                             SheetHeading("新建分类")
