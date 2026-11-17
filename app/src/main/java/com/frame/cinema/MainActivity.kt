@@ -4510,13 +4510,13 @@ private fun AnimatedDropdownPopup(
                 visibleState = visibilityState,
                 enter = fadeIn(animationSpec = tween(280)) +
                     scaleIn(
-                        initialScale = 0.86f,
+                        initialScale = 0.10f,
                         transformOrigin = TransformOrigin(1f, 0f),
                         animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
                     ),
                 exit = fadeOut(animationSpec = tween(180)) +
                     scaleOut(
-                        targetScale = 0.92f,
+                        targetScale = 0.10f,
                         transformOrigin = TransformOrigin(1f, 0f),
                         animationSpec = tween(180)
                     )
