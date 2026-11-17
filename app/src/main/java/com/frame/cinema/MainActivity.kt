@@ -2592,11 +2592,8 @@ private fun LibraryPage(
                     AnimatedDropdownPopup(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false },
-                        offset = androidx.compose.ui.unit.IntOffset(0, with(density) { 36.dp.roundToPx() }),
+                        offset = androidx.compose.ui.unit.IntOffset.Zero,
                         modifier = Modifier.width(192.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
                     ) {
                         CustomSortMenuItem("2列大图", !compact) { onCompactChange(false); showSortMenu = false }
                         CustomSortMenuItem("3列小图", compact) { onCompactChange(true); showSortMenu = false }
@@ -3634,11 +3631,8 @@ private fun RecordsPage(
                     AnimatedDropdownPopup(
                         expanded = showRecordSortMenu,
                         onDismissRequest = { showRecordSortMenu = false },
-                        offset = androidx.compose.ui.unit.IntOffset(0, with(density) { 36.dp.roundToPx() }),
+                        offset = androidx.compose.ui.unit.IntOffset.Zero,
                         modifier = Modifier.width(192.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
                     ) {
                         CustomSortMenuItem("按添加时间", sortMode == RecordSortMode.ADDED) {
                             onRecordSortModeChange(RecordSortMode.ADDED)
@@ -4541,11 +4535,17 @@ private fun AnimatedDropdownPopup(
 ) {
     val visibilityState = remember { MutableTransitionState(false) }
     visibilityState.targetState = expanded
+    val cornerRadius by animateDpAsState(
+        targetValue = if (expanded) 16.dp else 18.dp,
+        animationSpec = tween(280),
+        label = "sortMenuCornerRadius"
+    )
+    val menuShape = RoundedCornerShape(cornerRadius)
 
     if (visibilityState.currentState || visibilityState.targetState) {
         Popup(
-            alignment = Alignment.TopEnd,
-            offset = offset,
+            alignment = Alignment.Center,
+            offset = androidx.compose.ui.unit.IntOffset.Zero,
             onDismissRequest = onDismissRequest,
             properties = PopupProperties(focusable = true)
         ) {
@@ -4554,17 +4554,28 @@ private fun AnimatedDropdownPopup(
                 enter = fadeIn(animationSpec = tween(280)) +
                     scaleIn(
                         initialScale = 0.10f,
-                        transformOrigin = TransformOrigin(1f, 0f),
+                        transformOrigin = TransformOrigin(0.5f, 0.5f),
                         animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
                     ),
                 exit = fadeOut(animationSpec = tween(180)) +
                     scaleOut(
                         targetScale = 0.10f,
-                        transformOrigin = TransformOrigin(1f, 0f),
+                        transformOrigin = TransformOrigin(0.5f, 0.5f),
                         animationSpec = tween(180)
                     )
             ) {
-                Column(modifier = modifier, content = content)
+                Column(
+                    modifier = modifier
+                        .shadow(
+                            3.dp,
+                            menuShape,
+                            ambientColor = Color.Black.copy(alpha = .045f),
+                            spotColor = Color.Black.copy(alpha = .045f)
+                        )
+                        .clip(menuShape)
+                        .background(Color.White),
+                    content = content
+                )
             }
         }
     }
