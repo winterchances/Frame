@@ -793,6 +793,7 @@ private fun FrameNativeApp(
     }
     BackHandler(enabled = showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
+            showNestedCategorySheet -> sheet = SheetType.NONE
             showCategoryDrawer -> { showCategoryDrawer = false; categoryEditMode = false }
             contextMenuOpen -> { contextMenuOpen = false }
             showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
