@@ -373,6 +373,10 @@ class MainActivity : ComponentActivity() {
                                 onSystemBarsVisible = { visible ->
                                     val controller = WindowInsetsControllerCompat(window, window.decorView)
                                     if (visible) controller.show(WindowInsetsCompat.Type.statusBars()) else controller.hide(WindowInsetsCompat.Type.statusBars())
+                                },
+                                onCategoryDrawerOverlay = { progress ->
+                                    val channel = (255f * (1f - 0.28f * progress.coerceIn(0f, 1f))).toInt().coerceIn(0, 255)
+                                    window.statusBarColor = android.graphics.Color.rgb(channel, channel, channel)
                                 }
                             )
                         }
@@ -432,7 +436,8 @@ private fun FrameNativeApp(
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
     onOrientation: (Boolean) -> Unit,
     onKeepAwake: (Boolean) -> Unit,
-    onSystemBarsVisible: (Boolean) -> Unit
+    onSystemBarsVisible: (Boolean) -> Unit,
+    onCategoryDrawerOverlay: (Float) -> Unit
 ) {
     val context = LocalContext.current
     val openPlayerRequestValue by openPlayerRequest
@@ -558,9 +563,10 @@ private fun FrameNativeApp(
     val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
     val categoryDrawerProgress by animateFloatAsState(
         targetValue = if (showCategoryDrawer) 1f else 0f,
-        animationSpec = tween(if (showCategoryDrawer) 300 else 250, easing = if (showCategoryDrawer) androidx.compose.animation.core.FastOutSlowInEasing else androidx.compose.animation.core.FastOutLinearInEasing),
+        animationSpec = tween(if (showCategoryDrawer) 300 else 220, easing = if (showCategoryDrawer) androidx.compose.animation.core.FastOutSlowInEasing else androidx.compose.animation.core.FastOutLinearInEasing),
         label = "category-drawer-backdrop-progress"
     )
+    SideEffect { onCategoryDrawerOverlay(categoryDrawerProgress) }
     val contextMenuReturnProgress by animateFloatAsState(
         targetValue = if (contextMenuVideo != null && !contextMenuOpen) 1f else 0f,
         animationSpec = tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing),
