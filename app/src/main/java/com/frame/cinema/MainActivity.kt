@@ -3580,7 +3580,7 @@ private fun RecordsPage(
                                 ) {
                                     Spacer(Modifier.width(14.dp))
                                     Column(
-                                        Modifier.weight(1f).padding(start = 10.dp, top = 0.dp, bottom = 8.dp)
+                                        Modifier.weight(1f).padding(start = 10.dp, top = 1.dp, bottom = 8.dp)
                                             .bringIntoViewRequester(entryBringIntoView)
                                             .noRippleClickable { onEdit(entry) }
                                     ) {
@@ -3803,7 +3803,7 @@ private fun RecordsPage(
                                             Spacer(Modifier.width(14.dp))
                                             Column(
                                                 Modifier.weight(1f)
-                                                    .padding(start = 10.dp, top = 0.dp, bottom = 8.dp)
+                                                    .padding(start = 10.dp, top = 1.dp, bottom = 8.dp)
                                                     .then(if (timelineEntry.id == entry.id) Modifier.bringIntoViewRequester(entryBringIntoView) else Modifier)
                                                     .noRippleClickable { onEdit(timelineEntry) }
                                             ) {
