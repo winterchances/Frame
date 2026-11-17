@@ -42,12 +42,14 @@ data class VideoItem(
     val rating: Float = 0f,
     val durationMs: Long = 0L,
     val lastPlayedAt: Long = 0L,
-    val thumbPath: String? = null
+    val thumbPath: String? = null,
+    // Null is treated as visible for compatibility with backups created before this field existed.
+    val isInLibrary: Boolean? = true
 ) {
     val contentUri: Uri get() = Uri.parse(uri)
 }
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 7) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 8) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -66,7 +68,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 rating INTEGER NOT NULL DEFAULT 0,
                 duration_ms INTEGER NOT NULL DEFAULT 0,
                 last_played_at INTEGER NOT NULL DEFAULT 0,
-                thumb_path TEXT
+                thumb_path TEXT,
+                is_in_library INTEGER NOT NULL DEFAULT 1
             )""".trimIndent()
         )
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
@@ -120,6 +123,9 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         if (oldVersion < 7) {
             db.execSQL("ALTER TABLE reviews ADD COLUMN standalone_group_id INTEGER")
         }
+        if (oldVersion < 8) {
+            db.execSQL("ALTER TABLE videos ADD COLUMN is_in_library INTEGER NOT NULL DEFAULT 1")
+        }
         if (oldVersion < 5) {
             db.execSQL("""
                 UPDATE videos
@@ -159,10 +165,22 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating")),
                     durationMs = cursor.getLong(cursor.getColumnIndexOrThrow("duration_ms")),
                     lastPlayedAt = cursor.getLong(cursor.getColumnIndexOrThrow("last_played_at")),
-                    thumbPath = cursor.getString(cursor.getColumnIndexOrThrow("thumb_path"))
+                    thumbPath = cursor.getString(cursor.getColumnIndexOrThrow("thumb_path")),
+                    isInLibrary = cursor.getInt(cursor.getColumnIndexOrThrow("is_in_library")) != 0
                 )
             )
         }
+    }
+
+    @Synchronized fun libraryVideos(): List<VideoItem> = allVideos().filter { it.isInLibrary != false }
+
+    @Synchronized fun setInLibrary(id: Long, inLibrary: Boolean) {
+        writableDatabase.update(
+            "videos",
+            ContentValues().apply { put("is_in_library", if (inLibrary) 1 else 0) },
+            "id=?",
+            arrayOf(id.toString())
+        )
     }
 
     @Synchronized fun upsert(video: VideoItem) {
@@ -173,6 +191,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             put("category", video.category); put("bg_index", video.bgIndex); put("review", video.review)
             put("rating", video.rating); put("duration_ms", video.durationMs)
             put("last_played_at", video.lastPlayedAt); put("thumb_path", video.thumbPath)
+            put("is_in_library", if (video.isInLibrary == false) 0 else 1)
         }
         writableDatabase.insertWithOnConflict("videos", null, v, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -217,6 +236,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("rating", video.rating.coerceIn(0f, 5f))
                     put("duration_ms", video.durationMs); put("last_played_at", video.lastPlayedAt)
                     put("thumb_path", video.thumbPath)
+                     put("is_in_library", if (video.isInLibrary == false) 0 else 1)
                 }
                 db.insertWithOnConflict("videos", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             }
