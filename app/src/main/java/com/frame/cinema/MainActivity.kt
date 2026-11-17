@@ -309,7 +309,7 @@ private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
 private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, CATEGORIES, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -450,6 +450,8 @@ private fun FrameNativeApp(
     val recordsListState = rememberLazyListState()
     var page by remember { mutableStateOf(MainPage.HOME) }
     var libraryMultiSelectMode by remember { mutableStateOf(false) }
+    var showCategoryDrawer by remember { mutableStateOf(false) }
+    var categoryEditMode by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
@@ -554,6 +556,11 @@ private fun FrameNativeApp(
         label = "import-data-backdrop-progress"
     )
     val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
+    val categoryDrawerProgress by animateFloatAsState(
+        targetValue = if (showCategoryDrawer) 1f else 0f,
+        animationSpec = tween(if (showCategoryDrawer) 300 else 250, easing = if (showCategoryDrawer) androidx.compose.animation.core.FastOutSlowInEasing else androidx.compose.animation.core.FastOutLinearInEasing),
+        label = "category-drawer-backdrop-progress"
+    )
     val contextMenuReturnProgress by animateFloatAsState(
         targetValue = if (contextMenuVideo != null && !contextMenuOpen) 1f else 0f,
         animationSpec = tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing),
@@ -571,7 +578,7 @@ private fun FrameNativeApp(
             contextMenuFabBounds = null
         }
     }
-    val backdropBlur = maxOf(5.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress), 5.dp * contextMenuProgress)
+    val backdropBlur = maxOf(5.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress), 5.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() {
@@ -750,14 +757,136 @@ private fun FrameNativeApp(
         }
     }
 
+
+        if (showCategoryDrawer || categoryDrawerProgress > 0f) {
+            Box(Modifier.fillMaxSize().zIndex(10f)) {
+                AnimatedVisibility(
+                    visible = showCategoryDrawer,
+                    enter = fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                    exit = fadeOut(tween(220, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
+                    modifier = Modifier.fillMaxSize().zIndex(0f)
+                ) {
+                    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)).noRippleClickable {
+                        showCategoryDrawer = false
+                        categoryEditMode = false
+                    })
+                }
+                AnimatedVisibility(
+                    visible = showCategoryDrawer,
+                    enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) + fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                    exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)) + fadeOut(tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
+                    modifier = Modifier.align(Alignment.CenterStart).zIndex(1f)
+                ) {
+                    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding()) {
+                        Column(
+                            Modifier.width(maxWidth * 0.75f).padding(start = 12.dp).fillMaxHeight().padding(vertical = 40.dp)
+                                .shadow(12.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp))
+                                .background(PageBg).noRippleClickable { }.padding(horizontal = 18.dp, vertical = 20.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("分类管理", Modifier.weight(1f), color = MainText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text(if (categoryEditMode) "完成" else "编辑",
+                                    Modifier.noRippleClickable { categoryEditMode = !categoryEditMode }.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    color = ThemeTeal, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false; categoryEditMode = false })
+                            }
+                            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                items(categories, key = { it }) { value ->
+                                    val isDefault = value == "全部分类" || value == "我的最爱"
+                                    var dragRemainder by remember(value) { mutableFloatStateOf(0f) }
+                                    val latestCategories = rememberUpdatedState(categories)
+                                    val count = when (value) {
+                                        "全部分类" -> videos.count { it.category == "全部分类" }
+                                        "我的最爱" -> videos.count { it.isFav }
+                                        else -> videos.count { it.category == value }
+                                    }
+                                    val label = when (value) { "全部分类" -> "未分类"; "我的最爱" -> "我的收藏"; else -> value }
+                                    val itemIcon = when (value) {
+                                        "全部分类" -> Icons.Outlined.FolderOpen
+                                        "我的最爱" -> Icons.Outlined.FavoriteBorder
+                                        else -> Icons.Outlined.Folder
+                                    }
+                                    Row(
+                                        Modifier.fillMaxWidth().height(52.dp).animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                                            .then(if (categoryEditMode) Modifier.pointerInput(value) {
+                                                detectDragGesturesAfterLongPress(onDragEnd = { dragRemainder = 0f }, onDragCancel = { dragRemainder = 0f }) { change, dragAmount ->
+                                                    change.consume()
+                                                    dragRemainder += dragAmount.y
+                                                    val threshold = 25.dp.toPx()
+                                                    val step = when { dragRemainder >= threshold -> 1; dragRemainder <= -threshold -> -1; else -> 0 }
+                                                    if (step != 0) {
+                                                        val currentCategories = latestCategories.value
+                                                        val from = currentCategories.indexOf(value)
+                                                        val to = (from + step).coerceIn(0, currentCategories.lastIndex)
+                                                        if (from != to) {
+                                                            val reordered = currentCategories.toMutableList()
+                                                            val moved = reordered.removeAt(from)
+                                                            reordered.add(to, moved)
+                                                            categories = reordered
+                                                            repository.saveCategories(reordered)
+                                                        }
+                                                        dragRemainder = 0f
+                                                    }
+                                                }
+                                            } else Modifier)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (!categoryEditMode && category == value) Color.White else Color.Transparent)
+                                            .then(if (!categoryEditMode) Modifier.noRippleClickable { category = value; showCategoryDrawer = false } else Modifier)
+                                            .padding(horizontal = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (categoryEditMode) Icon(Icons.Outlined.DragHandle, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
+                                        else Icon(itemIcon, null, tint = MainText, modifier = Modifier.size(21.dp))
+                                        Text(label, Modifier.weight(1f).padding(start = 12.dp), color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        if (categoryEditMode) {
+                                            if (isDefault) Text("默认", color = Color(0xFFAAAAAA), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                            else Text("删除",
+                                                Modifier.noRippleClickable {
+                                                    repository.saveCategories(categories - value)
+                                                    videos.filter { it.category == value }.forEach { repository.update(it.copy(category = "全部分类")) }
+                                                    if (category == value) category = "全部分类"
+                                                    refresh()
+                                                }.padding(start = 12.dp, top = 10.dp, bottom = 10.dp),
+                                                color = Color(0xFFE65C5C), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                        } else Text(count.toString(), color = MutedText, fontSize = 13.sp)
+                                    }
+                                }
+                            }
+                            if (categoryEditMode) {
+                                Spacer(Modifier.height(16.dp))
+                                Row(Modifier.fillMaxWidth().height(52.dp)
+                                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                    .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 20.dp),
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f), singleLine = true,
+                                        decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText, fontSize = 16.sp); inner() },
+                                        textStyle = TextStyle(fontSize = 16.sp, lineHeight = 18.sp, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                                    Box(Modifier.size(36.dp).clip(CircleShape).background(ThemeTeal).noRippleClickable {
+                                        val name = newCategory.trim()
+                                        if (name.isNotEmpty() && name !in categories) {
+                                            repository.saveCategories(categories + name)
+                                            newCategory = ""
+                                            refresh()
+                                        }
+                                    }, contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Outlined.Add, "添加分类", tint = Color.White, modifier = Modifier.size(20.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
     val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
     LaunchedEffect(sheet) {
         sheetVisibility.targetState = sheet != SheetType.NONE
         if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
-    BackHandler(enabled = contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
+    BackHandler(enabled = showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
+            showCategoryDrawer -> { showCategoryDrawer = false; categoryEditMode = false }
             contextMenuOpen -> { contextMenuOpen = false }
             showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
             showImportDataDialog -> { showImportDataDialog = false; pendingImportUri = null }
@@ -864,7 +993,7 @@ private fun FrameNativeApp(
                                 onCompactChange = { compact = it },
                                 onStatus = { status = it },
                                 onCategory = { category = it },
-                                onCategories = { sheet = SheetType.CATEGORIES },
+                                onOpenCategoryDrawer = onOpenCategoryDrawer,
                                 onLongVideo = { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
                                 onPlay = { selected = it; playVideo(it) },
                                 contextMenuVideo = contextMenuVideo,
@@ -961,7 +1090,7 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
-            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress))) {
+            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
                 AnimatedVisibility(
                     visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode),
                     enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
@@ -1125,133 +1254,6 @@ private fun FrameNativeApp(
                             Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
-                            }
-                        }
-                    }
-                    SheetType.CATEGORIES -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("分类管理")
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth()
-                                .heightIn(max = 350.dp)
-                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White),
-                            userScrollEnabled = false
-                        ) {
-                            itemsIndexed(categories, key = { _, cat -> cat }) { index, cat ->
-                                val isDefault = cat == "全部分类" || cat == "我的最爱"
-                                var dragRemainder by remember(cat) { mutableFloatStateOf(0f) }
-                                val latestCategories = rememberUpdatedState(categories)
-                                Row(
-                                    Modifier.fillMaxWidth().height(52.dp)
-                                        .animateItemPlacement(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
-                                        .then(
-                                            Modifier.pointerInput(cat) {
-                                                detectDragGesturesAfterLongPress(
-                                                    onDragEnd = { dragRemainder = 0f },
-                                                    onDragCancel = { dragRemainder = 0f }
-                                                ) { change, dragAmount ->
-                                                    change.consume()
-                                                    dragRemainder += dragAmount.y
-                                                    val threshold = 25.dp.toPx()
-                                                    val step = when {
-                                                        dragRemainder >= threshold -> 1
-                                                        dragRemainder <= -threshold -> -1
-                                                        else -> 0
-                                                    }
-                                                    if (step != 0) {
-                                                        val currentCategories = latestCategories.value
-                                                        val from = currentCategories.indexOf(cat)
-                                                        val to = (from + step).coerceIn(0, currentCategories.lastIndex)
-                                                        if (from != to) {
-                                                            val reordered = currentCategories.toMutableList()
-                                                            val moved = reordered.removeAt(from)
-                                                            reordered.add(to, moved)
-                                                            categories = reordered
-                                                            repository.saveCategories(reordered)
-                                                        }
-                                                        dragRemainder = 0f
-                                                    }
-                                                }
-                                            }
-                                        )
-                                        .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.DragHandle,
-                                        contentDescription = null,
-                                        tint = Color(0xFF999999),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        when (cat) { "全部分类" -> "未分类"; "我的最爱" -> "我的收藏"; else -> cat },
-                                        Modifier.weight(1f).padding(start = 12.dp),
-                                        color = MainText,
-                                        fontSize = 16.sp
-                                    )
-                                    if (isDefault) {
-                                        Text(
-                                            "默认",
-                                            color = Color(0xFFAAAAAA),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
-                                        )
-                                    } else {
-                                        Text(
-                                            "删除",
-                                            color = Color(0xFFE65C5C),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            modifier = Modifier.noRippleClickable {
-                                                repository.saveCategories(categories - cat)
-                                                videos.filter { it.category == cat }.forEach { repository.update(it.copy(category = "全部分类")) }
-                                                refresh()
-                                            }.padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
-                                        )
-                                    }
-                                }
-                                if (index < categories.lastIndex) {
-                                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .height(52.dp)
-                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                                .padding(horizontal = 20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            BasicTextField(
-                                newCategory,
-                                { newCategory = it },
-                                Modifier.weight(1f)
-                                    .onFocusChanged { sheetKeyboardUp = it.isFocused },
-                                singleLine = true,
-                                decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText, fontSize = 16.sp); inner() },
-                                textStyle = TextStyle(
-                                    fontSize = 16.sp,
-                                    lineHeight = 18.sp,
-                                    color = MainText,
-                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                )
-                            )
-                            Box(
-                                Modifier.size(36.dp).clip(CircleShape).background(ThemeTeal)
-                                    .noRippleClickable {
-                                        val name = newCategory.trim()
-                                        if (name.isNotEmpty() && name !in categories) {
-                                            repository.saveCategories(categories + name); newCategory = ""; refresh()
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Outlined.Add, "添加分类", tint = Color.White, modifier = Modifier.size(20.dp))
                             }
                         }
                     }
@@ -1896,913 +1898,7 @@ private fun FrameNativeApp(
                 startBounds.right + (targetBounds.right - startBounds.right) * p,
                 startBounds.bottom + (targetBounds.bottom - startBounds.bottom) * p
             )
-            BoxWithConstraints(Modifier.fillMaxSize().zIndex(20f)) {
-                val density = LocalDensity.current
-                val cardLeft = with(density) { bounds.left.toDp() }
-                val cardTop = with(density) { bounds.top.toDp() }
-                val cardWidth = with(density) { bounds.width.toDp() }
-                val menuAnchorLeft = with(density) { startBounds.left.toDp() }
-                val menuAnchorTop = with(density) { startBounds.top.toDp() }
-                val menuAnchorWidth = with(density) { startBounds.width.toDp() }
-                val menuAnchorBottom = with(density) { startBounds.bottom.toDp() }
-                val menuWidth = minOf(196.dp, maxWidth - 32.dp)
-                val menuHeight = 42.dp * 7 + 8.dp
-                val menuX = (menuAnchorLeft + menuAnchorWidth / 2f - menuWidth / 2f)
-                    .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
-                val safeTop = 60.dp
-                val safeBottom = 80.dp
-                val maxMenuY = (maxHeight - menuHeight - safeBottom).coerceAtLeast(safeTop)
-                val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
-                    else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
-                Box(
-                    Modifier.offset(x = cardLeft, y = cardTop)
-                        .width(cardWidth)
-                        .graphicsLayer {
-                            alpha = contextMenuProgress
-                            compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
-                        }
-                        .drawWithContent {
-                            drawContent()
-                            fun clearRootRect(rect: Rect) {
-                                val left = maxOf(rect.left, bounds.left)
-                                val top = maxOf(rect.top, bounds.top)
-                                val right = minOf(rect.right, bounds.right)
-                                val bottom = minOf(rect.bottom, bounds.bottom)
-                                if (right > left && bottom > top) {
-                                    drawRect(
-                                        color = Color.Transparent,
-                                        topLeft = Offset(left - bounds.left, top - bounds.top),
-                                        size = Size(right - left, bottom - top),
-                                        blendMode = androidx.compose.ui.graphics.BlendMode.Clear
-                                    )
-                                }
-                            }
-                            fun clearRootRoundRect(rect: Rect, radius: Float) {
-                                drawRoundRect(
-                                    color = Color.Transparent,
-                                    topLeft = Offset(rect.left - bounds.left, rect.top - bounds.top),
-                                    size = Size(rect.width, rect.height),
-                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
-                                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
-                                )
-                            }
-                            fun clearRootCircle(rect: Rect) {
-                                drawCircle(
-                                    color = Color.Transparent,
-                                    radius = minOf(rect.width, rect.height) / 2f,
-                                    center = Offset(
-                                        rect.center.x - bounds.left,
-                                        rect.center.y - bounds.top
-                                    ),
-                                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
-                                )
-                            }
-                            val viewport = contextMenuViewportBounds
-                            if (viewport != null) {
-                                if (bounds.top < viewport.top) clearRootRect(Rect(bounds.left, bounds.top, bounds.right, viewport.top))
-                                if (bounds.bottom > viewport.bottom) clearRootRect(Rect(bounds.left, viewport.bottom, bounds.right, bounds.bottom))
-                                if (bounds.left < viewport.left) clearRootRect(Rect(bounds.left, bounds.top, viewport.left, bounds.bottom))
-                                if (bounds.right > viewport.right) clearRootRect(Rect(viewport.right, bounds.top, bounds.right, bounds.bottom))
-                            }
-                            contextMenuStickyHeaderBounds?.let { clearRootRect(it) }
-                            contextMenuNavigationBounds?.let { clearRootRoundRect(it, 28.dp.toPx()) }
-                            contextMenuFabBounds?.let { clearRootCircle(it) }
-                        },
-                    content = { PosterCardVisual(video, compact) }
-                )
-                Column(
-                    Modifier.offset(x = menuX, y = menuY).width(menuWidth)
-                        .graphicsLayer {
-                            val p = contextMenuProgress
-                            alpha = p
-                            scaleX = .9f + .1f * p
-                            scaleY = .9f + .1f * p
-                            transformOrigin = TransformOrigin(.5f, 0f)
-                        }
-                        .shadow(16.dp, RoundedCornerShape(18.dp))
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color.White)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(18.dp))
-                        .padding(vertical = 4.dp)
-                        .zIndex(2f)
-                ) {
-                    ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
-                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video, showVideoActions = false) }
-                    ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
-                    ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
-                    ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
-                    ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
-                    ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.removeFromLibrary(video.id); refresh(); contextMenuOpen = false }
-                }
-            }
         }
-        if (showClearDataDialog || clearDialogProgress > 0f) {
-            Box(Modifier.fillMaxSize().zIndex(5f).background(Color.Black.copy(alpha = .28f * clearDialogProgress)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) {
-                androidx.compose.animation.AnimatedVisibility(visible = showClearDataDialog,
-                    enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
-                    exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(Color.White).noRippleClickable { }.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("清空全部数据？", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText)
-                        Text("此操作会删除片库条目、分类、封面和本地记录，且无法撤销。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 26.dp, bottom = 22.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFF3B30)).noRippleClickable { repository.clearAll(); refresh(); showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("确认清空", color = Color.White, fontWeight = FontWeight.SemiBold) }
-                        }
-                    }
-                }
-            }
-        }
-        if (showImportDataDialog || importDialogProgress > 0f) {
-            Box(Modifier.fillMaxSize().zIndex(7f).background(Color.Black.copy(alpha = .28f * importDialogProgress)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) {
-                androidx.compose.animation.AnimatedVisibility(visible = showImportDataDialog,
-                    enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
-                    exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(Color.White).noRippleClickable { }.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("导入并覆盖数据？", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText)
-                        Text("导入会覆盖当前片库中的全部数据，且无法撤销。确定继续吗？", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 26.dp, bottom = 22.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(ThemeTeal).noRippleClickable {
-                                val uri = pendingImportUri
-                                showImportDataDialog = false
-                                pendingImportUri = null
-                                if (uri != null) importBackup(uri)
-                            }, contentAlignment = Alignment.Center) { Text("确认导入", color = Color.White, fontWeight = FontWeight.SemiBold) }
-                        }
-                    }
-                }
-            }
-        }
-        if (toast.isNotBlank()) {
-            Box(Modifier.fillMaxSize()) {
-                Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp), shape = CircleShape, color = Color(0xDD222222)) {
-                    Text(toast, color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
-                }
-            }
-        }
-    }
-
-@Composable
-private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onBoundsChanged: ((Rect) -> Unit)? = null, onSelect: (MainPage) -> Unit) {
-    val entries = listOf(
-        MainPage.HOME to FrameHomeIcon,
-        MainPage.LIBRARY to FrameLibraryIcon,
-        MainPage.RECENT to FrameRecentIcon,
-        MainPage.RECORDS to FrameRecordsIcon
-    )
-    BoxWithConstraints(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
-            .onGloballyPositioned { onBoundsChanged?.invoke(it.boundsInRoot()) }
-            .height(56.dp)
-            .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
-    ) {
-        val navWidth = maxWidth
-        Box(
-            Modifier.fillMaxSize()
-                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                .clip(RoundedCornerShape(28.dp))
-                .background(Glass)
-                .border(0.3.dp, Color(0xFFE6E6E6), RoundedCornerShape(28.dp))
-                .padding(5.dp)
-        ) {
-            val slot = (navWidth - 10.dp) / 4
-            val target = slot * entries.indexOfFirst { it.first == current }
-            val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
-            Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
-            Row(Modifier.fillMaxSize()) {
-                entries.forEach { (item, icon) ->
-                    Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            item.label,
-                            fontSize = 10.sp,
-                            lineHeight = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MainText,
-                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun HomePage(
-    videos: List<VideoItem>, weeklyWatchTimeMs: Long, hazeState: HazeState,
-    listState: LazyListState,
-    onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
-) {
-    val context = LocalContext.current
-    val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.take(4) }
-    val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(10) }
-    val homeExpansionPreferences = remember {
-        context.getSharedPreferences("frame_home_expansion", Context.MODE_PRIVATE)
-    }
-    var continueExpanded by remember {
-        mutableStateOf(homeExpansionPreferences.getBoolean("continue_expanded", true))
-    }
-    var recentExpanded by remember {
-        mutableStateOf(homeExpansionPreferences.getBoolean("recent_expanded", true))
-    }
-    val showTopBar by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
-        }
-    }
-    val density = LocalDensity.current
-    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
-    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
-    val homeTopFadeStartPx = statusBarBottomPx + with(density) { 48.dp.toPx() }
-    val homeBottomFadeEndPx = with(density) { (LocalConfiguration.current.screenHeightDp.dp - 72.dp).toPx() }
-    val homeFadeLengthPx = with(density) { 48.dp.toPx() }
-    val homeTitleTopPx = remember { mutableFloatStateOf(0f) }
-    val homeTitleAlphaState = remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 0f
-            else titleFadeAlpha(
-                listState.firstVisibleItemScrollOffset.toFloat(),
-                homeTitleTopPx.floatValue,
-                statusBarBottomPx,
-                titleSafetyGapPx
-            )
-        }
-    }
-    val homeTitleHeightPx = remember { mutableIntStateOf(0) }
-    val homeOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val homeTitleScrollDistancePx = remember {
-        derivedStateOf {
-            when (listState.firstVisibleItemIndex) {
-                0 -> listState.firstVisibleItemScrollOffset.toFloat()
-                1 -> (homeTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> homeTitleHeightPx.intValue + homeOffscreenPx
-            }
-        }
-    }
-    val homeOverlayOffsets by remember(listState) {
-        derivedStateOf {
-            listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
-        }
-    }
-    Box(Modifier.fillMaxSize().clipToBounds()) {
-        AnimatedVisibility(
-            visible = showTopBar,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .background(PageBg)
-                    .statusBarsPadding()
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
-            }
-        }
-        LazyColumn(state = listState, flingBehavior = rememberSoftListFlingBehavior(), modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp).clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
-            item(key = "home-large-title") {
-                Box(
-                    Modifier.zIndex(1f)
-                        .onGloballyPositioned {
-                            homeTitleHeightPx.intValue = it.size.height
-                            if (homeTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
-                                homeTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
-                            }
-                        }
-                        .graphicsLayer { alpha = 0f }
-                ) {
-                    Header("首页", onSettings)
-                }
-            }
-            item(key = "home-stat-panel") {
-                Column(
-                    Modifier.fillMaxWidth()
-                        .graphicsLayer { alpha = 0f }
-                        .background(PageBg)
-                        .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
-                        .drawBehind {
-                            val bleed = 20.dp.toPx()
-                            drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
-
-                        }
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Glass)
-                            .padding(horizontal = 10.dp, vertical = 15.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
-                        Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                        Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
-                        Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                        Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
-                    }
-                }
-            }
-            item(key = "home-stat-panel-gap") { Spacer(Modifier.height(14.dp)) }
-            item(key = "home-continue-heading") {
-                SectionHeading("继续观看", continueExpanded, onToggle = {
-                    continueExpanded = !continueExpanded
-                    homeExpansionPreferences.edit().putBoolean("continue_expanded", continueExpanded).apply()
-                })
-            }
-            item(key = "home-continue-content") {
-                AnimatedVisibility(
-                    visible = continueExpanded,
-                    enter = androidx.compose.animation.expandVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.12f, .64f, 1f))) + fadeIn(tween(300)),
-                    exit = androidx.compose.animation.shrinkVertically(tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(250))
-                ) {
-                    if (continuing.isEmpty()) EmptyHint("暂无观看记录", horizontalPadding = 0.dp) else {
-                        val heroListState = rememberLazyListState()
-                        val snapFling = rememberSnapFlingBehavior(heroListState, SnapPosition.Start)
-                        val gentleSnapFling = remember(snapFling) {
-                            object : FlingBehavior {
-                                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float =
-                                    with(snapFling) { performFling(initialVelocity * .58f) }
-                            }
-                        }
-                        LazyRow(state = heroListState, flingBehavior = gentleSnapFling, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            itemsIndexed(continuing, key = { _, video -> video.id }) { _, video ->
-                                Box(
-                                    Modifier.width(280.dp).height(160.dp).shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                        .clip(RoundedCornerShape(16.dp)).background(PosterBrush(video.bgIndex)).noRippleClickable { onVideo(video) }
-                                ) {
-                                    Thumbnail(video, Modifier.fillMaxSize())
-                                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0f to Color.Transparent, .4f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .8f)))))
-                                    Column(Modifier.align(Alignment.BottomStart).padding(15.dp)) {
-                                        Text(displayVideoName(video.name), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                        Spacer(Modifier.height(2.dp))
-                                        Text("播放至 ${formatTime((video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong())}", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                                        Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
-                                            Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            item(key = "home-recent-heading") {
-                SectionHeading(
-                    "最近添加",
-                    recentExpanded,
-                    chevronExpandDurationMs = 320,
-                    chevronCollapseDurationMs = 240,
-                    chevronExpandEasing = androidx.compose.animation.core.FastOutSlowInEasing,
-                    chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing,
-                    onToggle = {
-                        recentExpanded = !recentExpanded
-                        homeExpansionPreferences.edit().putBoolean("recent_expanded", recentExpanded).apply()
-                    }
-                )
-            }
-            item(key = "home-recent-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
-            item(key = "home-recent-content") {
-                Column(Modifier.fillMaxWidth()) {
-                    if (recent.isEmpty()) {
-                        AnimatedVisibility(
-                            visible = recentExpanded,
-                            enter = expandVertically(tween(300)) + fadeIn(tween(220)),
-                            exit = shrinkVertically(tween(300)) + fadeOut(tween(220))
-                        ) {
-                            EmptyHint("暂无视频，点击右下角添加", horizontalPadding = 0.dp)
-                        }
-                    } else {
-                        recent.forEachIndexed { index, video ->
-                            val collapseDelay = (recent.size - index - 1) * 60
-                            AnimatedVisibility(
-                                visible = recentExpanded,
-                                enter = expandVertically(
-                                    animationSpec = tween(
-                                        durationMillis = 300,
-                                        delayMillis = index * 60,
-                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                    )
-                                ) + fadeIn(tween(durationMillis = 220, delayMillis = index * 60)) +
-                                    slideInVertically(
-                                        initialOffsetY = { it / 8 },
-                                        animationSpec = tween(
-                                            durationMillis = 300,
-                                            delayMillis = index * 60,
-                                            easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                        )
-                                    ),
-                                exit = shrinkVertically(
-                                    animationSpec = tween(
-                                        durationMillis = 300,
-                                        delayMillis = collapseDelay,
-                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                    )
-                                ) + fadeOut(tween(durationMillis = 220, delayMillis = collapseDelay)) +
-                                    slideOutVertically(
-                                        targetOffsetY = { it / 8 },
-                                        animationSpec = tween(
-                                            durationMillis = 300,
-                                            delayMillis = collapseDelay,
-                                            easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                        )
-                                    )
-                            ) {
-                                VideoRow(video, "${video.date} 添加") { onVideo(video) }
-                            }
-                        }
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(20.dp)) }
-        }
-
-        Box(
-            Modifier.fillMaxWidth().zIndex(1f)
-                .graphicsLayer {
-                    translationY = -homeTitleScrollDistancePx.value
-                    alpha = homeTitleAlphaState.value
-                }
-                .padding(horizontal = 20.dp)
-        ) {
-            Header("首页", onSettings)
-        }
-        val homeStatsOffset = homeOverlayOffsets["home-stat-panel"]
-        if (homeStatsOffset != null) {
-            Column(
-                Modifier.fillMaxWidth()
-                    .graphicsLayer { translationY = homeStatsOffset }
-                    .background(PageBg)
-                    .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
-                    .drawBehind {
-                        val bleed = 20.dp.toPx()
-                        drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
-                    }
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp)
-                        .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Glass)
-                        .padding(horizontal = 10.dp, vertical = 15.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Stat("视频总数", videos.size.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("已看完", videos.count { it.progress >= 100f || it.status == "watched" }.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("本周时长", (weeklyWatchTimeMs / 3600000L).toString(), "h", Modifier.weight(1f))
-                }
-            }
-        }
-
-        AnimatedVisibility(
-            visible = showTopBar && homeTitleAlphaState.value <= 0f,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .background(PageBg)
-                    .statusBarsPadding()
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
-            }
-        }
-    }
-}
-
-@Composable
-private fun rememberSoftListFlingBehavior(): FlingBehavior {
-    val decay = remember { exponentialDecay<Float>(frictionMultiplier = 0.8f) }
-    return remember(decay) {
-        object : FlingBehavior {
-            override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-                var lastValue = 0f
-                val animation = AnimationState(initialValue = 0f, initialVelocity = initialVelocity)
-                animation.animateDecay(decay) {
-                    val delta = value - lastValue
-                    val consumed = scrollBy(delta)
-                    lastValue = value
-                    if (abs(delta - consumed) > 0.5f) cancelAnimation()
-                }
-                return animation.velocity
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun LibraryPage(
-    hazeState: HazeState,
-    listState: androidx.compose.foundation.lazy.grid.LazyGridState,
-    stickyCategoryScrollState: androidx.compose.foundation.ScrollState,
-    floatingCategoryScrollState: androidx.compose.foundation.ScrollState,
-    videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
-    sort: SortMode, sortDirection: SortDirection,
-    onSortModeChange: (SortMode) -> Unit, onSortDirectionChange: (SortDirection) -> Unit,
-    onCompactChange: (Boolean) -> Unit,
-    onStatus: (String) -> Unit, onCategory: (String) -> Unit,
-    onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
-    contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
-    onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
-    multiSelectMode: Boolean, onMultiSelectModeChange: (Boolean) -> Unit,
-    onBatchMove: (Set<Long>, String) -> Unit,
-    onBatchFavorite: (Set<Long>, Boolean) -> Unit,
-    onBatchStatus: (Set<Long>, String) -> Unit,
-    onBatchRemove: (Set<Long>) -> Unit
-) {
-    var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var showSortMenu by remember { mutableStateOf(false) }
-    var showCategoryDrawer by remember { mutableStateOf(false) }
-    var showMoveDialog by remember { mutableStateOf(false) }
-    var showStatusDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    val selectedCount = selectedVideoIds.size
-    BackHandler(enabled = multiSelectMode && !showCategoryDrawer) {
-        selectedVideoIds = emptySet()
-        onMultiSelectModeChange(false)
-    }
-    BackHandler(enabled = showCategoryDrawer) {
-        showCategoryDrawer = false
-    }
-    val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
-    val availableMoveCategories = categories.filterNot { it == "我的最爱" }
-    val softListFlingBehavior = rememberSoftListFlingBehavior()
-    val density = LocalDensity.current
-    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
-    val libraryStickyHeaderHeightPx = remember { mutableIntStateOf(0) }
-    val libraryBottomFadeEndPx = with(density) { (LocalConfiguration.current.screenHeightDp.dp - 72.dp).toPx() }
-    val libraryFadeLengthPx = with(density) { 48.dp.toPx() }
-    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
-    val libraryTitleTopPx = remember { mutableFloatStateOf(0f) }
-    val titleAlphaState = remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 0f
-            else titleFadeAlpha(
-                listState.firstVisibleItemScrollOffset.toFloat(),
-                libraryTitleTopPx.floatValue,
-                statusBarBottomPx,
-                titleSafetyGapPx
-            )
-        }
-    }
-    val filtered = remember(videos, status, category) {
-        videos.filter {
-            (status == "全部" || (status == "在看" && (it.status == "playing" || it.progress in .01f..99.99f)) || (status == "已看" && (it.status == "watched" || it.progress >= 100f))) &&
-                ((category == "全部分类" && it.category == "全部分类") || (category == "我的最爱" && it.isFav) || (category != "全部分类" && category != "我的最爱" && it.category == category))
-        }
-    }
-    val columns = if (compact) 3 else 2
-    val gap = if (compact) 10.dp else 16.dp
-    val libraryTitleHeightPx = remember { mutableIntStateOf(0) }
-    val libraryOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val libraryTitleScrollDistancePx = remember {
-        derivedStateOf {
-            when (listState.firstVisibleItemIndex) {
-                0 -> listState.firstVisibleItemScrollOffset.toFloat()
-                1 -> (libraryTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> libraryTitleHeightPx.intValue + libraryOffscreenPx
-            }
-        }
-    }
-    Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(columns),
-            state = listState,
-            flingBehavior = softListFlingBehavior,
-            modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = if (compact) 114.dp else 108.dp),
-            horizontalArrangement = Arrangement.spacedBy(gap),
-            verticalArrangement = Arrangement.spacedBy(gap)
-        ) {
-            item(key = "library-title", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                Row(
-                    Modifier.fillMaxWidth()
-                        .onGloballyPositioned {
-                            libraryTitleHeightPx.intValue = it.size.height
-                            if (libraryTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
-                                libraryTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
-                            }
-                        }
-                        .graphicsLayer { alpha = 0f }
-                        .padding(top = 40.dp, bottom = 15.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                    ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
-                    Spacer(Modifier.size(36.dp))
-                    Spacer(Modifier.size(36.dp))
-                }
-            }
-            item(key = "library-filter-header", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                LibraryFilterHeader(
-                    categories = categories, status = status, category = category,
-                    categoryScrollState = stickyCategoryScrollState,
-                    onStatus = onStatus, onCategory = onCategory,
-                    onOpenCategoryDrawer = { showCategoryDrawer = true },
-                    alpha = 0f,
-                    onBoundsChanged = { libraryStickyHeaderHeightPx.intValue = it.height.roundToInt() },
-                    horizontalPadding = 0.dp,
-                    categoryBottomPadding = 0.dp,
-                    containerBottomPadding = if (compact) 6.dp else 0.dp
-                )
-            }
-            if (filtered.isEmpty()) {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                    EmptyHint(if (videos.isEmpty()) "片库还是空的，点击右下角导入视频" else "没有符合条件的视频")
-                }
-            } else {
-                items(filtered, key = { it.id }) { video ->
-                    Box(Modifier.fillMaxWidth()) {
-                        PosterCard(
-                            video, compact,
-                            onPlay = { if (multiSelectMode) {
-                                selectedVideoIds = if (video.id in selectedVideoIds) selectedVideoIds - video.id else selectedVideoIds + video.id
-                            } else onPlay(video) },
-                            onLong = { bounds -> onLongVideo(video, bounds) },
-                            modifier = Modifier.fillMaxWidth(),
-                            alpha = 1f,
-                            onBoundsChanged = if (contextMenuVideo?.id == video.id) onContextMenuBoundsChanged else null
-                        )
-                        if (multiSelectMode) {
-                            Box(
-                                Modifier.align(Alignment.TopEnd).padding(7.dp).size(25.dp)
-                                    .clip(CircleShape)
-                                    .background(if (video.id in selectedVideoIds) ThemeTeal else Color.Black.copy(alpha = .42f))
-                                    .border(1.5.dp, Color.White, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (video.id in selectedVideoIds) Icon(Icons.Outlined.Check, null, tint = Color.White, modifier = Modifier.size(17.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Row(
-            Modifier.fillMaxWidth()
-                .background(PageBg)
-                .graphicsLayer {
-                    translationY = if (multiSelectMode) 0f else -libraryTitleScrollDistancePx.value
-                    alpha = if (multiSelectMode) 1f else titleAlphaState.value
-                }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (multiSelectMode) {
-                TextButton(onClick = { selectedVideoIds = emptySet(); onMultiSelectModeChange(false) }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text("取消", color = ThemeTeal, fontSize = 14.sp)
-                }
-                Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, textAlign = TextAlign.Center, maxLines = 1)
-                TextButton(onClick = {
-                    val visibleIds = filtered.map { it.id }.toSet()
-                    selectedVideoIds = if (visibleIds.isNotEmpty() && visibleIds.all { it in selectedVideoIds }) selectedVideoIds - visibleIds else selectedVideoIds + visibleIds
-                }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 14.sp)
-                }
-            } else {
-                Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                ActionIcon(Icons.Outlined.Checklist, "批量选择", {
-                    selectedVideoIds = emptySet()
-                    onMultiSelectModeChange(true)
-                })
-                Box {
-                    ActionIcon(FrameGridIcon, "视图与排序", { showSortMenu = true })
-                    AnimatedDropdownPopup(
-                        expanded = showSortMenu,
-                        onDismissRequest = { showSortMenu = false },
-                        offset = androidx.compose.ui.unit.IntOffset(0, with(density) { 36.dp.roundToPx() }),
-                        modifier = Modifier.width(192.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
-                    ) {
-                        CustomSortMenuItem("2列大图", !compact) { onCompactChange(false); showSortMenu = false }
-                        CustomSortMenuItem("3列小图", compact) { onCompactChange(true); showSortMenu = false }
-                        HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
-                        CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) { onSortModeChange(SortMode.ADDED); showSortMenu = false }
-                        CustomSortMenuItem("按名称", sort == SortMode.NAME) { onSortModeChange(SortMode.NAME); showSortMenu = false }
-                        HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
-                        CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) { onSortDirectionChange(SortDirection.ASCENDING); showSortMenu = false }
-                        CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) { onSortDirectionChange(SortDirection.DESCENDING); showSortMenu = false }
-                    }
-                }
-            }
-        }
-        AnimatedVisibility(
-            visible = multiSelectMode && selectedCount > 0,
-            enter = slideInVertically(tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { it } + fadeIn(tween(220)),
-            exit = slideOutVertically(tween(200, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { it } + fadeOut(tween(160)),
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                    .height(64.dp)
-                    .shadow(8.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = .08f), spotColor = Color.Black.copy(alpha = .10f))
-                    .clip(RoundedCornerShape(18.dp)).background(Color.White),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showMoveDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.FolderOpen, null, tint = MainText, modifier = Modifier.size(20.dp))
-                    Text("移动分类", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
-                }
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
-                    onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
-                    selectedVideoIds = emptySet()
-                    onMultiSelectModeChange(false)
-                }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.FavoriteBorder, null, tint = MainText, modifier = Modifier.size(20.dp))
-                    Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
-                }
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showStatusDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.CheckCircleOutline, null, tint = MainText, modifier = Modifier.size(20.dp))
-                    Text("修改状态", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
-                }
-                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showDeleteDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.DeleteOutline, null, tint = Color(0xFFFF3B30), modifier = Modifier.size(20.dp))
-                    Text("批量移除", fontSize = 11.sp, color = Color(0xFFFF3B30), modifier = Modifier.padding(top = 3.dp))
-                }
-            }
-        }
-        LibraryFilterHeader(
-            categories = categories, status = status, category = category,
-            categoryScrollState = floatingCategoryScrollState,
-            onStatus = onStatus, onCategory = onCategory,
-            onOpenCategoryDrawer = { showCategoryDrawer = true },
-            alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
-            modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
-                .graphicsLayer {
-                    translationY = if (multiSelectMode) {
-                        libraryTitleHeightPx.intValue.toFloat()
-                    } else if (listState.firstVisibleItemIndex == 0) {
-                        (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
-                    } else 0f
-                }
-        )
-        if (showMoveDialog) {
-            AlertDialog(
-                onDismissRequest = { showMoveDialog = false },
-                title = { Text("移动到分类") },
-                text = {
-                    Column {
-                        availableMoveCategories.forEach { target ->
-                            TextButton(onClick = {
-                                onBatchMove(selectedVideoIds, target)
-                                selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showMoveDialog = false
-                            }, modifier = Modifier.fillMaxWidth()) {
-                                Text(if (target == "全部分类") "未分类" else target, color = MainText)
-                            }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { showMoveDialog = false }) { Text("取消") } }
-            )
-        }
-        if (showStatusDialog) {
-            AlertDialog(
-                onDismissRequest = { showStatusDialog = false },
-                title = { Text("修改播放状态") },
-                text = {
-                    Column {
-                        listOf("未看", "在看", "已看").forEach { target ->
-                            TextButton(onClick = {
-                                onBatchStatus(selectedVideoIds, target)
-                                selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showStatusDialog = false
-                            }, modifier = Modifier.fillMaxWidth()) { Text(target, color = MainText) }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { showStatusDialog = false }) { Text("取消") } }
-            )
-        }
-        if (showDeleteDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
-                title = { Text("移出所选视频？") },
-                text = { Text("确定将 $selectedCount 个视频移出片库吗？视频感想、评分、观看时长和封面缓存都会保留。") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        onBatchRemove(selectedVideoIds)
-                        selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showDeleteDialog = false
-                    }) { Text("移出片库", color = Color(0xFFE05A5A)) }
-                },
-                dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
-            )
-        }
-
-        BoxWithConstraints(Modifier.fillMaxSize().zIndex(20f)) {
-            AnimatedVisibility(
-                visible = showCategoryDrawer,
-                enter = fadeIn(tween(180)),
-                exit = fadeOut(tween(160)),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Box(
-                    Modifier.fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .noRippleClickable { showCategoryDrawer = false }
-                )
-            }
-            AnimatedVisibility(
-                visible = showCategoryDrawer,
-                enter = slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                ) + fadeIn(tween(220)),
-                exit = slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                ) + fadeOut(tween(180)),
-                modifier = Modifier.align(Alignment.TopStart)
-            ) {
-                Column(
-                    Modifier.width(maxWidth * 0.75f)
-                        .padding(start = 12.dp)
-                        .fillMaxHeight()
-                        .padding(vertical = 40.dp)
-                        .shadow(12.dp, RoundedCornerShape(24.dp))
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(PageBg)
-                        .noRippleClickable { }
-                        .padding(horizontal = 18.dp, vertical = 20.dp)
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = 18.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "分类管理",
-                            Modifier.weight(1f),
-                            color = MainText,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false })
-                    }
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        items(categories, key = { it }) { value ->
-                            val count = when (value) {
-                                "全部分类" -> videos.count { it.category == "全部分类" }
-                                "我的最爱" -> videos.count { it.isFav }
-                                else -> videos.count { it.category == value }
-                            }
-                            val label = when (value) {
-                                "全部分类" -> "未分类"
-                                "我的最爱" -> "我的收藏"
-                                else -> value
-                            }
-                            val itemIcon = when (value) {
-                                "全部分类" -> Icons.Outlined.FolderOpen
-                                "我的最爱" -> Icons.Outlined.FavoriteBorder
-                                else -> Icons.Outlined.Folder
-                            }
-                            Row(
-                                Modifier.fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (category == value) Color.White else Color.Transparent)
-                                    .noRippleClickable {
-                                        onCategory(value)
-                                        showCategoryDrawer = false
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(itemIcon, contentDescription = null, tint = MainText, modifier = Modifier.size(21.dp))
-                                Text(
-                                    label,
-                                    Modifier.weight(1f).padding(start = 12.dp),
-                                    color = MainText,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(count.toString(), color = MutedText, fontSize = 13.sp)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 @Composable
