@@ -131,6 +131,8 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -459,6 +461,8 @@ private fun FrameNativeApp(
     var categoryEditMode by remember { mutableStateOf(false) }
     var editingCategoryName by remember { mutableStateOf<String?>(null) }
     var editingCategoryDraft by remember { mutableStateOf("") }
+    val categoryRenameFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(editingCategoryName) { if (editingCategoryName != null) categoryRenameFocusRequester.requestFocus() }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
@@ -2038,7 +2042,7 @@ private fun FrameNativeApp(
                                         BasicTextField(
                                             value = editingCategoryDraft,
                                             onValueChange = { editingCategoryDraft = it },
-                                            modifier = Modifier.weight(1f).padding(start = 12.dp),
+                                            modifier = Modifier.weight(1f).padding(start = 12.dp).focusRequester(categoryRenameFocusRequester),
                                             singleLine = true,
                                             textStyle = TextStyle(fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false))
                                         )
