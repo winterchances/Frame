@@ -287,10 +287,11 @@ class NativeLibraryRepository(context: Context) {
     fun updatePlayback(id: Long, positionMs: Long, durationMs: Long, ended: Boolean = false) {
         val item = store.allVideos().firstOrNull { it.id == id } ?: return
         val percent = if (durationMs > 0) positionMs.toFloat() / durationMs * 100f else 0f
+        val keepCompleted = item.status == "watched" && !ended
         store.upsert(
             item.copy(
-                progress = if (ended) 100f else percent.coerceIn(0f, 99.9f),
-                status = if (ended) "watched" else if (percent > 0) "playing" else item.status,
+                progress = if (ended || keepCompleted) 100f else percent.coerceIn(0f, 99.9f),
+                status = if (ended || keepCompleted) "watched" else if (percent > 0) "playing" else item.status,
                 durationMs = durationMs,
                 lastPlayedAt = System.currentTimeMillis()
             )
