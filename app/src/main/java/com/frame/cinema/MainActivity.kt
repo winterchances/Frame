@@ -479,7 +479,7 @@ private fun FrameNativeApp(
     var reviewEntries by remember { mutableStateOf(repository.reviews()) }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories().let { saved ->
-        val ordered = listOf("我的最爱") + saved.filterNot { it == "全部分类" || it == "我的最爱" } + "全部分类"
+        val ordered = listOf("我的最爱") + saved.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct() + "全部分类"
         if (ordered != saved) repository.saveCategories(ordered)
         ordered
     }) }
@@ -2003,7 +2003,7 @@ private fun FrameNativeApp(
                             item(key = "category-fixed-divider") {
                                 Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFF0F0F0)))
                             }
-                            items(categories.filterNot { it == "全部分类" || it == "我的最爱" }, key = { it }) { value ->
+                            items(categories.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct(), key = { it }) { value ->
                                 var dragRemainder by remember(value) { mutableFloatStateOf(0f) }
                                 val latestCategories = rememberUpdatedState(categories)
                                 val count = videos.count { it.category == value }
