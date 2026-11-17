@@ -1954,7 +1954,7 @@ private fun FrameNativeApp(
             }
         }
 
-    Box(Modifier.fillMaxSize().zIndex(10f)) {
+    Box(Modifier.fillMaxSize().zIndex(if (sheet == SheetType.DELETE_CATEGORY) 2f else 10f)) {
             AnimatedVisibility(
                 visible = showCategoryDrawer,
                 enter = fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
