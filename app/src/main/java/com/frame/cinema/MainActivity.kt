@@ -1955,8 +1955,8 @@ private fun FrameNativeApp(
     Box(Modifier.fillMaxSize().zIndex(10f)) {
             AnimatedVisibility(
                 visible = showCategoryDrawer,
-                enter = fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
-                exit = fadeOut(tween(220, easing = androidx.compose.animation.core.FastOutLinearInEasing)),
+                enter = fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                exit = fadeOut(tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
                 modifier = Modifier.fillMaxSize().zIndex(0f)
             ) {
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)).noRippleClickable {
