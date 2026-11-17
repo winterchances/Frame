@@ -2520,6 +2520,7 @@ private fun LibraryPage(
         }
         Row(
             Modifier.fillMaxWidth()
+                .background(PageBg)
                 .graphicsLayer {
                     translationY = if (multiSelectMode) 0f else -libraryTitleScrollDistancePx.value
                     alpha = if (multiSelectMode) 1f else titleAlphaState.value
@@ -2618,7 +2619,7 @@ private fun LibraryPage(
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
                 .graphicsLayer {
                     translationY = if (multiSelectMode) {
-                        libraryTitleHeightPx.intValue.toFloat() + with(density) { 12.dp.toPx() }
+                        libraryTitleHeightPx.intValue.toFloat()
                     } else if (listState.firstVisibleItemIndex == 0) {
                         (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
                     } else 0f
