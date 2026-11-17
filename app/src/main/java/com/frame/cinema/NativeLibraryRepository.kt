@@ -114,6 +114,11 @@ class NativeLibraryRepository(context: Context) {
     fun importUris(uris: List<Uri>, onMetadataReady: () -> Unit = {}): Int {
         var added = 0
         uris.forEachIndexed { index, uri ->
+            runCatching {
+                app.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
             val existing = store.allVideos().firstOrNull { it.uri == uri.toString() }
             if (existing != null) {
                 if (existing.isInLibrary == false) {
@@ -121,11 +126,6 @@ class NativeLibraryRepository(context: Context) {
                     added++
                 }
                 return@forEachIndexed
-            }
-            runCatching {
-                app.contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
             }
             val name = queryName(uri)
             val id = System.currentTimeMillis() * 100 + index
@@ -144,7 +144,7 @@ class NativeLibraryRepository(context: Context) {
             thumbnailExecutor.execute {
                 val metadata = ThumbnailStore.createVideoMetadata(app, uri, id)
                 // Import may be cancelled by removing the item or clearing the library while
-                // metadata extraction is running. Never resurrect a deleted database row.
+                // metadata extraction is running. Keep metadata on a hidden row without restoring it.
                 val current = store.allVideos().firstOrNull { it.id == id }
                 if (current != null) {
                     store.upsert(
