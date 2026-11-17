@@ -3353,7 +3353,7 @@ private fun RecordsPage(
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
-                            .padding(16.dp)
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 3.dp)
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
@@ -3407,7 +3407,7 @@ private fun RecordsPage(
                         Spacer(Modifier.height(16.dp))
                         Row(
                             Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.Top
                         ) {
                             Text(
                                 "观影感想",
@@ -3613,7 +3613,7 @@ private fun RecordsPage(
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
                             .noRippleClickable { onEdit(entry) }
-                            .padding(16.dp)
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 3.dp)
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
@@ -3671,7 +3671,7 @@ private fun RecordsPage(
                         Spacer(Modifier.height(16.dp))
                         Row(
                             Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.Top
                         ) {
                             Text(
                                 "观影感想",
