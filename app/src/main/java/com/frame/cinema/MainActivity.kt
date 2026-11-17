@@ -2989,6 +2989,8 @@ private fun RecordsPage(
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     var showRecordSortMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val exportScope = rememberCoroutineScope()
+    var exportingReviewVideoId by remember { mutableStateOf<Long?>(null) }
     val recordExpansionPreferences = remember {
         context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
     }
@@ -3282,6 +3284,40 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
+                            Box(
+                                Modifier.size(30.dp).then(
+                                    if (exportingReviewVideoId == null) Modifier.noRippleClickable {
+                                        exportingReviewVideoId = video.id
+                                        exportScope.launch {
+                                            var bitmap: Bitmap? = null
+                                            val saved = try {
+                                                bitmap = withContext(Dispatchers.Default) {
+                                                    createReviewExportBitmap(video, entries)
+                                                }
+                                                saveVideoScreenshot(context, bitmap!!)
+                                            } catch (_: Exception) {
+                                                false
+                                            } finally {
+                                                bitmap?.recycle()
+                                                exportingReviewVideoId = null
+                                            }
+                                            Toast.makeText(
+                                                context,
+                                                if (saved) "观影记录图片已保存到图片/影匣" else "观影记录图片保存失败",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    } else Modifier
+                                ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Download,
+                                    contentDescription = "下载观影记录",
+                                    tint = if (exportingReviewVideoId == video.id) Color(0xFFCCCCCC) else Color(0xFF777777),
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
                             Box(
                                 Modifier.size(30.dp).noRippleClickable { onCreate(video) },
                                 contentAlignment = Alignment.Center
@@ -4087,6 +4123,181 @@ private fun findVideoTextureView(view: android.view.View): TextureView? {
         }
     }
     return null
+}
+
+private fun wrapReviewExportText(
+    text: String,
+    paint: android.graphics.Paint,
+    maxWidth: Float
+): List<String> {
+    val lines = mutableListOf<String>()
+    text.split('\n').forEach { paragraph ->
+        if (paragraph.isEmpty()) {
+            lines.add("")
+        } else {
+            var remaining = paragraph
+            while (remaining.isNotEmpty()) {
+                val count = paint.breakText(remaining, true, maxWidth, null).coerceAtLeast(1)
+                lines.add(remaining.substring(0, count))
+                remaining = remaining.substring(count)
+            }
+        }
+    }
+    return lines.ifEmpty { listOf("") }
+}
+
+private fun createReviewExportBitmap(
+    video: VideoItem,
+    entries: List<ReviewEntry>
+): Bitmap {
+    val width = 1080
+    val margin = 72f
+    val contentWidth = width - margin * 2
+    val titlePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(35, 35, 35)
+        textSize = 48f
+        typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+    }
+    val bodyPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(75, 75, 75)
+        textSize = 34f
+        typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
+    }
+    val metaPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(145, 145, 145)
+        textSize = 25f
+        typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
+    }
+    val labelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(90, 90, 90)
+        textSize = 25f
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+    }
+    val accentPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.rgb(125, 190, 174)
+        strokeWidth = 5f
+        strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+    val titleLines = wrapReviewExportText(
+        displayVideoName(video.name),
+        titlePaint,
+        contentWidth - 330f
+    )
+    val reviewLayouts = entries.map { entry ->
+        val date = SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt))
+        Triple(date, wrapReviewExportText(entry.content, bodyPaint, contentWidth - 54f), entry)
+    }
+    val coverTop = 190f
+    val coverHeight = 350f
+    var y = coverTop + coverHeight + 72f
+    y += 54f
+    reviewLayouts.forEach { (_, lines, _) ->
+        y += 42f + lines.size * 52f + 48f
+    }
+    val height = (y + 120f).toInt().coerceAtLeast(1000)
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.rgb(248, 248, 246))
+
+    val cardPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+    }
+    val cardRect = android.graphics.RectF(28f, 28f, width - 28f, height - 28f)
+    canvas.drawRoundRect(cardRect, 30f, 30f, cardPaint)
+
+    val topLabelPaint = android.graphics.Paint(labelPaint).apply {
+        color = android.graphics.Color.rgb(125, 155, 146)
+        textSize = 24f
+        letterSpacing = 2f
+    }
+    canvas.drawText("FRAME  /  WATCH JOURNAL", margin, 112f, topLabelPaint)
+    canvas.drawLine(margin, 140f, margin + 62f, 140f, accentPaint)
+
+    val coverRect = android.graphics.RectF(margin, coverTop, margin + 260f, coverTop + coverHeight)
+    val coverPath = android.graphics.Path().apply {
+        addRoundRect(coverRect, 18f, 18f, android.graphics.Path.Direction.CW)
+    }
+    canvas.save()
+    canvas.clipPath(coverPath)
+    canvas.drawColor(android.graphics.Color.rgb(238, 239, 239))
+    val cover = video.thumbPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
+    if (cover != null) {
+        val scale = maxOf(coverRect.width() / cover.width, coverRect.height() / cover.height)
+        val matrix = android.graphics.Matrix().apply {
+            setScale(scale, scale)
+            postTranslate(
+                coverRect.left + (coverRect.width() - cover.width * scale) / 2f,
+                coverRect.top + (coverRect.height() - cover.height * scale) / 2f
+            )
+        }
+        canvas.drawBitmap(cover, matrix, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG or android.graphics.Paint.FILTER_BITMAP_FLAG))
+        cover.recycle()
+    } else {
+        val placeholderPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(175, 180, 180)
+            textSize = 26f
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        canvas.drawText("FRAME", coverRect.centerX(), coverRect.centerY(), placeholderPaint)
+    }
+    canvas.restore()
+
+    val textLeft = margin + 300f
+    var titleY = coverTop + 58f
+    titleLines.forEach { line ->
+        canvas.drawText(line, textLeft, titleY, titlePaint)
+        titleY += 62f
+    }
+    val infoPaint = android.graphics.Paint(metaPaint).apply { textSize = 26f }
+    val statusText = if (video.status == "watched" || video.progress >= 100f) {
+        "${video.date}  ·  已看完"
+    } else {
+        "${video.date}  ·  ${video.progress.toInt()}%"
+    }
+    canvas.drawText(statusText, textLeft, maxOf(titleY + 28f, coverTop + 190f), infoPaint)
+    if (video.rating > 0f) {
+        val ratingPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(210, 166, 82)
+            textSize = 34f
+            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+        }
+        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", video.rating)}", textLeft, coverTop + 280f, ratingPaint)
+    }
+
+    var cursorY = coverTop + coverHeight + 72f
+    canvas.drawLine(margin, cursorY, width - margin, cursorY, android.graphics.Paint().apply {
+        color = android.graphics.Color.rgb(238, 238, 238)
+        strokeWidth = 2f
+    })
+    cursorY += 62f
+    canvas.drawText("观影感想", margin, cursorY, titlePaint.apply { textSize = 36f })
+    canvas.drawText("${entries.size} 条", margin + 190f, cursorY, metaPaint)
+    cursorY += 54f
+
+    reviewLayouts.forEachIndexed { index, (date, lines, _) ->
+        canvas.drawCircle(margin + 8f, cursorY - 8f, 7f, accentPaint)
+        canvas.drawText(date, margin + 34f, cursorY, metaPaint)
+        cursorY += 48f
+        lines.forEach { line ->
+            canvas.drawText(line, margin + 34f, cursorY, bodyPaint)
+            cursorY += 52f
+        }
+        cursorY += 38f
+        if (index != reviewLayouts.lastIndex) {
+            canvas.drawLine(margin + 34f, cursorY - 12f, width - margin, cursorY - 12f, android.graphics.Paint().apply {
+                color = android.graphics.Color.rgb(242, 242, 242)
+                strokeWidth = 1.5f
+            })
+        }
+    }
+    val footerPaint = android.graphics.Paint(metaPaint).apply {
+        textSize = 22f
+        textAlign = android.graphics.Paint.Align.CENTER
+        color = android.graphics.Color.rgb(165, 165, 165)
+        letterSpacing = 1f
+    }
+    canvas.drawText("影匣  ·  FRAME", width / 2f, height - 68f, footerPaint)
+    return bitmap
 }
 
 private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap: Bitmap): Boolean =
