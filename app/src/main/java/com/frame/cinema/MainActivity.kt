@@ -2465,16 +2465,21 @@ private fun HomePage(
         }
 
         val showStickyTitle = showTopBar && homeTitleAlphaState.value <= 0f
+        val stickyTitleVisibility = remember { MutableTransitionState(false) }
+        stickyTitleVisibility.targetState = showStickyTitle
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(if (showStickyTitle) PageBg else Color.Transparent)
+                .background(
+                    if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
+                    else Color.Transparent
+                )
                 .statusBarsPadding()
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             AnimatedVisibility(
-                visible = showStickyTitle,
+                visibleState = stickyTitleVisibility,
                 enter = fadeIn(tween(200)),
                 exit = fadeOut(tween(200))
             ) {
@@ -3907,16 +3912,21 @@ private fun RecordsPage(
         }
 
         val showStickyTitle = showTopBar && recordsTitleAlphaState.value <= 0f
+        val stickyTitleVisibility = remember { MutableTransitionState(false) }
+        stickyTitleVisibility.targetState = showStickyTitle
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(if (showStickyTitle) PageBg else Color.Transparent)
+                .background(
+                    if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
+                    else Color.Transparent
+                )
                 .statusBarsPadding()
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             AnimatedVisibility(
-                visible = showStickyTitle,
+                visibleState = stickyTitleVisibility,
                 enter = fadeIn(tween(200)),
                 exit = fadeOut(tween(200))
             ) {
