@@ -2783,6 +2783,7 @@ private fun LibraryPage(
         }
 
         }
+    }
 
 @Composable
 private fun LibraryFilterHeader(
