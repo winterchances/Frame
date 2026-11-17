@@ -4603,11 +4603,11 @@ private fun createUnifiedReviewExportBitmap(
 
 private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap: Bitmap): Boolean =
     withContext(Dispatchers.IO) {
-        val fileName = "一帧_${SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())}.jpg"
+        val fileName = "一帧_${SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())}.png"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, fileName)
-                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
                 put(
                     android.provider.MediaStore.Images.Media.RELATIVE_PATH,
                     "${Environment.DIRECTORY_PICTURES}/一帧"
@@ -4619,7 +4619,7 @@ private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap
                 ?: return@withContext false
             val written = runCatching {
                 resolver.openOutputStream(uri)?.use { output ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                 } ?: false
             }.getOrDefault(false)
             if (written) {
@@ -4641,11 +4641,11 @@ private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap
             val file = File(directory, fileName)
             val written = runCatching {
                 java.io.FileOutputStream(file).use { output ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                 }
             }.getOrDefault(false)
             if (written) {
-                MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf("image/jpeg"), null)
+                MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf("image/png"), null)
             } else {
                 file.delete()
             }
