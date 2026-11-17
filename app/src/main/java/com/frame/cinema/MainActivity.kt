@@ -4420,7 +4420,7 @@ private fun createUnifiedReviewExportBitmap(
         letterSpacing = 2.2f
         typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
     }
-    canvas.drawText("FRAME  /  WATCH JOURNAL", margin, 108f, eyebrowPaint)
+    canvas.drawText("FRAME  /  JOURNAL", margin, 108f, eyebrowPaint)
     canvas.drawLine(margin, 137f, margin + 76f, 137f, accentPaint)
 
     val coverRect = android.graphics.RectF(
@@ -4466,7 +4466,7 @@ private fun createUnifiedReviewExportBitmap(
         textSize = 22f
         letterSpacing = 1.2f
     }
-    canvas.drawText("NOW WATCHING", textLeft, coverTop + 34f, heroLabelPaint)
+    canvas.drawText("A FRAME, A MOMENT.", textLeft, coverTop + 34f, heroLabelPaint)
     var titleY = coverTop + 105f
     titleLines.forEach { line ->
         canvas.drawText(line, textLeft, titleY, titlePaint)
