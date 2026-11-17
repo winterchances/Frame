@@ -3419,7 +3419,7 @@ private fun RecordsPage(
                         Spacer(Modifier.height(16.dp))
                         Row(
                             Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.Top
                         ) {
                             Text(
                                 "观影感想",
@@ -3685,7 +3685,7 @@ private fun RecordsPage(
                         Spacer(Modifier.height(16.dp))
                         Row(
                             Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.Top
                         ) {
                             Text(
                                 "观影感想",
