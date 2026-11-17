@@ -2733,7 +2733,7 @@ private fun LibraryPage(
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        ActionIcon(Icons.Outlined.Close, "关闭分类管理") { showCategoryDrawer = false }
+                        ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false })
                     }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
