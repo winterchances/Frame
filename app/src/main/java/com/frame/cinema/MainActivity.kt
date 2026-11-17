@@ -4194,7 +4194,7 @@ private fun createReviewExportBitmap(
     reviewLayouts.forEach { (_, lines, _) ->
         y += 42f + lines.size * 52f + 48f
     }
-    val height = (y + 120f).toInt().coerceAtLeast(1000)
+    val height = (y + 180f).toInt().coerceAtLeast(1000)
     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     val canvas = android.graphics.Canvas(bitmap)
     canvas.drawColor(android.graphics.Color.rgb(248, 248, 246))
