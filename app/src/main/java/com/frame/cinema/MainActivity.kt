@@ -3589,13 +3589,15 @@ private fun RecordsPage(
                 ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
                 ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
                 Box {
-                    ActionIcon(FrameSortIcon, "记录排序", { showRecordSortMenu = true }, iconSize = 18.dp)
-                    DropdownMenu(
+                    ActionIcon(FrameGridIcon, "记录排序与视图", { showRecordSortMenu = true })
+                    AnimatedDropdownPopup(
                         expanded = showRecordSortMenu,
                         onDismissRequest = { showRecordSortMenu = false },
-                        modifier = Modifier.width(224.dp)
+                        offset = androidx.compose.ui.unit.IntOffset(0, with(density) { 36.dp.roundToPx() }),
+                        modifier = Modifier.width(192.dp)
                             .shadow(8.dp, RoundedCornerShape(16.dp))
-                            .background(Color.White, RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White)
                     ) {
                         CustomSortMenuItem("按添加时间", sortMode == RecordSortMode.ADDED) {
                             onRecordSortModeChange(RecordSortMode.ADDED)
