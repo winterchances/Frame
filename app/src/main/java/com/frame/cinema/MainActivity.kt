@@ -302,7 +302,7 @@ private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
 private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SORT, GRID, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -845,27 +845,36 @@ private fun FrameNativeApp(
                                 listState = libraryListState,
                                 stickyCategoryScrollState = libraryStickyCategoryScrollState,
                                 floatingCategoryScrollState = libraryFloatingCategoryScrollState,
-                                sortedLibraryVideos, categories, status, category, compact,
-                                { status = it }, { category = it },
-                                { sheet = SheetType.GRID }, { sheet = SheetType.SORT },
-                                { sheet = SheetType.CATEGORIES },
-                                { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
-                                { selected = it; playVideo(it) },
-                                contextMenuVideo,
-                                contextMenuReturnProgress,
-                                { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds },
-                                { viewport -> contextMenuViewportBounds = viewport },
-                                { header -> contextMenuStickyHeaderBounds = header },
-                                { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
-                                { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
-                                { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { item ->
+                                videos = sortedLibraryVideos,
+                                categories = categories,
+                                status = status,
+                                category = category,
+                                compact = compact,
+                                sort = sort,
+                                sortDirection = sortDirection,
+                                onSortModeChange = { sort = it },
+                                onSortDirectionChange = { sortDirection = it },
+                                onCompactChange = { compact = it },
+                                onStatus = { status = it },
+                                onCategory = { category = it },
+                                onCategories = { sheet = SheetType.CATEGORIES },
+                                onLongVideo = { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
+                                onPlay = { selected = it; playVideo(it) },
+                                contextMenuVideo = contextMenuVideo,
+                                contextMenuReturnProgress = contextMenuReturnProgress,
+                                onContextMenuBoundsChanged = { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds },
+                                onViewportBoundsChanged = { viewport -> contextMenuViewportBounds = viewport },
+                                onStickyHeaderBoundsChanged = { header -> contextMenuStickyHeaderBounds = header },
+                                onBatchMove = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
+                                onBatchFavorite = { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
+                                onBatchStatus = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { item ->
                                     repository.update(when (target) {
                                         "未看" -> item.copy(progress = 0f, status = "all")
                                         "在看" -> item.copy(status = "playing")
                                         else -> item.copy(progress = 100f, status = "watched")
                                     })
                                 } }; refresh() },
-                                { ids -> ids.forEach(repository::removeFromLibrary); refresh() }
+                                onBatchRemove = { ids -> ids.forEach(repository::removeFromLibrary); refresh() }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
@@ -1101,54 +1110,6 @@ private fun FrameNativeApp(
                             Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
-                            }
-                        }
-                    }
-                    SheetType.SORT -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("视频排序")
-                        Column(
-                            Modifier.fillMaxWidth()
-                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                        ) {
-                            SortOptionRow(
-                                "按添加时间", sort == SortMode.ADDED, sortDirection,
-                                onAscending = { sort = SortMode.ADDED; sortDirection = SortDirection.ASCENDING },
-                                onDescending = { sort = SortMode.ADDED; sortDirection = SortDirection.DESCENDING }
-                            )
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
-                            SortOptionRow(
-                                "按名称", sort == SortMode.NAME, sortDirection,
-                                onAscending = { sort = SortMode.NAME; sortDirection = SortDirection.ASCENDING },
-                                onDescending = { sort = SortMode.NAME; sortDirection = SortDirection.DESCENDING }
-                            )
-                        }
-                    }
-                    SheetType.GRID -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("视图模式")
-                        Column(
-                            Modifier.fillMaxWidth()
-                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                        ) {
-                            Row(
-                                Modifier.fillMaxWidth().height(52.dp)
-                                    .noRippleClickable { compact = false; sheet = SheetType.NONE }
-                                    .padding(horizontal = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("2列大图（舒适）", color = MainText, fontSize = 16.sp)
-                            }
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
-                            Row(
-                                Modifier.fillMaxWidth().height(52.dp)
-                                    .noRippleClickable { compact = true; sheet = SheetType.NONE }
-                                    .padding(horizontal = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("3列小图（紧凑）", color = MainText, fontSize = 16.sp)
                             }
                         }
                     }
@@ -2456,7 +2417,10 @@ private fun LibraryPage(
     stickyCategoryScrollState: androidx.compose.foundation.ScrollState,
     floatingCategoryScrollState: androidx.compose.foundation.ScrollState,
     videos: List<VideoItem>, categories: List<String>, status: String, category: String, compact: Boolean,
-    onStatus: (String) -> Unit, onCategory: (String) -> Unit, onGrid: () -> Unit, onSort: () -> Unit,
+    sort: SortMode, sortDirection: SortDirection,
+    onSortModeChange: (SortMode) -> Unit, onSortDirectionChange: (SortDirection) -> Unit,
+    onCompactChange: (Boolean) -> Unit,
+    onStatus: (String) -> Unit, onCategory: (String) -> Unit,
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
@@ -2469,6 +2433,8 @@ private fun LibraryPage(
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var moreMenuExpanded by remember { mutableStateOf(false) }
     var batchMenuExpanded by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
+    var showGridMenu by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -2543,8 +2509,57 @@ private fun LibraryPage(
                 ) {
                     Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
                     ActionIcon(FrameTagIcon, "分类管理", onCategories, iconModifier = Modifier.offset(x = 1.dp, y = 1.dp))
-                    ActionIcon(FrameGridIcon, "布局管理", onGrid)
-                    ActionIcon(FrameSortIcon, "排序", onSort, iconSize = 18.dp)
+                    Box {
+                        ActionIcon(FrameGridIcon, "布局管理", { showGridMenu = true })
+                        DropdownMenu(
+                            expanded = showGridMenu,
+                            onDismissRequest = { showGridMenu = false },
+                            modifier = Modifier.width(208.dp)
+                                .shadow(8.dp, RoundedCornerShape(16.dp))
+                                .background(Color.White, RoundedCornerShape(16.dp))
+                        ) {
+                            CustomSortMenuItem("2列大图（舒适）", !compact) {
+                                onCompactChange(false)
+                                showGridMenu = false
+                            }
+                            CustomSortMenuItem("3列小图（紧凑）", compact) {
+                                onCompactChange(true)
+                                showGridMenu = false
+                            }
+                        }
+                    }
+                    Box {
+                        ActionIcon(FrameSortIcon, "排序", { showSortMenu = true }, iconSize = 18.dp)
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false },
+                            modifier = Modifier.width(184.dp)
+                                .shadow(8.dp, RoundedCornerShape(16.dp))
+                                .background(Color.White, RoundedCornerShape(16.dp))
+                        ) {
+                            CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) {
+                                onSortModeChange(SortMode.ADDED)
+                                showSortMenu = false
+                            }
+                            CustomSortMenuItem("按名称", sort == SortMode.NAME) {
+                                onSortModeChange(SortMode.NAME)
+                                showSortMenu = false
+                            }
+                            HorizontalDivider(
+                                color = Color(0xFFF0F0F0),
+                                thickness = 0.5.dp,
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            )
+                            CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) {
+                                onSortDirectionChange(SortDirection.ASCENDING)
+                                showSortMenu = false
+                            }
+                            CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) {
+                                onSortDirectionChange(SortDirection.DESCENDING)
+                                showSortMenu = false
+                            }
+                        }
+                    }
                 }
             }
             item(key = "library-filter-header", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
@@ -4466,6 +4481,38 @@ private fun RatingStars(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CustomSortMenuItem(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth().height(48.dp)
+            .noRippleClickable { onClick() }
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text,
+            color = if (isSelected) ThemeTeal else MainText,
+            fontSize = 15.sp,
+            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+        )
+        if (isSelected) {
+            Icon(
+                Icons.Outlined.Check,
+                contentDescription = null,
+                tint = ThemeTeal,
+                modifier = Modifier.size(18.dp)
+            )
+        } else {
+            Spacer(Modifier.size(18.dp))
         }
     }
 }
