@@ -40,6 +40,19 @@ class NativeLibraryRepository(context: Context) {
         }
     }
 
+    fun addTimestampReview(videoId: Long, content: String, playbackPositionMs: Long): Boolean {
+        val text = content.trim()
+        if (text.isEmpty() || store.allVideos().none { it.id == videoId }) return false
+        store.addReview(
+            videoId = videoId,
+            content = text,
+            rating = 0f,
+            createdAt = System.currentTimeMillis(),
+            playbackPositionMs = playbackPositionMs.coerceAtLeast(0L)
+        )
+        return true
+    }
+
     fun updateReview(id: Long, videoId: Long?, content: String, rating: Float) {
         val text = content.trim()
         if (text.isNotEmpty()) store.updateReview(id, videoId, text, 0f)
