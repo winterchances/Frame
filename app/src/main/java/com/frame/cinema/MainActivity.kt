@@ -872,6 +872,7 @@ private fun FrameNativeApp(
                                 onCompactChange = { compact = it },
                                 onStatus = { status = it },
                                 onCategory = { category = it },
+                                categoryDrawerVisible = showCategoryDrawer,
                                 onOpenCategoryDrawer = { showCategoryDrawer = true },
                                 onLongVideo = { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
                                 onPlay = { selected = it; playVideo(it) },
@@ -2418,7 +2419,7 @@ private fun LibraryPage(
     onSortModeChange: (SortMode) -> Unit, onSortDirectionChange: (SortDirection) -> Unit,
     onCompactChange: (Boolean) -> Unit,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit,
-    onOpenCategoryDrawer: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
+    categoryDrawerVisible: Boolean, onOpenCategoryDrawer: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
     multiSelectMode: Boolean, onMultiSelectModeChange: (Boolean) -> Unit,
@@ -2433,7 +2434,7 @@ private fun LibraryPage(
     var showStatusDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
-    BackHandler(enabled = multiSelectMode && !showCategoryDrawer) {
+    BackHandler(enabled = multiSelectMode && !categoryDrawerVisible) {
         selectedVideoIds = emptySet()
         onMultiSelectModeChange(false)
     }
