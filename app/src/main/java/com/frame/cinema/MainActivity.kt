@@ -1350,14 +1350,16 @@ private fun FrameNativeApp(
                                             ) {
                                                 Thumbnail(video, Modifier.fillMaxSize())
                                             }
-                                            Text(
-                                                displayVideoName(video.name),
+                                            VideoCardTitle(
+                                                video.name,
                                                 color = MainText,
                                                 fontSize = 16.sp,
+                                                englishFontSize = 14.sp,
+                                                englishColor = Color(0xFF888888),
                                                 fontWeight = FontWeight.Medium,
                                                 lineHeight = 21.sp,
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis,
+                                                maxLines = 1,
+                                                showEnglish = true,
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }
