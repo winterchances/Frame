@@ -3055,6 +3055,8 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     video.name,
                     fontSize = 15.sp,
                     color = Color(0xFF222222),
+                    englishFontSize = 13.sp,
+                    englishColor = Color(0xFF888888),
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     showEnglish = true,
@@ -3388,6 +3390,8 @@ private fun RecordsPage(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
+                                    englishFontSize = 14.sp,
+                                    englishColor = Color(0xFF888888),
                                     lineHeight = 22.sp,
                                     maxLines = 1,
                                     showEnglish = true
@@ -4750,6 +4754,8 @@ private fun VideoCardTitle(
     name: String,
     fontSize: androidx.compose.ui.unit.TextUnit,
     color: Color,
+    englishFontSize: androidx.compose.ui.unit.TextUnit = fontSize,
+    englishColor: Color = color,
     fontWeight: FontWeight,
     maxLines: Int,
     showEnglish: Boolean,
@@ -4771,8 +4777,8 @@ private fun VideoCardTitle(
         if (showEnglish && !englishTitle.isNullOrBlank()) {
             Text(
                 englishTitle,
-                color = color,
-                fontSize = fontSize,
+                color = englishColor,
+                fontSize = englishFontSize,
                 fontWeight = fontWeight,
                 lineHeight = lineHeight,
                 maxLines = 1,
@@ -4909,7 +4915,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true)
+            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), englishFontSize = 13.sp, englishColor = Color(0xFF888888), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
