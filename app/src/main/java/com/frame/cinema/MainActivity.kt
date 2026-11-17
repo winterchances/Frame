@@ -313,7 +313,7 @@ private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
 private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY, NEW_CATEGORY }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -507,7 +507,7 @@ private fun FrameNativeApp(
     var editReviewVideoId by remember { mutableStateOf<Long?>(null) }
     var editStandaloneGroupId by remember { mutableStateOf<Long?>(null) }
     var showReviewVideoActions by remember { mutableStateOf(true) }
-    var newCategory by remember { mutableStateOf("") }
+    var newCategoryName by remember { mutableStateOf("") }
     var sort by remember { mutableStateOf(SortMode.ADDED) }
     var sortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
     val videoById = remember(videos) { videos.associateBy { it.id } }
@@ -1868,6 +1868,41 @@ private fun FrameNativeApp(
                             sheet = SheetType.NONE
                         }
                     }
+                    SheetType.NEW_CATEGORY -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("新建分类")
+                        BasicTextField(
+                            value = newCategoryName,
+                            onValueChange = { newCategoryName = it },
+                            modifier = Modifier.fillMaxWidth().height(52.dp)
+                                .onFocusChanged { sheetKeyboardUp = it.isFocused }
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 16.dp),
+                            singleLine = true,
+                            decorationBox = { inner ->
+                                if (newCategoryName.isEmpty()) Text("输入分类名称", color = MutedText, fontSize = 16.sp)
+                                inner()
+                            },
+                            textStyle = TextStyle(fontSize = 16.sp, lineHeight = 18.sp, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        SheetAction("确认", bottomPadding = 12.dp) {
+                            val name = newCategoryName.trim()
+                            when {
+                                name.isEmpty() -> toast = "分类名称不能为空"
+                                name in categories -> toast = "分类名称已存在"
+                                else -> {
+                                    repository.saveCategories(categories + name)
+                                    newCategoryName = ""
+                                    refresh()
+                                    sheet = SheetType.NONE
+                                }
+                            }
+                        }
+                        SheetAction("取消", bottomPadding = 0.dp) {
+                            newCategoryName = ""
+                            sheet = SheetType.NONE
+                        }
+                    }
                     SheetType.NONE -> Unit
                 }
                 }
@@ -2034,7 +2069,7 @@ private fun FrameNativeApp(
             }
         }
 
-    Box(Modifier.fillMaxSize().zIndex(if (sheet == SheetType.DELETE_CATEGORY) 2f else 10f)) {
+    Box(Modifier.fillMaxSize().zIndex(if (sheet == SheetType.DELETE_CATEGORY || sheet == SheetType.NEW_CATEGORY) 2f else 10f)) {
             AnimatedVisibility(
                 visible = showCategoryDrawer,
                 enter = fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
@@ -2061,6 +2096,8 @@ private fun FrameNativeApp(
                         Row(Modifier.fillMaxWidth().padding(bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("分类管理", Modifier.weight(1f), color = MainText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             ActionIcon(if (categoryEditMode) Icons.Outlined.Check else Icons.Outlined.Edit, if (categoryEditMode) "完成编辑" else "编辑分类", { categoryEditMode = !categoryEditMode; editingCategoryName = null })
+                            Spacer(Modifier.width(8.dp))
+                            ActionIcon(Icons.Outlined.Add, "新建分类", { newCategoryName = ""; sheet = SheetType.NEW_CATEGORY })
                             Spacer(Modifier.width(8.dp))
                             ActionIcon(Icons.Outlined.Close, "关闭分类管理", { showCategoryDrawer = false; categoryEditMode = false; editingCategoryName = null })
                         }
@@ -2193,27 +2230,6 @@ private fun FrameNativeApp(
                                     } else if (editingCategoryName != value) {
                                         Text(count.toString(), color = MutedText, fontSize = 13.sp)
                                     }
-                                }
-                            }
-                        }
-                        if (categoryEditMode) {
-                            Spacer(Modifier.height(16.dp))
-                            Row(Modifier.fillMaxWidth().height(52.dp)
-                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                BasicTextField(newCategory, { newCategory = it }, Modifier.weight(1f), singleLine = true,
-                                    decorationBox = { inner -> if (newCategory.isEmpty()) Text("新分类名称", color = MutedText, fontSize = 16.sp); inner() },
-                                    textStyle = TextStyle(fontSize = 16.sp, lineHeight = 18.sp, color = MainText, platformStyle = PlatformTextStyle(includeFontPadding = false)))
-                                Box(Modifier.size(36.dp).clip(CircleShape).background(ThemeTeal).noRippleClickable {
-                                    val name = newCategory.trim()
-                                    if (name.isNotEmpty() && name !in categories) {
-                                        repository.saveCategories(categories + name)
-                                        newCategory = ""
-                                        refresh()
-                                    }
-                                }, contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Outlined.Add, "添加分类", tint = Color.White, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
