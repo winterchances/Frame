@@ -4400,9 +4400,11 @@ private fun createUnifiedReviewExportBitmap(
     timelineEntryHeights.forEach { entryHeight ->
         contentBottom += entryHeight + 12f
     }
-    val height = (contentBottom + 150f).toInt().coerceAtLeast(1050)
+    val contentHeight = (contentBottom + 150f).toInt().coerceAtLeast(1050)
+    val exportHeight = 1440
+    val contentScale = minOf(1f, exportHeight.toFloat() / contentHeight)
 
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val bitmap = Bitmap.createBitmap(width, exportHeight, Bitmap.Config.ARGB_8888)
     val canvas = android.graphics.Canvas(bitmap)
     canvas.drawColor(android.graphics.Color.rgb(246, 248, 247))
 
@@ -4410,9 +4412,12 @@ private fun createUnifiedReviewExportBitmap(
         color = android.graphics.Color.WHITE
     }
     canvas.drawRoundRect(
-        android.graphics.RectF(28f, 28f, width - 28f, height - 28f),
+        android.graphics.RectF(28f, 28f, width - 28f, exportHeight - 28f),
         32f, 32f, cardPaint
     )
+
+    canvas.save()
+    canvas.scale(contentScale, contentScale, width / 2f, 0f)
 
     val eyebrowPaint = android.graphics.Paint(metaPaint).apply {
         color = android.graphics.Color.rgb(112, 151, 143)
@@ -4518,7 +4523,8 @@ private fun createUnifiedReviewExportBitmap(
         color = android.graphics.Color.rgb(151, 163, 159)
         letterSpacing = 1.1f
     }
-    canvas.drawText("一帧  ·  FRAME", width / 2f, height - 68f, footerPaint)
+    canvas.drawText("一帧  ·  FRAME", width / 2f, contentHeight - 68f, footerPaint)
+    canvas.restore()
     return bitmap
 }
 
