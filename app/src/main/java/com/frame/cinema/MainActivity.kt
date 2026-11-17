@@ -4552,11 +4552,6 @@ private fun createUnifiedReviewExportBitmap(
     canvas.restore()
 
     val textLeft = margin + coverWidth + 48f
-    val heroLabelPaint = android.graphics.Paint(metaPaint).apply {
-        color = android.graphics.Color.rgb(145, 158, 153)
-        textSize = 22f
-        letterSpacing = 1.2f
-    }
     var titleY = coverTop + 58f
     titleLines.forEach { line ->
         canvas.drawText(line, textLeft, titleY, titlePaint)
