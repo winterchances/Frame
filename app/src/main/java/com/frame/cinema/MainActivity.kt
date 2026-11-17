@@ -4508,7 +4508,7 @@ private fun NativePlayerOverlay(
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, top = 26.dp, bottom = 30.dp)
+                        .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 30.dp)
                 ) {
                     SheetHeading("记录此刻")
                     BasicTextField(
