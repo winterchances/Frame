@@ -27,7 +27,8 @@ class NativeLibraryRepository(context: Context) {
     private val store = VideoStore(app)
     private val thumbnailExecutor = Executors.newSingleThreadExecutor()
 
-    fun videos(): List<VideoItem> = store.allVideos()
+    fun videos(): List<VideoItem> = store.libraryVideos()
+    fun backupVideos(): List<VideoItem> = store.allVideos()
     fun reviews(): List<ReviewEntry> = store.allReviews()
     fun categories(): List<String> = store.categories()
 
@@ -113,7 +114,14 @@ class NativeLibraryRepository(context: Context) {
     fun importUris(uris: List<Uri>, onMetadataReady: () -> Unit = {}): Int {
         var added = 0
         uris.forEachIndexed { index, uri ->
-            if (store.allVideos().any { it.uri == uri.toString() }) return@forEachIndexed
+            val existing = store.allVideos().firstOrNull { it.uri == uri.toString() }
+            if (existing != null) {
+                if (existing.isInLibrary == false) {
+                    store.setInLibrary(existing.id, true)
+                    added++
+                }
+                return@forEachIndexed
+            }
             runCatching {
                 app.contentResolver.takePersistableUriPermission(
                     uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -211,15 +219,12 @@ class NativeLibraryRepository(context: Context) {
         return true
     }
 
-    fun delete(id: Long) {
-        val item = store.allVideos().firstOrNull { it.id == id }
-        ThumbnailStore.delete(app, item?.thumbPath)
-        store.delete(id)
-        store.clearWatchTimeForVideo(id)
+    fun removeFromLibrary(id: Long) {
+        store.setInLibrary(id, false)
     }
 
     fun clearRecent() {
-        store.updateAll(store.allVideos().map {
+        store.updateAll(store.libraryVideos().map {
             it.copy(progress = 0f, status = "all", lastPlayedAt = 0L)
         })
         store.clearWatchTime()
