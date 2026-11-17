@@ -3480,7 +3480,7 @@ private fun RecordsPage(
                                     RecordActionGlyphType.Expand,
                                     if (expanded) "收起感想" else "展开感想",
                                     Color(0xFFDDDDDD),
-                                    modifier = Modifier.rotate(if (expanded) 180f else 0f)
+                                    modifier = Modifier.offset(y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
                                 )
                             }
                         }
