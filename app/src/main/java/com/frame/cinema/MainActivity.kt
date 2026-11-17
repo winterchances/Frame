@@ -2464,18 +2464,19 @@ private fun HomePage(
             }
         }
 
-        AnimatedVisibility(
-            visible = showTopBar && homeTitleAlphaState.value <= 0f,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
+        val showStickyTitle = showTopBar && homeTitleAlphaState.value <= 0f
+        Box(
+            Modifier.align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .background(if (showStickyTitle) PageBg else Color.Transparent)
+                .statusBarsPadding()
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .background(PageBg)
-                    .statusBarsPadding()
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
+            AnimatedVisibility(
+                visible = showStickyTitle,
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(200))
             ) {
                 Text("首页", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
             }
@@ -3905,18 +3906,19 @@ private fun RecordsPage(
             }
         }
 
-        AnimatedVisibility(
-            visible = showTopBar && recordsTitleAlphaState.value <= 0f,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
+        val showStickyTitle = showTopBar && recordsTitleAlphaState.value <= 0f
+        Box(
+            Modifier.align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .background(if (showStickyTitle) PageBg else Color.Transparent)
+                .statusBarsPadding()
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .background(PageBg)
-                    .statusBarsPadding()
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
+            AnimatedVisibility(
+                visible = showStickyTitle,
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(200))
             ) {
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
             }
