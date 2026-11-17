@@ -446,6 +446,7 @@ private fun FrameNativeApp(
     val recentListState = rememberLazyListState()
     val recordsListState = rememberLazyListState()
     var page by remember { mutableStateOf(MainPage.HOME) }
+    var libraryMultiSelectMode by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
@@ -869,6 +870,8 @@ private fun FrameNativeApp(
                                 onContextMenuBoundsChanged = { latestBounds -> if (contextMenuBounds != latestBounds) contextMenuBounds = latestBounds },
                                 onViewportBoundsChanged = { viewport -> contextMenuViewportBounds = viewport },
                                 onStickyHeaderBoundsChanged = { header -> contextMenuStickyHeaderBounds = header },
+                                multiSelectMode = libraryMultiSelectMode,
+                                onMultiSelectModeChange = { libraryMultiSelectMode = it },
                                 onBatchMove = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
                                 onBatchFavorite = { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
                                 onBatchStatus = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { item ->
@@ -957,10 +960,15 @@ private fun FrameNativeApp(
 
         if (playing == null) {
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress))) {
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)) {
+                AnimatedVisibility(
+                    visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode),
+                    enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
+                    exit = fadeOut(tween(140)) + slideOutVertically(tween(140)) { it / 3 },
+                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)
+                ) {
                     BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
                 }
-                Column(
+                if (!(page == MainPage.LIBRARY && libraryMultiSelectMode)) Column(
                     Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -2390,14 +2398,13 @@ private fun LibraryPage(
     onCategories: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
+    multiSelectMode: Boolean, onMultiSelectModeChange: (Boolean) -> Unit,
     onBatchMove: (Set<Long>, String) -> Unit,
     onBatchFavorite: (Set<Long>, Boolean) -> Unit,
     onBatchStatus: (Set<Long>, String) -> Unit,
     onBatchRemove: (Set<Long>) -> Unit
 ) {
-    var multiSelectMode by remember { mutableStateOf(false) }
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var batchMenuExpanded by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -2405,7 +2412,7 @@ private fun LibraryPage(
     val selectedCount = selectedVideoIds.size
     BackHandler(enabled = multiSelectMode) {
         selectedVideoIds = emptySet()
-        multiSelectMode = false
+        onMultiSelectModeChange(false)
     }
     val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
     val availableMoveCategories = categories.filterNot { it == "我的最爱" }
@@ -2533,37 +2540,22 @@ private fun LibraryPage(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (multiSelectMode) {
-                Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 21.sp, fontWeight = FontWeight.Bold, color = MainText, maxLines = 1)
+                TextButton(onClick = { selectedVideoIds = emptySet(); onMultiSelectModeChange(false) }, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                    Text("取消", color = ThemeTeal, fontSize = 14.sp)
+                }
+                Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, textAlign = TextAlign.Center, maxLines = 1)
                 TextButton(onClick = {
                     val visibleIds = filtered.map { it.id }.toSet()
                     selectedVideoIds = if (visibleIds.isNotEmpty() && visibleIds.all { it in selectedVideoIds }) selectedVideoIds - visibleIds else selectedVideoIds + visibleIds
-                }, contentPadding = PaddingValues(horizontal = 5.dp)) {
-                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 13.sp)
-                }
-                Box {
-                    TextButton(onClick = { batchMenuExpanded = true }, contentPadding = PaddingValues(horizontal = 5.dp)) {
-                        Text("批量操作", color = if (selectedCount > 0) ThemeTeal else MutedText, fontSize = 13.sp)
-                    }
-                    DropdownMenu(expanded = batchMenuExpanded, onDismissRequest = { batchMenuExpanded = false }) {
-                        DropdownMenuItem(text = { Text("移动分类") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showMoveDialog = true })
-                        DropdownMenuItem(text = { Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite); selectedVideoIds = emptySet(); multiSelectMode = false })
-                        DropdownMenuItem(text = { Text("修改播放状态") }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showStatusDialog = true })
-                        DropdownMenuItem(text = { Text("批量移除", color = Color(0xFFE05A5A)) }, enabled = selectedCount > 0, onClick = { batchMenuExpanded = false; showDeleteDialog = true })
-                    }
-                }
-                TextButton(onClick = { selectedVideoIds = emptySet(); multiSelectMode = false }, contentPadding = PaddingValues(horizontal = 3.dp)) {
-                    Text("完成", color = MainText, fontSize = 13.sp)
+                }, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 14.sp)
                 }
             } else {
                 Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                ActionIcon(
-                    Icons.Outlined.Checklist,
-                    "批量选择",
-                    {
-                        selectedVideoIds = emptySet()
-                        multiSelectMode = true
-                    }
-                )
+                ActionIcon(Icons.Outlined.Checklist, "批量选择", {
+                    selectedVideoIds = emptySet()
+                    onMultiSelectModeChange(true)
+                })
                 Box {
                     ActionIcon(FrameGridIcon, "视图与排序", { showSortMenu = true })
                     AnimatedDropdownPopup(
@@ -2575,41 +2567,50 @@ private fun LibraryPage(
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
                     ) {
-                        CustomSortMenuItem("2列大图", !compact) {
-                            onCompactChange(false)
-                            showSortMenu = false
-                        }
-                        CustomSortMenuItem("3列小图", compact) {
-                            onCompactChange(true)
-                            showSortMenu = false
-                        }
-                        HorizontalDivider(
-                            color = Color(0xFFF0F0F0),
-                            thickness = 0.5.dp,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
-                        CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) {
-                            onSortModeChange(SortMode.ADDED)
-                            showSortMenu = false
-                        }
-                        CustomSortMenuItem("按名称", sort == SortMode.NAME) {
-                            onSortModeChange(SortMode.NAME)
-                            showSortMenu = false
-                        }
-                        HorizontalDivider(
-                            color = Color(0xFFF0F0F0),
-                            thickness = 0.5.dp,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
-                        CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) {
-                            onSortDirectionChange(SortDirection.ASCENDING)
-                            showSortMenu = false
-                        }
-                        CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) {
-                            onSortDirectionChange(SortDirection.DESCENDING)
-                            showSortMenu = false
-                        }
+                        CustomSortMenuItem("2列大图", !compact) { onCompactChange(false); showSortMenu = false }
+                        CustomSortMenuItem("3列小图", compact) { onCompactChange(true); showSortMenu = false }
+                        HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
+                        CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) { onSortModeChange(SortMode.ADDED); showSortMenu = false }
+                        CustomSortMenuItem("按名称", sort == SortMode.NAME) { onSortModeChange(SortMode.NAME); showSortMenu = false }
+                        HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
+                        CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) { onSortDirectionChange(SortDirection.ASCENDING); showSortMenu = false }
+                        CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) { onSortDirectionChange(SortDirection.DESCENDING); showSortMenu = false }
                     }
+                }
+            }
+        }
+        AnimatedVisibility(
+            visible = multiSelectMode && selectedCount > 0,
+            enter = slideInVertically(tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { it } + fadeIn(tween(220)),
+            exit = slideOutVertically(tween(200, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { it } + fadeOut(tween(160)),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    .height(64.dp)
+                    .shadow(8.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = .08f), spotColor = Color.Black.copy(alpha = .10f))
+                    .clip(RoundedCornerShape(18.dp)).background(Color.White),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showMoveDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Outlined.FolderOpen, null, tint = MainText, modifier = Modifier.size(20.dp))
+                    Text("移动分类", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
+                }
+                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
+                    onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
+                    selectedVideoIds = emptySet()
+                    onMultiSelectModeChange(false)
+                }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Outlined.FavoriteBorder, null, tint = MainText, modifier = Modifier.size(20.dp))
+                    Text(if (selectedAreAllFavorite) "取消收藏" else "添加收藏", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
+                }
+                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showStatusDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Outlined.CheckCircleOutline, null, tint = MainText, modifier = Modifier.size(20.dp))
+                    Text("修改状态", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 3.dp))
+                }
+                Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showDeleteDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Outlined.DeleteOutline, null, tint = Color(0xFFFF3B30), modifier = Modifier.size(20.dp))
+                    Text("批量移除", fontSize = 11.sp, color = Color(0xFFFF3B30), modifier = Modifier.padding(top = 3.dp))
                 }
             }
         }
@@ -2636,7 +2637,7 @@ private fun LibraryPage(
                         availableMoveCategories.forEach { target ->
                             TextButton(onClick = {
                                 onBatchMove(selectedVideoIds, target)
-                                selectedVideoIds = emptySet(); multiSelectMode = false; showMoveDialog = false
+                                selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showMoveDialog = false
                             }, modifier = Modifier.fillMaxWidth()) {
                                 Text(if (target == "全部分类") "未分类" else target, color = MainText)
                             }
@@ -2655,7 +2656,7 @@ private fun LibraryPage(
                         listOf("未看", "在看", "已看").forEach { target ->
                             TextButton(onClick = {
                                 onBatchStatus(selectedVideoIds, target)
-                                selectedVideoIds = emptySet(); multiSelectMode = false; showStatusDialog = false
+                                selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showStatusDialog = false
                             }, modifier = Modifier.fillMaxWidth()) { Text(target, color = MainText) }
                         }
                     }
@@ -2671,7 +2672,7 @@ private fun LibraryPage(
                 confirmButton = {
                     TextButton(onClick = {
                         onBatchRemove(selectedVideoIds)
-                        selectedVideoIds = emptySet(); multiSelectMode = false; showDeleteDialog = false
+                        selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showDeleteDialog = false
                     }) { Text("移出片库", color = Color(0xFFE05A5A)) }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
