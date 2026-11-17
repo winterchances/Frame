@@ -2463,7 +2463,7 @@ private fun LibraryPage(
     onBatchMove: (Set<Long>, String) -> Unit,
     onBatchFavorite: (Set<Long>, Boolean) -> Unit,
     onBatchStatus: (Set<Long>, String) -> Unit,
-    onBatchDelete: (Set<Long>) -> Unit
+    onBatchRemove: (Set<Long>) -> Unit
 ) {
     var multiSelectMode by remember { mutableStateOf(false) }
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -2697,7 +2697,7 @@ private fun LibraryPage(
                 text = { Text("确定将 $selectedCount 个视频移出片库吗？视频感想、评分、观看时长和封面缓存都会保留。") },
                 confirmButton = {
                     TextButton(onClick = {
-                        onBatchDelete(selectedVideoIds)
+                        onBatchRemove(selectedVideoIds)
                         selectedVideoIds = emptySet(); multiSelectMode = false; showDeleteDialog = false
                     }) { Text("移出片库", color = Color(0xFFE05A5A)) }
                 },
