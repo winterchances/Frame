@@ -3087,7 +3087,7 @@ private fun RecordActionGlyph(
             .semantics { contentDescription = description }
     ) {
         val scale = size.width / 24f
-        val stroke = 1.5.dp.toPx()
+        val stroke = 1.3.dp.toPx()
         fun point(x: Float, y: Float) = Offset(x * scale, y * scale)
         fun line(x1: Float, y1: Float, x2: Float, y2: Float) {
             drawLine(
