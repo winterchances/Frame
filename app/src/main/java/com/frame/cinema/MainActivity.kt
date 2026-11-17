@@ -2407,7 +2407,6 @@ private fun LibraryPage(
     val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
     val availableMoveCategories = categories.filterNot { it == "我的最爱" }
     val softListFlingBehavior = rememberSoftListFlingBehavior()
-    var showRecordSortMenu by remember { mutableStateOf(false) }
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
     val libraryStickyHeaderHeightPx = remember { mutableIntStateOf(0) }
@@ -2947,6 +2946,7 @@ private fun RecordsPage(
     onTargetHandled: () -> Unit
 ) {
     val softListFlingBehavior = rememberSoftListFlingBehavior()
+    var showRecordSortMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val recordExpansionPreferences = remember {
         context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
