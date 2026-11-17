@@ -302,7 +302,7 @@ private val FrameStarOutlineIcon = buildFrameStarIcon("FrameStarOutline", false)
 private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, CATEGORIES, SEARCH, RECORD_SEARCH, RECORD_SORT, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
+private enum class SheetType { NONE, IMPORT, SETTINGS, CATEGORIES, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT }
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -893,7 +893,6 @@ private fun FrameNativeApp(
                                 sortMode = recordSortMode,
                                 sortDirection = recordSortDirection,
                                 onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
-                                onSort = { sheet = SheetType.RECORD_SORT },
                                 onCreate = { video ->
                                     if (video == null) {
                                         selected = null
@@ -1355,45 +1354,6 @@ private fun FrameNativeApp(
                         }
                         if (!sheetKeyboardUp && matchingReviewEntries.size in 1..4) {
                             Spacer(Modifier.height(with(LocalDensity.current) { recordSearchBottomSpacerPx.toDp() }))
-                        }
-                    }
-                    SheetType.RECORD_SORT -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        SheetHeading("记录排序")
-                        Column(
-                            Modifier.fillMaxWidth()
-                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                        ) {
-                            SortOptionRow(
-                                "按添加时间", recordSortMode == RecordSortMode.ADDED, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.ASCENDING },
-                                onDescending = { recordSortMode = RecordSortMode.ADDED; recordSortDirection = SortDirection.DESCENDING }
-                            )
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
-                            SortOptionRow(
-                                "按记录时间", recordSortMode == RecordSortMode.RECORD_TIME, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.RECORD_TIME; recordSortDirection = SortDirection.ASCENDING },
-                                onDescending = { recordSortMode = RecordSortMode.RECORD_TIME; recordSortDirection = SortDirection.DESCENDING }
-                            )
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
-                            SortOptionRow(
-                                "按名称", recordSortMode == RecordSortMode.NAME, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.ASCENDING },
-                                onDescending = { recordSortMode = RecordSortMode.NAME; recordSortDirection = SortDirection.DESCENDING }
-                            )
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
-                            SortOptionRow(
-                                "按看完时间", recordSortMode == RecordSortMode.WATCHED, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.ASCENDING },
-                                onDescending = { recordSortMode = RecordSortMode.WATCHED; recordSortDirection = SortDirection.DESCENDING }
-                            )
-                            Box(Modifier.fillMaxWidth().height(0.3.dp).background(Color(0xFFF0F0F0)))
-                            SortOptionRow(
-                                "按评分", recordSortMode == RecordSortMode.RATING, recordSortDirection,
-                                onAscending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.ASCENDING },
-                                onDescending = { recordSortMode = RecordSortMode.RATING; recordSortDirection = SortDirection.DESCENDING }
-                            )
                         }
                     }
                     SheetType.SEARCH -> Column(
@@ -2445,6 +2405,7 @@ private fun LibraryPage(
     val selectedAreAllFavorite = videos.filter { it.id in selectedVideoIds }.let { it.isNotEmpty() && it.all { video -> video.isFav } }
     val availableMoveCategories = categories.filterNot { it == "我的最爱" }
     val softListFlingBehavior = rememberSoftListFlingBehavior()
+    var showRecordSortMenu by remember { mutableStateOf(false) }
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
     val libraryStickyHeaderHeightPx = remember { mutableIntStateOf(0) }
@@ -2975,7 +2936,6 @@ private fun RecordsPage(
     sortMode: RecordSortMode,
     sortDirection: SortDirection,
     onSearch: () -> Unit,
-    onSort: () -> Unit,
     onCreate: (VideoItem?) -> Unit,
     onCreateStandalone: (Long) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
@@ -3158,7 +3118,6 @@ private fun RecordsPage(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
                         ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
-                        ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
                     }
                 }
             }
@@ -3622,7 +3581,50 @@ private fun RecordsPage(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
                 ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
-                ActionIcon(FrameSortIcon, "记录排序", onSort, iconSize = 18.dp)
+                Box {
+                    ActionIcon(FrameSortIcon, "记录排序", { showRecordSortMenu = true }, iconSize = 18.dp)
+                    DropdownMenu(
+                        expanded = showRecordSortMenu,
+                        onDismissRequest = { showRecordSortMenu = false },
+                        modifier = Modifier.width(224.dp)
+                            .shadow(8.dp, RoundedCornerShape(16.dp))
+                            .background(Color.White, RoundedCornerShape(16.dp))
+                    ) {
+                        CustomSortMenuItem("按添加时间", sortMode == RecordSortMode.ADDED) {
+                            onRecordSortModeChange(RecordSortMode.ADDED)
+                            showRecordSortMenu = false
+                        }
+                        CustomSortMenuItem("按记录时间", sortMode == RecordSortMode.RECORD_TIME) {
+                            onRecordSortModeChange(RecordSortMode.RECORD_TIME)
+                            showRecordSortMenu = false
+                        }
+                        CustomSortMenuItem("按名称", sortMode == RecordSortMode.NAME) {
+                            onRecordSortModeChange(RecordSortMode.NAME)
+                            showRecordSortMenu = false
+                        }
+                        CustomSortMenuItem("按看完时间", sortMode == RecordSortMode.WATCHED) {
+                            onRecordSortModeChange(RecordSortMode.WATCHED)
+                            showRecordSortMenu = false
+                        }
+                        CustomSortMenuItem("按评分", sortMode == RecordSortMode.RATING) {
+                            onRecordSortModeChange(RecordSortMode.RATING)
+                            showRecordSortMenu = false
+                        }
+                        HorizontalDivider(
+                            color = Color(0xFFF0F0F0),
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                        CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) {
+                            onRecordSortDirectionChange(SortDirection.ASCENDING)
+                            showRecordSortMenu = false
+                        }
+                        CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) {
+                            onRecordSortDirectionChange(SortDirection.DESCENDING)
+                            showRecordSortMenu = false
+                        }
+                    }
+                }
             }
         }
         val recordsStatsOffset = recordsOverlayOffsets["records-stat-panel"]
