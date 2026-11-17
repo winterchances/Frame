@@ -4354,14 +4354,13 @@ private fun createReviewExportBitmap(
         canvas.drawText(line, textLeft, titleY, titlePaint)
         titleY += 62f
     }
-    val infoPaint = android.graphics.Paint(metaPaint).apply { textSize = 26f }
     if (video.rating > 0f) {
         val ratingPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.rgb(127, 181, 177)
             textSize = 34f
             typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
         }
-        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", video.rating)}", textLeft, coverTop + 220f, ratingPaint)
+        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", video.rating)}", textLeft, maxOf(titleY + 38f, coverTop + 220f), ratingPaint)
     }
 
     var cursorY = coverTop + coverHeight + 72f
@@ -4469,7 +4468,7 @@ private fun createStandaloneReviewExportBitmap(entry: ReviewEntry, timelineEntri
             color = android.graphics.Color.rgb(127, 181, 177); textSize = 34f
             typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
         }
-        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", entry.rating)}", textLeft, coverTop + 220f, ratingPaint)
+        canvas.drawText("★  ${String.format(Locale.getDefault(), "%.1f", entry.rating)}", textLeft, maxOf(titleY + 38f, coverTop + 220f), ratingPaint)
     }
     var cursorY = coverTop + coverHeight + 72f
     canvas.drawLine(margin, cursorY, width - margin, cursorY, android.graphics.Paint().apply {
