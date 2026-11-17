@@ -1225,6 +1225,7 @@ private fun FrameNativeApp(
                                             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                             .clip(RoundedCornerShape(16.dp))
                                             .noRippleClickable {
+                                                targetRecordVideoId = null
                                                 targetReviewId = entry.id
                                                 recordSearch = ""
                                                 sheet = SheetType.NONE
@@ -3362,6 +3363,7 @@ private fun RecordsPage(
             val videoIndex = displayVideos.indexOfFirst { it.id == videoTargetId }
             if (videoIndex >= 0) {
                 listState.animateScrollToItem(5 + videoIndex)
+                onTargetHandled()
             } else onTargetHandled()
             return@LaunchedEffect
         }
