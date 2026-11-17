@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaScannerConnection
-import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.Environment
 import android.view.TextureView
@@ -3461,7 +3460,7 @@ private fun RecordsPage(
                                             var bitmap: Bitmap? = null
                                             val saved = try {
                                                 bitmap = withContext(Dispatchers.Default) {
-                                                    createReviewExportBitmap(context, video, entries)
+                                                    createReviewExportBitmap(video, entries)
                                                 }
                                                 saveVideoScreenshot(context, bitmap!!)
                                             } catch (_: Exception) {
@@ -4376,7 +4375,6 @@ private fun splitReviewExportTitle(title: String): Pair<String, String?> =
     splitChineseEnglishTitle(title)
 
 private fun createReviewExportBitmap(
-    context: Context,
     video: VideoItem,
     entries: List<ReviewEntry>
 ): Bitmap {
@@ -4390,20 +4388,9 @@ private fun createReviewExportBitmap(
         dateFormat.format(Date(entry.createdAt)) to
             wrapReviewExportText(entry.content, bodyPaint, 850f)
     }
-    val highResolutionCover = runCatching {
-        val retriever = MediaMetadataRetriever()
-        try {
-            retriever.setDataSource(context, video.contentUri)
-            retriever.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                ?: retriever.getFrameAtTime(0L)
-        } finally {
-            retriever.release()
-        }
-    }.getOrNull()
     return createUnifiedReviewExportBitmap(
         title = displayVideoName(video.name),
         coverPath = video.thumbPath,
-        coverBitmap = highResolutionCover,
         rating = video.rating,
         reviews = layouts
     )
@@ -4435,7 +4422,6 @@ private fun createUnifiedReviewExportBitmap(
     title: String,
     coverPath: String?,
     rating: Float,
-    coverBitmap: Bitmap? = null,
     reviews: List<Pair<String, List<String>>>
 ): Bitmap {
     val width = 1080
@@ -4523,7 +4509,7 @@ private fun createUnifiedReviewExportBitmap(
     canvas.save()
     canvas.clipPath(coverClipPath)
     canvas.drawColor(android.graphics.Color.rgb(237, 242, 240))
-    val cover = coverBitmap ?: coverPath?.let { path ->
+    val cover = coverPath?.let { path ->
         runCatching { BitmapFactory.decodeFile(path) }.getOrNull()
     }
     if (cover != null) {
