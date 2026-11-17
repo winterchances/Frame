@@ -3454,7 +3454,8 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Download,
                                     "下载观影记录",
-                                    Color(0xFFDDDDDD)
+                                    Color(0xFFDDDDDD),
+                                modifier = Modifier.offset(y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3464,7 +3465,8 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Add,
                                     "新增感想",
-                                    Color(0xFFDDDDDD)
+                                    Color(0xFFDDDDDD),
+                                modifier = Modifier.offset(y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3715,7 +3717,8 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Download,
                                     "下载独立感想",
-                                    Color(0xFFDDDDDD)
+                                    Color(0xFFDDDDDD),
+                                modifier = Modifier.offset(y = (-6.5).dp)
                                 )
                             }
                             Box(
@@ -3725,7 +3728,8 @@ private fun RecordsPage(
                                 RecordActionGlyph(
                                     RecordActionGlyphType.Add,
                                     "新增感想",
-                                    Color(0xFFDDDDDD)
+                                    Color(0xFFDDDDDD),
+                                modifier = Modifier.offset(y = (-6.5).dp)
                                 )
                             }
                             Box(
