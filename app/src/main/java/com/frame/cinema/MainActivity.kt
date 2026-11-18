@@ -3591,7 +3591,7 @@ private fun RecordsPage(
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
-                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 3.dp)
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
@@ -3660,14 +3660,12 @@ private fun RecordsPage(
                             Text(
                                 "${entries.size} 条",
                                 modifier = Modifier.offset(y = 1.dp),
-                                color = Color(0xFF999999),
+                                color = Color(0xFFDDDDDD),
                                 fontSize = 12.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            Text(
-                                "导出",
-                                modifier = Modifier.padding(vertical = 6.dp).then(
+                            T
                                     if (exportingReviewVideoId == null) Modifier.noRippleClickable {
                                         exportingReviewVideoId = video.id
                                         exportScope.launch {
@@ -3697,18 +3695,14 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                "添加",
-                                modifier = Modifier.padding(vertical = 6.dp).noRippleClickable { onCreate(video) },
+                            T { onCreate(video) },
                                 color = Color(0xFFDDDDDD),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                "展开",
-                                modifier = Modifier.padding(vertical = 6.dp).then(
+                            T
                                     if (entries.isNotEmpty()) Modifier.noRippleClickable {
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
@@ -3720,7 +3714,7 @@ private fun RecordsPage(
                             )
                         }
                         val timelineTopSpacing by animateDpAsState(
-                            targetValue = if (entries.isNotEmpty() && expanded) 2.dp else 0.dp,
+                            targetValue = if (entries.isNotEmpty() && expanded) 16.dp else 0.dp,
                             animationSpec = tween(
                                 durationMillis = 300,
                                 easing = androidx.compose.animation.core.FastOutSlowInEasing
@@ -3870,7 +3864,7 @@ private fun RecordsPage(
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.White)
                             .noRippleClickable { onEdit(entry) }
-                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 3.dp)
+                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
                     ) {
                         Row(
                             Modifier.fillMaxWidth(),
@@ -3941,14 +3935,12 @@ private fun RecordsPage(
                             Text(
                                 "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
                                 modifier = Modifier.offset(y = 1.dp),
-                                color = Color(0xFF999999),
+                                color = Color(0xFFDDDDDD),
                                 fontSize = 12.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            Text(
-                                "导出",
-                                modifier = Modifier.padding(vertical = 6.dp).then(
+                            T
                                     if (exportingStandaloneReviewId == null) Modifier.noRippleClickable {
                                         exportingStandaloneReviewId = entry.id
                                         exportScope.launch {
@@ -3975,18 +3967,14 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                "添加",
-                                modifier = Modifier.padding(vertical = 6.dp).noRippleClickable { onCreateStandalone(entry.id) },
+                            T { onCreateStandalone(entry.id) },
                                 color = Color(0xFFDDDDDD),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                "展开",
-                                modifier = Modifier.padding(vertical = 6.dp).noRippleClickable {
+                            T {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
                                 color = Color(0xFFDDDDDD),
@@ -3996,7 +3984,7 @@ private fun RecordsPage(
                             )
                         }
                         val timelineTopSpacing by animateDpAsState(
-                            targetValue = if (expanded) 12.dp else 0.dp,
+                            targetValue = if (expanded) 16.dp else 0.dp,
                             animationSpec = tween(
                                 durationMillis = 300,
                                 easing = androidx.compose.animation.core.FastOutSlowInEasing
