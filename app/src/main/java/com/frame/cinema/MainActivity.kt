@@ -4298,6 +4298,7 @@ private fun NativePlayerOverlay(
     var subtitleSheetVisible by remember(item.id) { mutableStateOf(false) }
     var subtitleTracks by remember(item.id) { mutableStateOf<List<SubtitleTrackOption>>(emptyList()) }
     var subtitlePreference by remember(item.id) { mutableStateOf(repository.subtitlePreference(item.id)) }
+    var hasSubtitleFolderAccess by remember(item.id) { mutableStateOf(repository.hasVideoFolderSource(item.id)) }
     val subtitlePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             runCatching {
@@ -4359,6 +4360,23 @@ private fun NativePlayerOverlay(
         player.setMediaItem(builder.build(), position)
         player.prepare()
         if (wasPlaying) player.play() else player.pause()
+    }
+
+    val subtitleFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { treeUri ->
+        if (treeUri != null) {
+            val registered = repository.registerVideoFolderSource(item.id, item.contentUri, treeUri)
+            hasSubtitleFolderAccess = registered
+            if (registered) {
+                val automatic = repository.findSiblingSubtitles(item.id, item.name).map { SubtitleTrackOption(it.first, it.second) }
+                subtitleTracks = (automatic + subtitleTracks.filter { it.manual }).distinctBy { it.uri }
+                if (subtitlePreference.selectedUri == null && subtitlePreference.enabled) {
+                    automatic.firstOrNull()?.let { selectSubtitle(it) }
+                }
+                if (automatic.isEmpty()) Toast.makeText(context, "文件夹中没有找到同名字幕", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "未在所选文件夹中找到当前视频", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     BackHandler(enabled = timestampNoteSheetVisible || subtitleSheetVisible) {
@@ -4438,8 +4456,8 @@ private fun NativePlayerOverlay(
         }
     }
     LaunchedEffect(speedIndex) { player.setPlaybackParameters(PlaybackParameters(speeds[speedIndex])) }
-    LaunchedEffect(controlsVisible, isPlaying, locked) {
-        if (controlsVisible && isPlaying && !locked) {
+    LaunchedEffect(controlsVisible, isPlaying, locked, subtitleSheetVisible, timestampNoteSheetVisible) {
+        if (controlsVisible && isPlaying && !locked && !subtitleSheetVisible && !timestampNoteSheetVisible) {
             delay(3000)
             onAutoHideControls()
         }
@@ -4662,7 +4680,7 @@ private fun NativePlayerOverlay(
             }
         }
         AnimatedVisibility(
-            visible = centerMessage.isNotEmpty() && !locked && !timestampNoteSheetVisible,
+            visible = centerMessage.isNotEmpty() && !locked && !timestampNoteSheetVisible && !subtitleSheetVisible,
             modifier = Modifier.align(Alignment.Center).zIndex(10f),
             enter = fadeIn(tween(180)), exit = fadeOut(tween(180))
         ) {
@@ -4719,8 +4737,13 @@ private fun NativePlayerOverlay(
                             if (selected) Icon(Icons.Outlined.Check, contentDescription = "当前字幕", tint = ThemeTeal)
                         }
                     }
-                    SheetAction("从文件中选择字幕", bottomPadding = 0.dp) {
+                    SheetAction("从文件中选择字幕") {
                         subtitlePicker.launch(arrayOf("*/*"))
+                    }
+                    if (!hasSubtitleFolderAccess) {
+                        SheetAction("授权视频文件夹以自动匹配", bottomPadding = 0.dp) {
+                            subtitleFolderPicker.launch(null)
+                        }
                     }
                 }
             }
