@@ -243,15 +243,23 @@ class NativeLibraryRepository(context: Context) {
             source.relativePath.split('/').filter { it.isNotBlank() }.forEach { segment ->
                 directory = directory.findFile(segment) ?: return emptyList()
             }
-            val baseName = videoName.substringBeforeLast('.', videoName).trim()
-            directory.listFiles()
+            val siblings = directory.listFiles()
+            val storedVideoUri = store.allVideos().firstOrNull { it.id == videoId }?.uri
+            val actualVideoName = siblings.firstOrNull { it.uri.toString() == storedVideoUri }?.name ?: videoName
+            val baseName = actualVideoName.substringBeforeLast('.', actualVideoName).trim()
+            siblings
                 .filter { !it.isDirectory && fileExtension(it.name) in setOf("srt", "ass", "ssa", "vtt") }
                 .mapNotNull { file ->
                     val name = file.name ?: return@mapNotNull null
-                    if (name.substringBeforeLast('.', name).equals(baseName, ignoreCase = true)) file.uri to name
-                    else null
+                    val subtitleBase = name.substringBeforeLast('.', name)
+                    val exact = subtitleBase.equals(baseName, ignoreCase = true)
+                    val languageVariant = subtitleBase.startsWith("$baseName.", ignoreCase = true) ||
+                        subtitleBase.startsWith("$baseName_", ignoreCase = true) ||
+                        subtitleBase.startsWith("$baseName-", ignoreCase = true)
+                    if (exact || languageVariant) Triple(file.uri, name, exact) else null
                 }
-                .sortedBy { it.second.lowercase(Locale.ROOT) }
+                .sortedWith(compareByDescending<Triple<Uri, String, Boolean>> { it.third }.thenBy { it.second.lowercase(Locale.ROOT) })
+                .map { it.first to it.second }
         }.getOrDefault(emptyList())
     }
 
