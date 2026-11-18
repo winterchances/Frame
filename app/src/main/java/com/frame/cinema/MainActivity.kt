@@ -3652,7 +3652,7 @@ private fun RecordsPage(
                             Text(
                                 "随记",
                                 color = Color(0xFF555555),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -3661,7 +3661,7 @@ private fun RecordsPage(
                                 "${entries.size} 条",
                                 modifier = Modifier,
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
@@ -3692,20 +3692,20 @@ private fun RecordsPage(
                                     } else Modifier
                                 ),
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "添加",
                                 modifier = Modifier.noRippleClickable { onCreate(video) },
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "展开",
                                 modifier = Modifier.then(
@@ -3714,7 +3714,7 @@ private fun RecordsPage(
                                     } else Modifier
                                 ),
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -3934,7 +3934,7 @@ private fun RecordsPage(
                             Text(
                                 "随记",
                                 color = Color(0xFF555555),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -3943,7 +3943,7 @@ private fun RecordsPage(
                                 "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
                                 modifier = Modifier,
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
@@ -3971,27 +3971,27 @@ private fun RecordsPage(
                                     } else Modifier
                                 ),
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "添加",
                                 modifier = Modifier.noRippleClickable { onCreateStandalone(entry.id) },
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "展开",
                                 modifier = Modifier.noRippleClickable {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
