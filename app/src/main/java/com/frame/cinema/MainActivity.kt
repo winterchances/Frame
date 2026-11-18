@@ -3650,7 +3650,7 @@ private fun RecordsPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "观影感想",
+                                "随记",
                                 color = Color(0xFF555555),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
@@ -3931,7 +3931,7 @@ private fun RecordsPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "观影感想",
+                                "随记",
                                 color = Color(0xFF555555),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
