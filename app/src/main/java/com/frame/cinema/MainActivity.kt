@@ -151,6 +151,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.C
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackParameters
@@ -314,6 +316,25 @@ private val FrameStarFilledIcon = buildFrameStarIcon("FrameStarFilled", true)
 
 private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY, NEW_CATEGORY }
+private data class SubtitleTrackOption(val uri: Uri, val name: String, val manual: Boolean = false)
+
+private fun subtitleMimeType(uri: Uri, name: String? = null): String {
+    val extension = (name ?: uri.lastPathSegment.orEmpty()).substringAfterLast('.', "").lowercase()
+    return when (extension) {
+        "srt" -> MimeTypes.APPLICATION_SUBRIP
+        "ass", "ssa" -> MimeTypes.TEXT_SSA
+        "vtt" -> MimeTypes.TEXT_VTT
+        else -> MimeTypes.APPLICATION_SUBRIP
+    }
+}
+
+private fun subtitleConfiguration(uri: Uri, name: String? = null): MediaItem.SubtitleConfiguration =
+    MediaItem.SubtitleConfiguration.Builder(uri)
+        .setMimeType(subtitleMimeType(uri, name))
+        .setLanguage("und")
+        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+        .build()
+
 private enum class SortMode { ADDED, NAME }
 private enum class SortDirection { ASCENDING, DESCENDING }
 private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -405,11 +426,27 @@ class MainActivity : ComponentActivity() {
         if (iconBytes != null) {
             metadataBuilder.setArtworkData(iconBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
         }
-        val mediaItem = MediaItem.Builder()
+        val subtitlePreference = repository.subtitlePreference(item.id)
+        val matchedSubtitles = repository.findSiblingSubtitles(item.id, item.name)
+        val selectedSubtitle = subtitlePreference.selectedUri?.let { saved ->
+            matchedSubtitles.firstOrNull { it.first.toString() == saved }
+                ?: runCatching {
+                    val uri = Uri.parse(saved)
+                    val name = uri.lastPathSegment?.substringAfterLast('/') ?: "外部字幕"
+                    uri to name
+                }.getOrNull()
+        } ?: if (subtitlePreference.enabled) matchedSubtitles.firstOrNull() else null
+        if (subtitlePreference.selectedUri == null && subtitlePreference.enabled && selectedSubtitle != null) {
+            repository.saveSubtitlePreference(item.id, SubtitlePreference(selectedSubtitle.first.toString(), true))
+        }
+        val mediaItemBuilder = MediaItem.Builder()
             .setMediaId(item.id.toString())
             .setUri(item.contentUri)
             .setMediaMetadata(metadataBuilder.build())
-            .build()
+        if (subtitlePreference.enabled && selectedSubtitle != null) {
+            mediaItemBuilder.setSubtitleConfigurations(listOf(subtitleConfiguration(selectedSubtitle.first, selectedSubtitle.second)))
+        }
+        val mediaItem = mediaItemBuilder.build()
         controller.setMediaItem(mediaItem)
         controller.prepare()
         if (positionMs != null) controller.seekTo(positionMs.coerceAtLeast(0L))
@@ -972,6 +1009,7 @@ private fun FrameNativeApp(
             NativePlayerOverlay(
                 item = targetPlaying,
                 player = player,
+                repository = repository,
                 speeds = speeds,
                 speedIndex = speedIndex,
                 locked = locked,
@@ -4184,7 +4222,7 @@ private fun RecordsPage(
 }
 @Composable
 private fun NativePlayerOverlay(
-    item: VideoItem, player: Player, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
+    item: VideoItem, player: Player, repository: NativeLibraryRepository, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
     onClose: () -> Unit, onToggleControls: () -> Unit, onAutoHideControls: () -> Unit, onToggleLock: () -> Unit,
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onProgress: (Long, Long) -> Unit,
