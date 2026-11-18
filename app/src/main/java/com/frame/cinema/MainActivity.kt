@@ -4315,6 +4315,7 @@ private fun NativePlayerOverlay(
             if (name.substringAfterLast('.', "").lowercase() in setOf("srt", "ass", "ssa", "vtt")) {
                 val option = SubtitleTrackOption(uri, name, true)
                 subtitleTracks = (subtitleTracks.filterNot { it.uri == uri } + option)
+                repository.saveSubtitleTrack(item.id, SubtitleTrackEntry(uri.toString(), name, true))
                 val updated = SubtitlePreference(uri.toString(), true)
                 subtitlePreference = updated
                 repository.saveSubtitlePreference(item.id, updated)
@@ -4339,13 +4340,16 @@ private fun NativePlayerOverlay(
     LaunchedEffect(item.id) {
         subtitlePreference = repository.subtitlePreference(item.id)
         val automatic = repository.findSiblingSubtitles(item.id, item.name).map { SubtitleTrackOption(it.first, it.second) }
+        val manual = repository.manualSubtitleTracks(item.id).mapNotNull { entry ->
+            runCatching { SubtitleTrackOption(Uri.parse(entry.uri), entry.name, true) }.getOrNull()
+        }
         val selected = subtitlePreference.selectedUri?.let { saved ->
-            automatic.firstOrNull { it.uri.toString() == saved } ?: runCatching {
+            (automatic + manual).firstOrNull { it.uri.toString() == saved } ?: runCatching {
                 val uri = Uri.parse(saved)
                 SubtitleTrackOption(uri, uri.lastPathSegment?.substringAfterLast('/') ?: "已挂载字幕", true)
             }.getOrNull()
         }
-        subtitleTracks = (automatic + listOfNotNull(selected)).distinctBy { it.uri }
+        subtitleTracks = (automatic + manual + listOfNotNull(selected)).distinctBy { it.uri }
     }
 
     fun selectSubtitle(option: SubtitleTrackOption?) {
@@ -4373,7 +4377,8 @@ private fun NativePlayerOverlay(
             hasSubtitleFolderAccess = registered
             if (registered) {
                 val automatic = repository.findSiblingSubtitles(item.id, item.name).map { SubtitleTrackOption(it.first, it.second) }
-                subtitleTracks = (automatic + subtitleTracks.filter { it.manual }).distinctBy { it.uri }
+                val savedManual = repository.manualSubtitleTracks(item.id).map { SubtitleTrackOption(Uri.parse(it.uri), it.name, true) }
+                subtitleTracks = (automatic + savedManual).distinctBy { it.uri }
                 if (subtitlePreference.selectedUri == null && subtitlePreference.enabled) {
                     automatic.firstOrNull()?.let { selectSubtitle(it) }
                 }
@@ -4714,7 +4719,10 @@ private fun NativePlayerOverlay(
                         .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 50.dp)
                 ) {
                     SheetHeading("字幕")
-                    SheetAction("关闭字幕", bottomPadding = 12.dp) {
+                    if (subtitleTracks.isEmpty()) {
+                        Text("还没有找到字幕，可以从文件中选择，或授权视频文件夹进行自动匹配。", color = MutedText, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(bottom = 16.dp))
+                    }
+                    SheetAction(if (subtitlePreference.enabled) "关闭字幕" else "字幕已关闭", bottomPadding = 12.dp) {
                         selectSubtitle(null)
                         subtitleSheetVisible = false
                     }
