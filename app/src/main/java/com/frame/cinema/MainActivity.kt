@@ -4624,6 +4624,10 @@ private fun NativePlayerOverlay(
                             Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         }
                         Spacer(Modifier.width(15.dp))
+                        PlayerIconButton(Icons.Outlined.ClosedCaption, "字幕") {
+                            subtitleSheetVisible = true
+                        }
+                        Spacer(Modifier.width(15.dp))
                         PlayerIconButton(Icons.Outlined.AddComment, "记录此刻") {
                             timestampPositionMs = player.currentPosition.coerceAtLeast(0L)
                             player.pause()
@@ -4664,6 +4668,61 @@ private fun NativePlayerOverlay(
         ) {
             Box(Modifier.clip(CircleShape).background(Color.Black.copy(alpha = .68f)).padding(horizontal = 22.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
                 Text(centerMessage, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+        }
+        if (subtitleSheetVisible) {
+            Box(Modifier.fillMaxSize().zIndex(19f)) {
+                Box(
+                    Modifier.fillMaxSize()
+                        .background(Color.Black.copy(alpha = .32f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { subtitleSheetVisible = false }
+                )
+                Column(
+                    Modifier.align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .75f)
+                        .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .background(PageBg)
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 50.dp)
+                ) {
+                    SheetHeading("字幕")
+                    SheetAction("关闭字幕", bottomPadding = 12.dp) {
+                        selectSubtitle(null)
+                        subtitleSheetVisible = false
+                    }
+                    subtitleTracks.forEach { option ->
+                        val selected = subtitlePreference.enabled && subtitlePreference.selectedUri == option.uri.toString()
+                        Row(
+                            Modifier.fillMaxWidth().padding(bottom = 12.dp).height(52.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .noRippleClickable {
+                                    selectSubtitle(option)
+                                    subtitleSheetVisible = false
+                                }
+                                .padding(horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                option.name,
+                                modifier = Modifier.weight(1f),
+                                color = MainText,
+                                fontSize = 15.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (selected) Icon(Icons.Outlined.Check, contentDescription = "当前字幕", tint = ThemeTeal)
+                        }
+                    }
+                    SheetAction("从文件中选择字幕", bottomPadding = 0.dp) {
+                        subtitlePicker.launch(arrayOf("*/*"))
+                    }
+                }
             }
         }
         if (timestampNoteSheetVisible) {
