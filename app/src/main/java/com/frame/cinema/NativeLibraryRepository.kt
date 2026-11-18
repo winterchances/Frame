@@ -212,6 +212,29 @@ class NativeLibraryRepository(context: Context) {
         store.saveSubtitlePreference(videoId, preference)
     }
 
+    fun hasVideoFolderSource(videoId: Long): Boolean = store.videoFolderSource(videoId) != null
+
+    fun registerVideoFolderSource(videoId: Long, videoUri: Uri, treeUri: Uri): Boolean {
+        runCatching {
+            app.contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val root = DocumentFile.fromTreeUri(app, treeUri) ?: return false
+        fun find(directory: DocumentFile, relativePath: String): String? {
+            directory.listFiles().forEach { child ->
+                if (child.isDirectory) {
+                    val next = if (relativePath.isBlank()) child.name.orEmpty() else "$relativePath/${child.name.orEmpty()}"
+                    find(child, next)?.let { return it }
+                } else if (child.uri == videoUri) {
+                    return relativePath
+                }
+            }
+            return null
+        }
+        val parentPath = find(root, "") ?: return false
+        store.saveVideoFolderSource(videoId, VideoFolderSource(treeUri.toString(), parentPath))
+        return true
+    }
+
     fun findSiblingSubtitles(videoId: Long, videoName: String): List<Pair<Uri, String>> {
         val source = store.videoFolderSource(videoId) ?: return emptyList()
         return runCatching {
