@@ -213,7 +213,13 @@ class NativeLibraryRepository(context: Context) {
         store.saveSubtitlePreference(videoId, preference)
     }
 
-    fun hasVideoFolderSource(videoId: Long): Boolean = store.videoFolderSource(videoId) != null
+    fun hasVideoFolderSource(videoId: Long): Boolean {
+        val source = store.videoFolderSource(videoId) ?: return false
+        val treeUri = Uri.parse(source.treeUri)
+        return app.contentResolver.persistedUriPermissions.any {
+            it.uri == treeUri && it.isReadPermission
+        }
+    }
 
     fun registerVideoFolderSource(videoId: Long, videoUri: Uri, treeUri: Uri): Boolean {
         runCatching {
