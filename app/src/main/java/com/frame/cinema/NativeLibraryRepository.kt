@@ -213,6 +213,12 @@ class NativeLibraryRepository(context: Context) {
         store.saveSubtitlePreference(videoId, preference)
     }
 
+    fun saveSubtitleTrack(videoId: Long, track: SubtitleTrackEntry) {
+        store.saveSubtitleTrack(videoId, track)
+    }
+
+    fun manualSubtitleTracks(videoId: Long): List<SubtitleTrackEntry> = store.subtitleTracks(videoId)
+
     fun hasVideoFolderSource(videoId: Long): Boolean {
         val source = store.videoFolderSource(videoId) ?: return false
         val treeUri = Uri.parse(source.treeUri)
