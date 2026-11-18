@@ -436,15 +436,20 @@ class MainActivity : ComponentActivity() {
                     uri to name
                 }.getOrNull()
         } ?: if (subtitlePreference.enabled) matchedSubtitles.firstOrNull() else null
-        if (subtitlePreference.selectedUri == null && subtitlePreference.enabled && selectedSubtitle != null) {
-            repository.saveSubtitlePreference(item.id, SubtitlePreference(selectedSubtitle.first.toString(), true))
+        val readableSubtitle = selectedSubtitle?.takeIf { candidate ->
+            runCatching {
+                contentResolver.openFileDescriptor(candidate.first, "r")?.use { true } ?: false
+            }.getOrDefault(false)
+        }
+        if (subtitlePreference.selectedUri == null && subtitlePreference.enabled && readableSubtitle != null) {
+            repository.saveSubtitlePreference(item.id, SubtitlePreference(readableSubtitle.first.toString(), true))
         }
         val mediaItemBuilder = MediaItem.Builder()
             .setMediaId(item.id.toString())
             .setUri(item.contentUri)
             .setMediaMetadata(metadataBuilder.build())
-        if (subtitlePreference.enabled && selectedSubtitle != null) {
-            mediaItemBuilder.setSubtitleConfigurations(listOf(subtitleConfiguration(selectedSubtitle.first, selectedSubtitle.second)))
+        if (subtitlePreference.enabled && readableSubtitle != null) {
+            mediaItemBuilder.setSubtitleConfigurations(listOf(subtitleConfiguration(readableSubtitle.first, readableSubtitle.second)))
         }
         val mediaItem = mediaItemBuilder.build()
         controller.setMediaItem(mediaItem)
