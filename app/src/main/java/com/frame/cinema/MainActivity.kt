@@ -2562,8 +2562,8 @@ private fun HomePage(
                 SectionHeading(
                     "最近添加",
                     recentExpanded,
-                    chevronExpandDurationMs = 320,
-                    chevronCollapseDurationMs = 240,
+                    chevronExpandDurationMs = 300 + (recent.size - 1).coerceAtLeast(0) * 60,
+                    chevronCollapseDurationMs = 300 + (recent.size - 1).coerceAtLeast(0) * 60,
                     chevronExpandEasing = androidx.compose.animation.core.FastOutSlowInEasing,
                     chevronCollapseEasing = androidx.compose.animation.core.FastOutSlowInEasing,
                     onToggle = {
