@@ -4295,10 +4295,74 @@ private fun NativePlayerOverlay(
     var timestampNoteSheetVisible by remember(item.id) { mutableStateOf(false) }
     var timestampNoteText by remember(item.id) { mutableStateOf("") }
     var timestampPositionMs by remember(item.id) { mutableLongStateOf(0L) }
+    var subtitleSheetVisible by remember(item.id) { mutableStateOf(false) }
+    var subtitleTracks by remember(item.id) { mutableStateOf<List<SubtitleTrackOption>>(emptyList()) }
+    var subtitlePreference by remember(item.id) { mutableStateOf(repository.subtitlePreference(item.id)) }
+    val subtitlePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val name = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+                ?: uri.lastPathSegment?.substringAfterLast('/') ?: "外部字幕"
+            if (name.substringAfterLast('.', "").lowercase() in setOf("srt", "ass", "ssa", "vtt")) {
+                val option = SubtitleTrackOption(uri, name, true)
+                subtitleTracks = (subtitleTracks.filterNot { it.uri == uri } + option)
+                val updated = SubtitlePreference(uri.toString(), true)
+                subtitlePreference = updated
+                repository.saveSubtitlePreference(item.id, updated)
+                val wasPlaying = player.isPlaying
+                val position = player.currentPosition.coerceAtLeast(0L)
+                val mediaItem = MediaItem.Builder()
+                    .setMediaId(item.id.toString())
+                    .setUri(item.contentUri)
+                    .setMediaMetadata(player.currentMediaItem?.mediaMetadata ?: MediaMetadata.EMPTY)
+                    .setSubtitleConfigurations(listOf(subtitleConfiguration(uri, name)))
+                    .build()
+                player.setMediaItem(mediaItem, position)
+                player.prepare()
+                if (wasPlaying) player.play() else player.pause()
+            } else {
+                Toast.makeText(context, "请选择 SRT、ASS、SSA 或 VTT 字幕文件", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     val timestampNoteFocusRequester = remember(item.id) { FocusRequester() }
 
-    BackHandler(enabled = timestampNoteSheetVisible) {
-        timestampNoteSheetVisible = false
+    LaunchedEffect(item.id) {
+        subtitlePreference = repository.subtitlePreference(item.id)
+        val automatic = repository.findSiblingSubtitles(item.id, item.name).map { SubtitleTrackOption(it.first, it.second) }
+        val selected = subtitlePreference.selectedUri?.let { saved ->
+            automatic.firstOrNull { it.uri.toString() == saved } ?: runCatching {
+                val uri = Uri.parse(saved)
+                SubtitleTrackOption(uri, uri.lastPathSegment?.substringAfterLast('/') ?: "已挂载字幕", true)
+            }.getOrNull()
+        }
+        subtitleTracks = (automatic + listOfNotNull(selected)).distinctBy { it.uri }
+    }
+
+    fun selectSubtitle(option: SubtitleTrackOption?) {
+        val updated = if (option == null) subtitlePreference.copy(enabled = false)
+            else SubtitlePreference(option.uri.toString(), true)
+        subtitlePreference = updated
+        repository.saveSubtitlePreference(item.id, updated)
+        val wasPlaying = player.isPlaying
+        val position = player.currentPosition.coerceAtLeast(0L)
+        val builder = MediaItem.Builder()
+            .setMediaId(item.id.toString())
+            .setUri(item.contentUri)
+            .setMediaMetadata(player.currentMediaItem?.mediaMetadata ?: MediaMetadata.EMPTY)
+        if (updated.enabled && option != null) {
+            builder.setSubtitleConfigurations(listOf(subtitleConfiguration(option.uri, option.name)))
+        }
+        player.setMediaItem(builder.build(), position)
+        player.prepare()
+        if (wasPlaying) player.play() else player.pause()
+    }
+
+    BackHandler(enabled = timestampNoteSheetVisible || subtitleSheetVisible) {
+        if (timestampNoteSheetVisible) timestampNoteSheetVisible = false else subtitleSheetVisible = false
     }
     LaunchedEffect(timestampNoteSheetVisible) {
         if (timestampNoteSheetVisible) {
