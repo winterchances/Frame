@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
+import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -224,7 +225,7 @@ class NativeLibraryRepository(context: Context) {
                 if (child.isDirectory) {
                     val next = if (relativePath.isBlank()) child.name.orEmpty() else "$relativePath/${child.name.orEmpty()}"
                     find(child, next)?.let { return it }
-                } else if (child.uri == videoUri) {
+                } else if (sameDocument(child.uri, videoUri)) {
                     return relativePath
                 }
             }
@@ -245,7 +246,7 @@ class NativeLibraryRepository(context: Context) {
             }
             val siblings = directory.listFiles()
             val storedVideoUri = store.allVideos().firstOrNull { it.id == videoId }?.uri
-            val actualVideoName = siblings.firstOrNull { it.uri.toString() == storedVideoUri }?.name ?: videoName
+            val actualVideoName = siblings.firstOrNull { storedVideoUri != null && sameDocument(it.uri, Uri.parse(storedVideoUri)) }?.name ?: videoName
             val baseName = actualVideoName.substringBeforeLast('.', actualVideoName).trim()
             siblings
                 .filter { !it.isDirectory && fileExtension(it.name) in setOf("srt", "ass", "ssa", "vtt") }
@@ -261,6 +262,13 @@ class NativeLibraryRepository(context: Context) {
                 .sortedWith(compareByDescending<Triple<Uri, String, Boolean>> { it.third }.thenBy { it.second.lowercase(Locale.ROOT) })
                 .map { it.first to it.second }
         }.getOrDefault(emptyList())
+    }
+
+    private fun sameDocument(first: Uri, second: Uri): Boolean {
+        if (first == second) return true
+        val firstId = runCatching { DocumentsContract.getDocumentId(first) }.getOrNull()
+        val secondId = runCatching { DocumentsContract.getDocumentId(second) }.getOrNull()
+        return firstId != null && firstId == secondId
     }
 
     private fun fileExtension(name: String?): String = name?.substringAfterLast('.', "")?.lowercase(Locale.ROOT).orEmpty()
