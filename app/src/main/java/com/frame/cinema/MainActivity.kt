@@ -3665,7 +3665,9 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            T
+                            Text(
+                                "导出",
+                                modifier = Modifier.then(
                                     if (exportingReviewVideoId == null) Modifier.noRippleClickable {
                                         exportingReviewVideoId = video.id
                                         exportScope.launch {
@@ -3695,14 +3697,18 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            T { onCreate(video) },
+                            Text(
+                                "添加",
+                                modifier = Modifier.noRippleClickable { onCreate(video) },
                                 color = Color(0xFFDDDDDD),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            T
+                            Text(
+                                "展开",
+                                modifier = Modifier.then(
                                     if (entries.isNotEmpty()) Modifier.noRippleClickable {
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
@@ -3940,7 +3946,9 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            T
+                            Text(
+                                "导出",
+                                modifier = Modifier.then(
                                     if (exportingStandaloneReviewId == null) Modifier.noRippleClickable {
                                         exportingStandaloneReviewId = entry.id
                                         exportScope.launch {
@@ -3967,14 +3975,18 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            T { onCreateStandalone(entry.id) },
+                            Text(
+                                "添加",
+                                modifier = Modifier.noRippleClickable { onCreateStandalone(entry.id) },
                                 color = Color(0xFFDDDDDD),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            T {
+                            Text(
+                                "展开",
+                                modifier = Modifier.noRippleClickable {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
                                 color = Color(0xFFDDDDDD),
