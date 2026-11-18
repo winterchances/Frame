@@ -2543,6 +2543,8 @@ private fun HomePage(
                                             color = Color.White,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
+                                            englishFontSize = 16.sp,
+                                            englishFontWeight = FontWeight.SemiBold,
                                             maxLines = 1,
                                             showEnglish = true
                                         )
@@ -5071,6 +5073,7 @@ private fun VideoCardTitle(
     englishFontSize: androidx.compose.ui.unit.TextUnit = fontSize,
     englishColor: Color = color,
     fontWeight: FontWeight,
+    englishFontWeight: FontWeight = fontWeight,
     maxLines: Int,
     showEnglish: Boolean,
     modifier: Modifier = Modifier,
@@ -5095,7 +5098,7 @@ private fun VideoCardTitle(
                 englishTitle,
                 color = englishColor,
                 fontSize = englishFontSize,
-                fontWeight = fontWeight,
+                fontWeight = englishFontWeight,
                 lineHeight = lineHeight,
                 textAlign = textAlign,
                 maxLines = 1,
