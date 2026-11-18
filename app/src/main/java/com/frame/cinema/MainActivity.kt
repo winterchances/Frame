@@ -2543,7 +2543,7 @@ private fun HomePage(
                                             color = Color.White,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
-                                            englishFontSize = 16.sp,
+                                            englishFontSize = 14.sp,
                                             englishFontWeight = FontWeight.SemiBold,
                                             maxLines = 1,
                                             showEnglish = true
