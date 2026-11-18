@@ -50,7 +50,10 @@ data class VideoItem(
     val contentUri: Uri get() = Uri.parse(uri)
 }
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 9) {
+data class SubtitlePreference(val selectedUri: String? = null, val enabled: Boolean = true)
+data class VideoFolderSource(val treeUri: String, val relativePath: String)
+
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 10) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -74,6 +77,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             )""".trimIndent()
         )
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE video_folder_sources (video_id INTEGER PRIMARY KEY NOT NULL, tree_uri TEXT NOT NULL, relative_path TEXT NOT NULL DEFAULT '')")
+        db.execSQL("CREATE TABLE subtitle_preferences (video_id INTEGER PRIMARY KEY NOT NULL, selected_uri TEXT, enabled INTEGER NOT NULL DEFAULT 1)")
         db.execSQL("CREATE TABLE watch_time_daily (video_id INTEGER NOT NULL, day_key TEXT NOT NULL, duration_ms INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(video_id, day_key))")
         db.execSQL("""CREATE TABLE reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,6 +135,10 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         }
         if (oldVersion < 9) {
             db.execSQL("ALTER TABLE reviews ADD COLUMN playback_position_ms INTEGER")
+        }
+        if (oldVersion < 10) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS video_folder_sources (video_id INTEGER PRIMARY KEY NOT NULL, tree_uri TEXT NOT NULL, relative_path TEXT NOT NULL DEFAULT '')")
+            db.execSQL("CREATE TABLE IF NOT EXISTS subtitle_preferences (video_id INTEGER PRIMARY KEY NOT NULL, selected_uri TEXT, enabled INTEGER NOT NULL DEFAULT 1)")
         }
         if (oldVersion < 5) {
             db.execSQL("""
@@ -214,6 +223,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         db.beginTransaction()
         try {
             db.delete("videos", null, null)
+            db.delete("video_folder_sources", null, null)
+            db.delete("subtitle_preferences", null, null)
             db.delete("watch_time_daily", null, null)
             db.delete("reviews", null, null)
             db.delete("categories", null, null)
@@ -323,6 +334,49 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.delete("reviews", "id=?", arrayOf(id.toString()))
     }
 
+    @Synchronized fun saveVideoFolderSource(videoId: Long, source: VideoFolderSource) {
+        writableDatabase.insertWithOnConflict(
+            "video_folder_sources", null,
+            ContentValues().apply {
+                put("video_id", videoId)
+                put("tree_uri", source.treeUri)
+                put("relative_path", source.relativePath)
+            },
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+    }
+
+    @Synchronized fun videoFolderSource(videoId: Long): VideoFolderSource? =
+        readableDatabase.rawQuery(
+            "SELECT tree_uri, relative_path FROM video_folder_sources WHERE video_id=?",
+            arrayOf(videoId.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst()) VideoFolderSource(cursor.getString(0), cursor.getString(1)) else null
+        }
+
+    @Synchronized fun saveSubtitlePreference(videoId: Long, preference: SubtitlePreference) {
+        writableDatabase.insertWithOnConflict(
+            "subtitle_preferences", null,
+            ContentValues().apply {
+                put("video_id", videoId)
+                if (preference.selectedUri == null) putNull("selected_uri") else put("selected_uri", preference.selectedUri)
+                put("enabled", if (preference.enabled) 1 else 0)
+            },
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+    }
+
+    @Synchronized fun subtitlePreference(videoId: Long): SubtitlePreference =
+        readableDatabase.rawQuery(
+            "SELECT selected_uri, enabled FROM subtitle_preferences WHERE video_id=?",
+            arrayOf(videoId.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst()) SubtitlePreference(
+                selectedUri = if (cursor.isNull(0)) null else cursor.getString(0),
+                enabled = cursor.getInt(1) != 0
+            ) else SubtitlePreference()
+        }
+
     @Synchronized fun addWatchTime(videoId: Long, dayKey: String, durationMs: Long) {
         if (durationMs <= 0L) return
         val db = writableDatabase
@@ -366,6 +420,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         try {
             writableDatabase.delete("reviews", "video_id=?", arrayOf(id.toString()))
             writableDatabase.delete("videos", "id=?", arrayOf(id.toString()))
+            writableDatabase.delete("video_folder_sources", "video_id=?", arrayOf(id.toString()))
+            writableDatabase.delete("subtitle_preferences", "video_id=?", arrayOf(id.toString()))
             writableDatabase.setTransactionSuccessful()
         } finally { writableDatabase.endTransaction() }
     }
@@ -374,6 +430,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         try {
             writableDatabase.delete("reviews", null, null)
             writableDatabase.delete("videos", null, null)
+            writableDatabase.delete("video_folder_sources", null, null)
+            writableDatabase.delete("subtitle_preferences", null, null)
             writableDatabase.setTransactionSuccessful()
         } finally { writableDatabase.endTransaction() }
     }
