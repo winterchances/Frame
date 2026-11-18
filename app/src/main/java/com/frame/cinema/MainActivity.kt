@@ -3661,7 +3661,7 @@ private fun RecordsPage(
                                 "${entries.size} 条",
                                 modifier = Modifier.offset(y = 1.dp),
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 12.sp,
+                                fontSize = 14.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
@@ -3942,7 +3942,7 @@ private fun RecordsPage(
                                 "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
                                 modifier = Modifier.offset(y = 1.dp),
                                 color = Color(0xFFDDDDDD),
-                                fontSize = 12.sp,
+                                fontSize = 14.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
