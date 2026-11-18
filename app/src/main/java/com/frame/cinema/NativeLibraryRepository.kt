@@ -124,7 +124,11 @@ class NativeLibraryRepository(context: Context) {
         target.absolutePath
     }.getOrNull()
 
-    fun importUris(uris: List<Uri>, onMetadataReady: () -> Unit = {}): Int {
+    fun importUris(
+        uris: List<Uri>,
+        onMetadataReady: () -> Unit = {},
+        folderSources: Map<String, VideoFolderSource> = emptyMap()
+    ): Int {
         var added = 0
         uris.forEachIndexed { index, uri ->
             runCatching {
@@ -134,6 +138,7 @@ class NativeLibraryRepository(context: Context) {
             }
             val existing = store.allVideos().firstOrNull { it.uri == uri.toString() }
             if (existing != null) {
+                folderSources[uri.toString()]?.let { store.saveVideoFolderSource(existing.id, it) }
                 if (existing.isInLibrary == false) {
                     store.setInLibrary(existing.id, true)
                     added++
@@ -153,6 +158,7 @@ class NativeLibraryRepository(context: Context) {
                 bgIndex = ((id % 4) + 1).toInt()
             )
             store.upsert(item)
+            folderSources[uri.toString()]?.let { store.saveVideoFolderSource(id, it) }
             added++
             thumbnailExecutor.execute {
                 val metadata = ThumbnailStore.createVideoMetadata(app, uri, id)
@@ -183,15 +189,50 @@ class NativeLibraryRepository(context: Context) {
         }
         val root = DocumentFile.fromTreeUri(app, treeUri) ?: return 0
         val files = mutableListOf<Uri>()
-        fun collect(directory: DocumentFile) {
+        val folderSources = mutableMapOf<String, VideoFolderSource>()
+        fun collect(directory: DocumentFile, relativePath: String) {
             directory.listFiles().forEach { child ->
-                if (child.isDirectory) collect(child)
-                else if (child.type?.startsWith("video/") == true) files += child.uri
+                if (child.isDirectory) {
+                    val childPath = if (relativePath.isBlank()) child.name.orEmpty()
+                        else "$relativePath/${child.name.orEmpty()}"
+                    collect(child, childPath)
+                } else if (child.type?.startsWith("video/") == true) {
+                    files += child.uri
+                    folderSources[child.uri.toString()] = VideoFolderSource(treeUri.toString(), relativePath)
+                }
             }
         }
-        collect(root)
-        return importUris(files, onMetadataReady)
+        collect(root, "")
+        return importUris(files, onMetadataReady, folderSources)
     }
+
+    fun subtitlePreference(videoId: Long): SubtitlePreference = store.subtitlePreference(videoId)
+
+    fun saveSubtitlePreference(videoId: Long, preference: SubtitlePreference) {
+        store.saveSubtitlePreference(videoId, preference)
+    }
+
+    fun findSiblingSubtitles(videoId: Long, videoName: String): List<Pair<Uri, String>> {
+        val source = store.videoFolderSource(videoId) ?: return emptyList()
+        return runCatching {
+            val root = DocumentFile.fromTreeUri(app, Uri.parse(source.treeUri)) ?: return emptyList()
+            var directory = root
+            source.relativePath.split('/').filter { it.isNotBlank() }.forEach { segment ->
+                directory = directory.findFile(segment) ?: return emptyList()
+            }
+            val baseName = videoName.substringBeforeLast('.', videoName).trim()
+            directory.listFiles()
+                .filter { !it.isDirectory && fileExtension(it.name) in setOf("srt", "ass", "ssa", "vtt") }
+                .mapNotNull { file ->
+                    val name = file.name ?: return@mapNotNull null
+                    if (name.substringBeforeLast('.', name).equals(baseName, ignoreCase = true)) file.uri to name
+                    else null
+                }
+                .sortedBy { it.second.lowercase(Locale.ROOT) }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun fileExtension(name: String?): String = name?.substringAfterLast('.', "")?.lowercase(Locale.ROOT).orEmpty()
 
     fun update(item: VideoItem) = store.upsert(item)
 
