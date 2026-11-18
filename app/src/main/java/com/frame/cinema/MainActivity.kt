@@ -3646,8 +3646,8 @@ private fun RecordsPage(
                         Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                         Spacer(Modifier.height(16.dp))
                         Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
+                            Modifier.fillMaxWidth().padding(end = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 "观影感想",
@@ -3665,8 +3665,9 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            Box(
-                                Modifier.size(30.dp).then(
+                            Text(
+                                "导出",
+                                modifier = Modifier.padding(vertical = 6.dp).then(
                                     if (exportingReviewVideoId == null) Modifier.noRippleClickable {
                                         exportingReviewVideoId = video.id
                                         exportScope.launch {
@@ -3690,42 +3691,33 @@ private fun RecordsPage(
                                         }
                                     } else Modifier
                                 ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                RecordActionGlyph(
-                                    RecordActionGlyphType.Download,
-                                    "下载观影记录",
-                                    Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
-                                )
-                            }
-                            Box(
-                                Modifier.size(30.dp).noRippleClickable { onCreate(video) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                RecordActionGlyph(
-                                    RecordActionGlyphType.Add,
-                                    "新增感想",
-                                    Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
-                                )
-                            }
-                            Box(
-                                Modifier.size(30.dp)
-                                    .then(
-                                        if (entries.isNotEmpty()) Modifier.noRippleClickable {
-                                            setVideoReviewsExpanded(video.id, !expanded)
-                                        } else Modifier
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                RecordActionGlyph(
-                                    RecordActionGlyphType.Expand,
-                                    if (expanded) "收起感想" else "展开感想",
-                                    Color(0xFFDDDDDD),
-                                    modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
-                                )
-                            }
+                                color = Color(0xFFDDDDDD),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                "添加",
+                                modifier = Modifier.padding(vertical = 6.dp).noRippleClickable { onCreate(video) },
+                                color = Color(0xFFDDDDDD),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                "展开",
+                                modifier = Modifier.padding(vertical = 6.dp).then(
+                                    if (entries.isNotEmpty()) Modifier.noRippleClickable {
+                                        setVideoReviewsExpanded(video.id, !expanded)
+                                    } else Modifier
+                                ),
+                                color = Color(0xFFDDDDDD),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
                         }
                         val timelineTopSpacing by animateDpAsState(
                             targetValue = if (entries.isNotEmpty() && expanded) 2.dp else 0.dp,
@@ -3935,8 +3927,8 @@ private fun RecordsPage(
                         Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
                         Spacer(Modifier.height(16.dp))
                         Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
+                            Modifier.fillMaxWidth().padding(end = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 "观影感想",
@@ -3954,8 +3946,9 @@ private fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            Box(
-                                Modifier.size(30.dp).then(
+                            Text(
+                                "导出",
+                                modifier = Modifier.padding(vertical = 6.dp).then(
                                     if (exportingStandaloneReviewId == null) Modifier.noRippleClickable {
                                         exportingStandaloneReviewId = entry.id
                                         exportScope.launch {
@@ -3976,39 +3969,31 @@ private fun RecordsPage(
                                         }
                                     } else Modifier
                                 ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                RecordActionGlyph(
-                                    RecordActionGlyphType.Download,
-                                    "下载独立感想",
-                                    Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
-                                )
-                            }
-                            Box(
-                                Modifier.size(30.dp).noRippleClickable { onCreateStandalone(entry.id) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                RecordActionGlyph(
-                                    RecordActionGlyphType.Add,
-                                    "新增感想",
-                                    Color(0xFFDDDDDD),
-                                modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp)
-                                )
-                            }
-                            Box(
-                                Modifier.size(30.dp).noRippleClickable {
+                                color = Color(0xFFDDDDDD),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                "添加",
+                                modifier = Modifier.padding(vertical = 6.dp).noRippleClickable { onCreateStandalone(entry.id) },
+                                color = Color(0xFFDDDDDD),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                "展开",
+                                modifier = Modifier.padding(vertical = 6.dp).noRippleClickable {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                RecordActionGlyph(
-                                    RecordActionGlyphType.Expand,
-                                    if (expanded) "收起感想" else "展开感想",
-                                    Color(0xFFDDDDDD),
-                                    modifier = Modifier.offset(x = 11.dp, y = (-6.5).dp).rotate(if (expanded) 180f else 0f)
-                                )
-                            }
+                                color = Color(0xFFDDDDDD),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
                         }
                         val timelineTopSpacing by animateDpAsState(
                             targetValue = if (expanded) 12.dp else 0.dp,
