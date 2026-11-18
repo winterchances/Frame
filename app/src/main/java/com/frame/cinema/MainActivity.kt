@@ -3710,7 +3710,7 @@ private fun RecordsPage(
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
-                                "展开",
+                                if (expanded) "关闭" else "展开",
                                 modifier = Modifier.then(
                                     if (entries.isNotEmpty()) Modifier.noRippleClickable {
                                         setVideoReviewsExpanded(video.id, !expanded)
@@ -3989,7 +3989,7 @@ private fun RecordsPage(
                             )
                             Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
-                                "展开",
+                                if (expanded) "关闭" else "展开",
                                 modifier = Modifier.noRippleClickable {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
