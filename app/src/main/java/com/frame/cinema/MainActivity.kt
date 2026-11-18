@@ -3891,16 +3891,17 @@ private fun RecordsPage(
                                 }
                             }
                             Column(Modifier.weight(1f).height(106.dp)) {
-                                Text(
+                                VideoCardTitle(
                                     standaloneTitle,
                                     modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (entry.title.isBlank()) MutedText else Color(0xFF222222),
+                                    englishFontSize = 14.sp,
+                                    englishColor = Color(0xFF888888),
                                     lineHeight = 22.sp,
                                     maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    showEnglish = true
                                 )
                                 Spacer(Modifier.weight(1f))
                                 RatingStars(
