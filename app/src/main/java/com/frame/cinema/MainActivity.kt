@@ -3067,7 +3067,7 @@ private fun LibraryFilterHeader(
                 Modifier.weight(1f).horizontalScroll(categoryScrollState),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                (categories.filterNot { it == "全部分类" } + listOf("全部", "全部分类")).forEach { value ->
+                (categories.filterNot { it == "全部分类" } + listOf("全部分类", "全部")).forEach { value ->
                     Surface(
                         Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .noRippleClickable { onCategory(value) },
