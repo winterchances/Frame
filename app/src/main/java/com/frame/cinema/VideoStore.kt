@@ -51,9 +51,10 @@ data class VideoItem(
 }
 
 data class SubtitlePreference(val selectedUri: String? = null, val enabled: Boolean = true)
+data class SubtitleTrackEntry(val uri: String, val name: String, val manual: Boolean = true)
 data class VideoFolderSource(val treeUri: String, val relativePath: String)
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 10) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 11) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -79,6 +80,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
         db.execSQL("CREATE TABLE video_folder_sources (video_id INTEGER PRIMARY KEY NOT NULL, tree_uri TEXT NOT NULL, relative_path TEXT NOT NULL DEFAULT '')")
         db.execSQL("CREATE TABLE subtitle_preferences (video_id INTEGER PRIMARY KEY NOT NULL, selected_uri TEXT, enabled INTEGER NOT NULL DEFAULT 1)")
+        db.execSQL("CREATE TABLE subtitle_tracks (video_id INTEGER NOT NULL, uri TEXT NOT NULL, display_name TEXT NOT NULL, manual INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(video_id, uri))")
         db.execSQL("CREATE TABLE watch_time_daily (video_id INTEGER NOT NULL, day_key TEXT NOT NULL, duration_ms INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(video_id, day_key))")
         db.execSQL("""CREATE TABLE reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,6 +141,9 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         if (oldVersion < 10) {
             db.execSQL("CREATE TABLE IF NOT EXISTS video_folder_sources (video_id INTEGER PRIMARY KEY NOT NULL, tree_uri TEXT NOT NULL, relative_path TEXT NOT NULL DEFAULT '')")
             db.execSQL("CREATE TABLE IF NOT EXISTS subtitle_preferences (video_id INTEGER PRIMARY KEY NOT NULL, selected_uri TEXT, enabled INTEGER NOT NULL DEFAULT 1)")
+        }
+        if (oldVersion < 11) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS subtitle_tracks (video_id INTEGER NOT NULL, uri TEXT NOT NULL, display_name TEXT NOT NULL, manual INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(video_id, uri))")
         }
         if (oldVersion < 5) {
             db.execSQL("""
@@ -225,6 +230,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             db.delete("videos", null, null)
             db.delete("video_folder_sources", null, null)
             db.delete("subtitle_preferences", null, null)
+            db.delete("subtitle_tracks", null, null)
             db.delete("watch_time_daily", null, null)
             db.delete("reviews", null, null)
             db.delete("categories", null, null)
@@ -377,6 +383,31 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             ) else SubtitlePreference()
         }
 
+    @Synchronized fun saveSubtitleTrack(videoId: Long, track: SubtitleTrackEntry) {
+        writableDatabase.insertWithOnConflict(
+            "subtitle_tracks", null,
+            ContentValues().apply {
+                put("video_id", videoId)
+                put("uri", track.uri)
+                put("display_name", track.name)
+                put("manual", if (track.manual) 1 else 0)
+            },
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+    }
+
+    @Synchronized fun subtitleTracks(videoId: Long): List<SubtitleTrackEntry> =
+        readableDatabase.rawQuery(
+            "SELECT uri, display_name, manual FROM subtitle_tracks WHERE video_id=? ORDER BY display_name COLLATE NOCASE",
+            arrayOf(videoId.toString())
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) add(
+                    SubtitleTrackEntry(cursor.getString(0), cursor.getString(1), cursor.getInt(2) != 0)
+                )
+            }
+        }
+
     @Synchronized fun addWatchTime(videoId: Long, dayKey: String, durationMs: Long) {
         if (durationMs <= 0L) return
         val db = writableDatabase
@@ -422,6 +453,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             writableDatabase.delete("videos", "id=?", arrayOf(id.toString()))
             writableDatabase.delete("video_folder_sources", "video_id=?", arrayOf(id.toString()))
             writableDatabase.delete("subtitle_preferences", "video_id=?", arrayOf(id.toString()))
+            writableDatabase.delete("subtitle_tracks", "video_id=?", arrayOf(id.toString()))
             writableDatabase.setTransactionSuccessful()
         } finally { writableDatabase.endTransaction() }
     }
@@ -432,6 +464,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             writableDatabase.delete("videos", null, null)
             writableDatabase.delete("video_folder_sources", null, null)
             writableDatabase.delete("subtitle_preferences", null, null)
+            writableDatabase.delete("subtitle_tracks", null, null)
             writableDatabase.setTransactionSuccessful()
         } finally { writableDatabase.endTransaction() }
     }
