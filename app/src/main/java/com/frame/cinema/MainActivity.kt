@@ -3728,7 +3728,7 @@ private fun RecordsPage(
                             }
                         }
                         val timelineTopSpacing by animateDpAsState(
-                            targetValue = if (entries.isNotEmpty() && expanded) 2.dp else 0.dp,
+                            targetValue = if (entries.isNotEmpty() && expanded) 12.dp else 0.dp,
                             animationSpec = tween(
                                 durationMillis = 300,
                                 easing = androidx.compose.animation.core.FastOutSlowInEasing
