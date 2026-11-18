@@ -4353,6 +4353,15 @@ private fun NativePlayerOverlay(
     }
 
     fun selectSubtitle(option: SubtitleTrackOption?) {
+        if (option != null) {
+            val readable = runCatching {
+                context.contentResolver.openFileDescriptor(option.uri, "r")?.use { true } ?: false
+            }.getOrDefault(false)
+            if (!readable) {
+                Toast.makeText(context, "无法读取字幕文件，请重新选择", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
         val updated = if (option == null) subtitlePreference.copy(enabled = false)
             else SubtitlePreference(option.uri.toString(), true)
         subtitlePreference = updated
