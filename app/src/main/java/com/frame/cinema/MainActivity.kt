@@ -762,7 +762,24 @@ private fun FrameNativeApp(
     ) { uri ->
         if (uri != null) {
             try {
-                val json = com.google.gson.Gson().toJson(LibraryBackup(repository.backupVideos(), repository.reviews()))
+                val appPreferences = context.getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
+                val json = com.google.gson.Gson().toJson(
+                    LibraryBackup(
+                        videos = repository.backupVideos(),
+                        reviews = repository.reviews(),
+                        categories = repository.categories(),
+                        watchTimes = repository.backupWatchTimes(),
+                        folderSources = repository.backupFolderSources(),
+                        subtitlePreferences = repository.backupSubtitlePreferences(),
+                        subtitleTracks = repository.backupSubtitleTracks(),
+                        assets = repository.backupAssets(),
+                        appPreferences = BackupAppPreferences(
+                            allowBackground = appPreferences.getBoolean("allow_background", true),
+                            keepAwake = appPreferences.getBoolean("keep_awake", true),
+                            subtitleTextSizePercent = appPreferences.getInt("subtitle_text_size_percent", 100).coerceIn(50, 100)
+                        )
+                    )
+                )
                 val output = context.contentResolver.openOutputStream(uri)
                     ?: throw java.io.IOException("无法打开目标文件")
                 output.bufferedWriter(Charsets.UTF_8).use { it.write(json) }
@@ -825,7 +842,23 @@ private fun FrameNativeApp(
                 notify("文件格式错误")
                 return
             }
-            repository.replaceAll(imported.videos, imported.reviews)
+            repository.replaceAll(
+                imported.videos,
+                imported.reviews,
+                imported.categories,
+                imported.watchTimes.orEmpty(),
+                imported.folderSources.orEmpty(),
+                imported.subtitlePreferences.orEmpty(),
+                imported.subtitleTracks.orEmpty(),
+                imported.assets.orEmpty()
+            )
+            imported.appPreferences?.let { saved ->
+                context.getSharedPreferences("frame_preferences", Context.MODE_PRIVATE).edit()
+                    .putBoolean("allow_background", saved.allowBackground)
+                    .putBoolean("keep_awake", saved.keepAwake)
+                    .putInt("subtitle_text_size_percent", saved.subtitleTextSizePercent.coerceIn(50, 100))
+                    .apply()
+            }
             refresh()
             notify("数据导入成功，若部分视频无法播放，请重新导入视频源")
         } catch (_: Exception) {
