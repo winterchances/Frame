@@ -49,7 +49,7 @@ class NativeLibraryRepository(context: Context) {
         store.allReviews().forEach { review ->
             review.coverPath?.let { path ->
                 runCatching { File(path).takeIf { it.isFile }?.readBytes() }.getOrNull()?.let { bytes ->
-                    add(BackupAsset("review_cover", review.id, Base64.getEncoder().encodeToString(bytes)))
+                    add(BackupAsset("review_cover", review.id, Base64.encodeToString(bytes, Base64.NO_WRAP)))
                 }
             }
         }
