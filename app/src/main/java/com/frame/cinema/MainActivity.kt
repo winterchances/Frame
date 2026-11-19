@@ -3091,6 +3091,7 @@ private fun LibraryPage(
                             confirmText = "移出片库",
                             confirmDanger = true,
                             confirmOnRight = true,
+                            spacing = 12.dp,
                             onConfirm = {
                                 onBatchRemove(selectedVideoIds)
                                 selectedVideoIds = emptySet()
@@ -4851,6 +4852,7 @@ private fun NativePlayerOverlay(
                     SheetActionPair(
                         confirmOnRight = true,
                         confirmTheme = true,
+                        spacing = 12.dp,
                         onConfirm = {
                             val content = timestampNoteText.trim()
                             if (content.isEmpty()) {
@@ -5859,10 +5861,11 @@ private fun SheetActionPair(
     confirmDanger: Boolean = false,
     confirmOnRight: Boolean = false,
     confirmTheme: Boolean = false,
+    spacing: androidx.compose.ui.unit.Dp = 20.dp,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
         if (confirmOnRight) {
             SheetActionButton(cancelText, MainText, Color.White, onCancel, Modifier.weight(1f))
             SheetActionButton(
