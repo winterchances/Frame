@@ -111,7 +111,7 @@ object VideoFilenameParser {
         val technicalInfo = linkedMapOf<String, MutableList<String>>()
         for ((category, values) in technicalRules) {
             for (value in values.sortedByDescending { it.length }) {
-                val pattern = Regex("""(?i)(?<![\\p{L}\\p{N}])${Regex.escape(value)}(?![\\p{L}\\p{N}])""")
+                val pattern = Regex("""(?i)(?<![\p{L}\p{N}])${Regex.escape(value)}(?![\p{L}\p{N}])""")
                 if (pattern.containsMatchIn(remaining)) {
                     technicalInfo.getOrPut(category) { mutableListOf() }.add(value.uppercase(Locale.ROOT))
                     remaining = pattern.replace(remaining, " ")
