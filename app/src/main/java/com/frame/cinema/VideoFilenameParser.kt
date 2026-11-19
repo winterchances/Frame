@@ -32,7 +32,8 @@ object VideoFilenameParser {
         }.sortedByDescending { it.pattern.pattern.length }
 
     private val subtitleRules = rules(
-        "中英双字" to "中英双字|中英字幕|中英双语字幕|双语字幕",
+        "中英双字" to "中英双字|中英字幕|中英双语字幕",
+        "双语字幕" to "双语字幕",
         "中文字幕" to "中文字幕|内嵌中字|内封中字|简体中文字幕|繁体中文字幕",
         "英文字幕" to "英文字幕|内嵌英字|English[ ._-]*Sub(?:title)?s?",
         "简中" to "简中|简体中字",
@@ -126,7 +127,7 @@ object VideoFilenameParser {
         val technicalInfo = linkedMapOf<String, MutableList<String>>()
         for ((category, values) in technicalRules) {
             for (value in values.sortedByDescending { it.length }) {
-                val pattern = Regex("""(?i)(?<![A-Za-z0-9])${Regex.escape(value)}(?![A-Za-z0-9])""")
+                val pattern = Regex("""(?i)(?<![\\p{L}\\p{N}])${Regex.escape(value)}(?![\\p{L}\\p{N}])""")
                 if (pattern.containsMatchIn(remaining)) {
                     technicalInfo.getOrPut(category) { mutableListOf() }.add(value.uppercase(Locale.ROOT))
                     remaining = pattern.replace(remaining, " ")
