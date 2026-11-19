@@ -21,14 +21,14 @@ data class ParsedVideoFilename(val displayTitle: String, val metadata: ParsedFil
 /** Conservative parser: only returns metadata when the remaining title is unambiguous. */
 object VideoFilenameParser {
     private val extensionRegex = Regex("""\.[A-Za-z0-9]{1,8}$""")
-    private val separatorRegex = Regex("""[\s._\-–—()[\]{}]+""")
-    private val cleanupRegex = Regex("""^[\s._\-–—()[\]{}]+|[\s._\-–—()[\]{}]+$""")
+    private val separatorRegex = Regex("""[\s._\-–—()\[\]{}]+""")
+    private val cleanupRegex = Regex("""^[\s._\-–—()\[\]{}]+|[\s._\-–—()\[\]{}]+$""")
 
     private data class TagRule(val canonical: String, val pattern: Regex)
 
     private fun rules(vararg entries: Pair<String, String>): List<TagRule> =
         entries.map { (canonical, expression) ->
-            TagRule(canonical, Regex("""(?i)(?:^|[\s._\-–—()[\]{}])(?:$expression)(?=[\s._\-–—()[\]{}]*$)"""))
+            TagRule(canonical, Regex("""(?i)(?:^|[\s._\-–—()\[\]{}])(?:$expression)(?=[\s._\-–—()\[\]{}]*$)"""))
         }.sortedByDescending { it.pattern.pattern.length }
 
     private val subtitleRules = rules(
