@@ -3779,7 +3779,7 @@ private fun RecordsPage(
                             Text(
                                 "${entries.size} 条",
                                 modifier = Modifier,
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -3810,29 +3810,29 @@ private fun RecordsPage(
                                         }
                                     } else Modifier
                                 ),
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "添加",
                                 modifier = Modifier.noRippleClickable { onCreate(video) },
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
-                                if (expanded) "关闭" else "展开",
+                                if (entries.isEmpty()) "展开" else if (expanded) "关闭" else "展开",
                                 modifier = Modifier.then(
                                     if (entries.isNotEmpty()) Modifier.noRippleClickable {
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
                                 ),
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
