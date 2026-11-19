@@ -725,13 +725,13 @@ private fun FrameNativeApp(
     }
 
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        val count = repository.importUris(uris) { refresh() }
+        val count = repository.importUris(uris, onMetadataReady = { refresh() })
         refresh()
         notify("已导入 $count 个视频")
         sheet = SheetType.NONE
     }
     val galleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
-        val count = repository.importUris(uris) { refresh() }
+        val count = repository.importUris(uris, onMetadataReady = { refresh() })
         refresh()
         notify("已从相册导入 $count 个视频")
         sheet = SheetType.NONE
