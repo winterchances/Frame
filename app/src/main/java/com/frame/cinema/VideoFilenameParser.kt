@@ -28,7 +28,7 @@ object VideoFilenameParser {
 
     private fun rules(vararg entries: Pair<String, String>): List<TagRule> =
         entries.map { (canonical, expression) ->
-            TagRule(canonical, Regex("""(?i)(?<![\p{L}\p{N}])(?:$expression)(?![\p{L}\p{N}])"""))
+            TagRule(canonical, Regex("""(?i)(?:^|[\s._\-–—()[\]{}])(?:$expression)(?=[\s._\-–—()[\]{}]*$)"""))
         }.sortedByDescending { it.pattern.pattern.length }
 
     private val subtitleRules = rules(
@@ -87,22 +87,6 @@ object VideoFilenameParser {
         if (baseName.isBlank()) return null
         var remaining = baseName
 
-        val subtitleTags = mutableListOf<String>()
-        for (rule in subtitleRules) {
-            if (rule.pattern.containsMatchIn(remaining)) {
-                subtitleTags += rule.canonical
-                remaining = rule.pattern.replace(remaining, " ")
-            }
-        }
-
-        val languageTags = mutableListOf<String>()
-        for (rule in languageRules) {
-            if (rule.pattern.containsMatchIn(remaining)) {
-                languageTags += rule.canonical
-                remaining = rule.pattern.replace(remaining, " ")
-            }
-        }
-
         var season: Int? = null
         var episodeStart: Int? = null
         var episodeEnd: Int? = null
@@ -127,11 +111,27 @@ object VideoFilenameParser {
         val technicalInfo = linkedMapOf<String, MutableList<String>>()
         for ((category, values) in technicalRules) {
             for (value in values.sortedByDescending { it.length }) {
-                val pattern = Regex("""(?i)(?<![\p{L}\p{N}])${Regex.escape(value)}(?![\p{L}\p{N}])""")
+                val pattern = Regex("""(?i)(?<![\\p{L}\\p{N}])${Regex.escape(value)}(?![\\p{L}\\p{N}])""")
                 if (pattern.containsMatchIn(remaining)) {
                     technicalInfo.getOrPut(category) { mutableListOf() }.add(value.uppercase(Locale.ROOT))
                     remaining = pattern.replace(remaining, " ")
                 }
+            }
+        }
+
+        val subtitleTags = mutableListOf<String>()
+        for (rule in subtitleRules) {
+            if (rule.pattern.containsMatchIn(remaining)) {
+                subtitleTags += rule.canonical
+                remaining = rule.pattern.replace(remaining, " ")
+            }
+        }
+
+        val languageTags = mutableListOf<String>()
+        for (rule in languageRules) {
+            if (rule.pattern.containsMatchIn(remaining)) {
+                languageTags += rule.canonical
+                remaining = rule.pattern.replace(remaining, " ")
             }
         }
 
