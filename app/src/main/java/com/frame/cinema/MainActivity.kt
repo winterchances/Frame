@@ -66,6 +66,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.geometry.Rect
@@ -3062,18 +3063,45 @@ private fun LibraryPage(
                 }
         )
         if (showDeleteDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
-                title = { Text("移出所选视频？") },
-                text = { Text("确定将 $selectedCount 个视频移出片库吗？视频感想、评分、观看时长和封面缓存都会保留。") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        onBatchRemove(selectedVideoIds)
-                        selectedVideoIds = emptySet(); onMultiSelectModeChange(false); showDeleteDialog = false
-                    }) { Text("移出片库", color = Color(0xFFE05A5A)) }
-                },
-                dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
-            )
+            Dialog(onDismissRequest = { showDeleteDialog = false }) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(30.dp),
+                    color = PageBg,
+                    shadowElevation = 0.dp
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp)) {
+                        Text(
+                            "移出所选视频？",
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MainText,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "确定将 $selectedCount 个视频移出片库吗？视频感想、评分、观看时长和封面缓存都会保留。",
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 22.dp),
+                            color = MainText,
+                            fontSize = 15.sp,
+                            lineHeight = 23.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        SheetActionPair(
+                            confirmText = "移出片库",
+                            confirmDanger = true,
+                            confirmOnRight = true,
+                            onConfirm = {
+                                onBatchRemove(selectedVideoIds)
+                                selectedVideoIds = emptySet()
+                                onMultiSelectModeChange(false)
+                                showDeleteDialog = false
+                            },
+                            onCancel = { showDeleteDialog = false }
+                        )
+                    }
+                }
+            }
         }
 
         }
@@ -4821,6 +4849,8 @@ private fun NativePlayerOverlay(
                     )
                     Spacer(Modifier.height(12.dp))
                     SheetActionPair(
+                        confirmOnRight = true,
+                        confirmTheme = true,
                         onConfirm = {
                             val content = timestampNoteText.trim()
                             if (content.isEmpty()) {
@@ -5827,33 +5857,52 @@ private fun SheetActionPair(
     confirmText: String = "确认",
     cancelText: String = "取消",
     confirmDanger: Boolean = false,
+    confirmOnRight: Boolean = false,
+    confirmTheme: Boolean = false,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-        Surface(
-            Modifier.weight(1f).height(52.dp)
-                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                .clip(RoundedCornerShape(16.dp)).noRippleClickable(onConfirm),
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White,
-            shadowElevation = 0.dp
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(confirmText, color = if (confirmDanger) Color(0xFFFF3B30) else MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
-            }
+        if (confirmOnRight) {
+            SheetActionButton(cancelText, MainText, Color.White, onCancel, Modifier.weight(1f))
+            SheetActionButton(
+                confirmText,
+                if (confirmTheme) Color.White else if (confirmDanger) Color(0xFFFF3B30) else MainText,
+                if (confirmTheme) ThemeTeal else Color.White,
+                onConfirm,
+                Modifier.weight(1f)
+            )
+        } else {
+            SheetActionButton(
+                confirmText,
+                if (confirmTheme) Color.White else if (confirmDanger) Color(0xFFFF3B30) else MainText,
+                if (confirmTheme) ThemeTeal else Color.White,
+                onConfirm,
+                Modifier.weight(1f)
+            )
+            SheetActionButton(cancelText, MainText, Color.White, onCancel, Modifier.weight(1f))
         }
-        Surface(
-            Modifier.weight(1f).height(52.dp)
-                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                .clip(RoundedCornerShape(16.dp)).noRippleClickable(onCancel),
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White,
-            shadowElevation = 0.dp
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(cancelText, color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
-            }
+    }
+}
+
+@Composable
+private fun SheetActionButton(
+    text: String,
+    textColor: Color,
+    backgroundColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier.height(52.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+            .clip(RoundedCornerShape(16.dp)).noRippleClickable(onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = backgroundColor,
+        shadowElevation = 0.dp
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text, color = textColor, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
         }
     }
 }
