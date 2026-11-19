@@ -1256,8 +1256,9 @@ private fun FrameNativeApp(
                         val recordQuery = recordSearch.trim()
                         val matchingReviewEntries = remember(recordQuery, reviewEntries, videoById) {
                             if (recordQuery.isBlank()) emptyList() else reviewEntries.filter { entry ->
-                                val videoName = videoById[entry.videoId]?.let { displayVideoName(it.name) }.orEmpty()
-                                entry.content.contains(recordQuery, true) || entry.title.contains(recordQuery, true) || videoName.contains(recordQuery, true)
+                                val linkedVideo = videoById[entry.videoId]
+                                entry.content.contains(recordQuery, true) || entry.title.contains(recordQuery, true) ||
+                                    linkedVideo?.let { matchesVideoFilenameSearch(it, recordQuery) } == true
                             }.take(30)
                         }
                         val matchingUnreviewedVideos = remember(recordQuery, videos, reviewEntries) {
@@ -1266,7 +1267,7 @@ private fun FrameNativeApp(
                                 videos.filter { video ->
                                     (video.status == "watched" || video.progress >= 100f) &&
                                         video.id !in reviewedVideoIds &&
-                                        displayVideoName(video.name).contains(recordQuery, true)
+                                        matchesVideoFilenameSearch(video, recordQuery)
                                 }.take(30)
                             }
                         }
@@ -1446,7 +1447,7 @@ private fun FrameNativeApp(
                             val query = search.trim()
                             if (query.isBlank()) emptyList()
                             else videos.asSequence()
-                                .filter { displayVideoName(it.name).contains(query, true) }
+                                .filter { matchesVideoFilenameSearch(it, query) }
                                 .distinctBy { displayVideoName(it.name).trim().lowercase(Locale.getDefault()) }
                                 .take(30)
                                 .toList()
@@ -1867,7 +1868,7 @@ private fun FrameNativeApp(
                         val query = reviewVideoSearch.trim()
                         val matchingVideos = remember(query, videos) {
                             if (query.isBlank()) emptyList() else videos.filter {
-                                displayVideoName(it.name).contains(query, true)
+                                matchesVideoFilenameSearch(it, query)
                             }.take(30)
                         }
                         matchingVideos.forEach { video ->
