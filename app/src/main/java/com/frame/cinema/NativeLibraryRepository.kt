@@ -146,17 +146,21 @@ class NativeLibraryRepository(context: Context) {
                 }
                 return@forEachIndexed
             }
-            val name = queryName(uri)
+            val originalFileName = queryName(uri)
+            val parsedFilename = VideoFilenameParser.parse(originalFileName)
             val id = System.currentTimeMillis() * 100 + index
             val now = System.currentTimeMillis()
             val item = VideoItem(
                 id = id,
                 uri = uri.toString(),
-                name = name,
+                name = parsedFilename?.displayTitle ?: originalFileName,
                 size = querySize(uri),
                 date = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(now)),
                 addedAt = now,
-                bgIndex = ((id % 4) + 1).toInt()
+                bgIndex = ((id % 4) + 1).toInt(),
+                originalFileName = originalFileName,
+                filenameMetadataJson = parsedFilename?.let { com.google.gson.Gson().toJson(it.metadata) },
+                nameManuallyEdited = false
             )
             store.upsert(item)
             folderSources[uri.toString()]?.let { store.saveVideoFolderSource(id, it) }
@@ -303,7 +307,7 @@ class NativeLibraryRepository(context: Context) {
 
     fun rename(id: Long, name: String) {
         store.allVideos().firstOrNull { it.id == id }?.let {
-            store.upsert(it.copy(name = name))
+            store.upsert(it.copy(name = name, nameManuallyEdited = true))
         }
     }
 
