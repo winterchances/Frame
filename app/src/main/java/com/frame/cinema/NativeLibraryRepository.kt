@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.io.File
+import java.util.Base64
 import java.util.concurrent.Executors
 
 /**
@@ -32,6 +33,27 @@ class NativeLibraryRepository(context: Context) {
     fun backupVideos(): List<VideoItem> = store.allVideos()
     fun reviews(): List<ReviewEntry> = store.allReviews()
     fun categories(): List<String> = store.categories()
+    fun backupWatchTimes(): List<BackupWatchTime> = store.allWatchTimes()
+    fun backupFolderSources(): List<BackupFolderSource> = store.allFolderSources()
+    fun backupSubtitlePreferences(): List<BackupSubtitlePreference> = store.allSubtitlePreferences()
+    fun backupSubtitleTracks(): List<BackupSubtitleTrack> = store.allSubtitleTracks()
+
+    fun backupAssets(): List<BackupAsset> = buildList {
+        store.allVideos().forEach { video ->
+            video.thumbPath?.let { path ->
+                runCatching { File(path).takeIf { it.isFile }?.readBytes() }.getOrNull()?.let { bytes ->
+                    add(BackupAsset("video_thumbnail", video.id, Base64.getEncoder().encodeToString(bytes)))
+                }
+            }
+        }
+        store.allReviews().forEach { review ->
+            review.coverPath?.let { path ->
+                runCatching { File(path).takeIf { it.isFile }?.readBytes() }.getOrNull()?.let { bytes ->
+                    add(BackupAsset("review_cover", review.id, Base64.getEncoder().encodeToString(bytes)))
+                }
+            }
+        }
+    }
 
     fun addReview(videoId: Long?, content: String, rating: Float) {
         val text = content.trim()
@@ -291,18 +313,55 @@ class NativeLibraryRepository(context: Context) {
 
     fun update(item: VideoItem) = store.upsert(item)
 
-    fun replaceAll(items: List<VideoItem>, reviews: List<ReviewEntry>? = null) {
+    fun replaceAll(
+        items: List<VideoItem>,
+        reviews: List<ReviewEntry>? = null,
+        categories: List<String>? = null,
+        watchTimes: List<BackupWatchTime> = emptyList(),
+        folderSources: List<BackupFolderSource> = emptyList(),
+        subtitlePreferences: List<BackupSubtitlePreference> = emptyList(),
+        subtitleTracks: List<BackupSubtitleTrack> = emptyList(),
+        assets: List<BackupAsset> = emptyList()
+    ) {
         val oldThumbnails = store.allVideos().mapNotNull { it.thumbPath }.toSet()
+        val oldReviewCovers = store.allReviews().mapNotNull { it.coverPath }.toSet()
+        val restoredAssetPaths = mutableMapOf<Pair<String, Long>, String>()
+        assets.forEach { asset ->
+            runCatching {
+                val bytes = Base64.getDecoder().decode(asset.dataBase64)
+                val directory = when (asset.kind) {
+                    "video_thumbnail" -> File(app.filesDir, "video-thumbnails")
+                    "review_cover" -> File(app.filesDir, "review_covers")
+                    else -> return@runCatching
+                }.apply { mkdirs() }
+                val target = File(directory, "backup_\${asset.ownerId}.jpg")
+                target.writeBytes(bytes)
+                restoredAssetPaths[asset.kind to asset.ownerId] = target.absolutePath
+            }
+        }
         val restored = items.map { item ->
             item.copy(
-                thumbPath = item.thumbPath?.takeIf { path -> java.io.File(path).isFile },
+                thumbPath = restoredAssetPaths["video_thumbnail" to item.id]
+                    ?: item.thumbPath?.takeIf { path -> File(path).isFile },
                 category = if (item.category == "全部") "全部分类" else item.category
             )
         }
-        val retainedThumbnails = restored.mapNotNull { it.thumbPath }.toSet()
-        val restoredCategories = (listOf("全部分类", "我的最爱") + restored.map { it.category }).distinct()
-        store.replaceAll(restored, restoredCategories, reviews)
-        (oldThumbnails - retainedThumbnails).forEach { ThumbnailStore.delete(app, it) }
+        val restoredReviews = reviews?.map { review ->
+            review.copy(
+                coverPath = restoredAssetPaths["review_cover" to review.id]
+                    ?: review.coverPath?.takeIf { path -> File(path).isFile }
+            )
+        }
+        val restoredCategories = (categories?.takeIf { it.isNotEmpty() }
+            ?: (listOf("全部分类", "我的最爱") + restored.map { it.category })).let { names ->
+            (listOf("全部分类", "我的最爱") + names).distinct()
+        }
+        store.replaceAll(
+            restored, restoredCategories, restoredReviews,
+            watchTimes, folderSources, subtitlePreferences, subtitleTracks
+        )
+        (oldThumbnails - restored.mapNotNull { it.thumbPath }.toSet()).forEach { ThumbnailStore.delete(app, it) }
+        (oldReviewCovers - restoredReviews.orEmpty().mapNotNull { it.coverPath }.toSet()).forEach { File(it).delete() }
     }
 
     fun rename(id: Long, name: String) {
