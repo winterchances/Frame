@@ -5324,22 +5324,38 @@ private fun VideoCardTitle(
     showEnglish: Boolean,
     modifier: Modifier = Modifier,
     lineHeight: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified,
-    textAlign: TextAlign = TextAlign.Start
+    textAlign: TextAlign = TextAlign.Start,
+    combineEnglish: Boolean = false
 ) {
     val (primaryTitle, englishTitle) = splitDisplayVideoTitle(name)
     Column(modifier, horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
-        Text(
-            primaryTitle,
-            color = color,
-            fontSize = fontSize,
-            fontWeight = fontWeight,
-            lineHeight = lineHeight,
-            textAlign = textAlign,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
-        )
-        if (showEnglish && !englishTitle.isNullOrBlank()) {
+        if (combineEnglish) {
+            Text(
+                listOfNotNull(primaryTitle, englishTitle?.takeIf { it.isNotBlank() }).joinToString(" "),
+                color = color,
+                fontSize = fontSize,
+                fontWeight = fontWeight,
+                lineHeight = lineHeight,
+                textAlign = textAlign,
+                minLines = 2,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+            )
+        } else {
+            Text(
+                primaryTitle,
+                color = color,
+                fontSize = fontSize,
+                fontWeight = fontWeight,
+                lineHeight = lineHeight,
+                textAlign = textAlign,
+                maxLines = maxLines,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontFamily = FontFamily.SansSerif, platformStyle = PlatformTextStyle(includeFontPadding = false))
+            )
+        }
+        if (!combineEnglish && showEnglish && !englishTitle.isNullOrBlank()) {
             Text(
                 englishTitle,
                 color = englishColor,
@@ -5524,8 +5540,9 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
             fontSize = 13.sp,
             color = Color(0xFF222222),
             fontWeight = FontWeight.Medium,
-            maxLines = if (compact) 1 else 1,
+            maxLines = if (compact) 2 else 1,
             showEnglish = !compact,
+            combineEnglish = compact,
             modifier = Modifier.padding(top = 8.dp)
         )
     }
