@@ -271,7 +271,7 @@ class NativeLibraryRepository(context: Context) {
                     val subtitleBase = name.substringBeforeLast('.', name)
                     val exact = subtitleBase.equals(baseName, ignoreCase = true)
                     val languageVariant = subtitleBase.startsWith("$baseName.", ignoreCase = true) ||
-                        subtitleBase.startsWith("$baseName_", ignoreCase = true) ||
+                        subtitleBase.startsWith("${baseName}_", ignoreCase = true) ||
                         subtitleBase.startsWith("$baseName-", ignoreCase = true)
                     if (exact || languageVariant) Triple(file.uri, name, exact) else null
                 }
