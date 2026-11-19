@@ -3930,7 +3930,7 @@ private fun RecordsPage(
                                         ) {
                                             Text(
                                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                color = Color(0xFF999999),
+                                                color = Color(0xFFDDDDDD),
                                                 fontSize = 11.sp,
                                                 lineHeight = 14.sp,
                                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4061,7 +4061,7 @@ private fun RecordsPage(
                             Text(
                                 "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
                                 modifier = Modifier,
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -4089,27 +4089,27 @@ private fun RecordsPage(
                                         }
                                     } else Modifier
                                 ),
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "添加",
                                 modifier = Modifier.noRippleClickable { onCreateStandalone(entry.id) },
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFFDDDDDD), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 if (expanded) "关闭" else "展开",
                                 modifier = Modifier.noRippleClickable {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
-                                color = Color(0xFFDDDDDD),
+                                color = Color(0xFF999999),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
