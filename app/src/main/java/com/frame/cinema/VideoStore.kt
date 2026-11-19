@@ -45,7 +45,10 @@ data class VideoItem(
     val lastPlayedAt: Long = 0L,
     val thumbPath: String? = null,
     // Null is treated as visible for compatibility with backups created before this field existed.
-    val isInLibrary: Boolean? = true
+    val isInLibrary: Boolean? = true,
+    val originalFileName: String? = null,
+    val filenameMetadataJson: String? = null,
+    val nameManuallyEdited: Boolean = false
 ) {
     val contentUri: Uri get() = Uri.parse(uri)
 }
@@ -54,7 +57,7 @@ data class SubtitlePreference(val selectedUri: String? = null, val enabled: Bool
 data class SubtitleTrackEntry(val uri: String, val name: String, val manual: Boolean = true)
 data class VideoFolderSource(val treeUri: String, val relativePath: String)
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 11) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 12) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -74,7 +77,10 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 duration_ms INTEGER NOT NULL DEFAULT 0,
                 last_played_at INTEGER NOT NULL DEFAULT 0,
                 thumb_path TEXT,
-                is_in_library INTEGER NOT NULL DEFAULT 1
+                is_in_library INTEGER NOT NULL DEFAULT 1,
+                original_file_name TEXT,
+                filename_metadata_json TEXT,
+                name_manually_edited INTEGER NOT NULL DEFAULT 0
             )""".trimIndent()
         )
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
@@ -145,6 +151,13 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         if (oldVersion < 11) {
             db.execSQL("CREATE TABLE IF NOT EXISTS subtitle_tracks (video_id INTEGER NOT NULL, uri TEXT NOT NULL, display_name TEXT NOT NULL, manual INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(video_id, uri))")
         }
+        if (oldVersion < 12) {
+            db.execSQL("ALTER TABLE videos ADD COLUMN original_file_name TEXT")
+            db.execSQL("ALTER TABLE videos ADD COLUMN filename_metadata_json TEXT")
+            // Existing names may have been manually edited before this feature existed.
+            // Protect them rather than guessing whether they are still source filenames.
+            db.execSQL("ALTER TABLE videos ADD COLUMN name_manually_edited INTEGER NOT NULL DEFAULT 1")
+        }
         if (oldVersion < 5) {
             db.execSQL("""
                 UPDATE videos
@@ -185,7 +198,10 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     durationMs = cursor.getLong(cursor.getColumnIndexOrThrow("duration_ms")),
                     lastPlayedAt = cursor.getLong(cursor.getColumnIndexOrThrow("last_played_at")),
                     thumbPath = cursor.getString(cursor.getColumnIndexOrThrow("thumb_path")),
-                    isInLibrary = cursor.getInt(cursor.getColumnIndexOrThrow("is_in_library")) != 0
+                    isInLibrary = cursor.getInt(cursor.getColumnIndexOrThrow("is_in_library")) != 0,
+                    originalFileName = cursor.getString(cursor.getColumnIndexOrThrow("original_file_name")),
+                    filenameMetadataJson = cursor.getString(cursor.getColumnIndexOrThrow("filename_metadata_json")),
+                    nameManuallyEdited = cursor.getInt(cursor.getColumnIndexOrThrow("name_manually_edited")) != 0
                 )
             )
         }
@@ -211,6 +227,9 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             put("rating", video.rating); put("duration_ms", video.durationMs)
             put("last_played_at", video.lastPlayedAt); put("thumb_path", video.thumbPath)
             put("is_in_library", if (video.isInLibrary == false) 0 else 1)
+            put("original_file_name", video.originalFileName)
+            put("filename_metadata_json", video.filenameMetadataJson)
+            put("name_manually_edited", if (video.nameManuallyEdited) 1 else 0)
         }
         writableDatabase.insertWithOnConflict("videos", null, v, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -259,6 +278,9 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("duration_ms", video.durationMs); put("last_played_at", video.lastPlayedAt)
                     put("thumb_path", video.thumbPath)
                      put("is_in_library", if (video.isInLibrary == false) 0 else 1)
+                    put("original_file_name", video.originalFileName)
+                    put("filename_metadata_json", video.filenameMetadataJson)
+                    put("name_manually_edited", if (video.nameManuallyEdited) 1 else 0)
                 }
                 db.insertWithOnConflict("videos", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             }
