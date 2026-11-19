@@ -2824,7 +2824,7 @@ private fun LibraryPage(
     }
     val filtered = remember(videos, status, category) {
         videos.filter {
-            (status == "全部" || (status == "在看" && (it.status == "playing" || it.progress in .01f..99.99f)) || (status == "已看" && (it.status == "watched" || it.progress >= 100f))) &&
+            (status == "全部" || (status == "未看" && it.status == "all" && it.progress <= 0f) || (status == "在看" && (it.status == "playing" || it.progress in .01f..99.99f)) || (status == "已看" && (it.status == "watched" || it.progress >= 100f))) &&
                 (category == "全部" || (category == "全部分类" && it.category == "全部分类") || (category == "我的最爱" && it.isFav) || (category != "全部" && category != "全部分类" && category != "我的最爱" && it.category == category))
         }
     }
@@ -3132,7 +3132,7 @@ private fun LibraryFilterHeader(
             Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(25.dp)
         ) {
-            listOf("全部", "在看", "已看").forEach { value ->
+            listOf("全部", "未看", "在看", "已看").forEach { value ->
                 Column(Modifier.noRippleClickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(value, color = if (status == value) MainText else MutedText, fontWeight = FontWeight.Medium, fontSize = 17.sp)
                     if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
