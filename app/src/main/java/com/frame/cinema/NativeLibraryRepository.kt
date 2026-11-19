@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.io.File
-import java.util.Base64
+import android.util.Base64
 import java.util.concurrent.Executors
 
 /**
@@ -42,7 +42,7 @@ class NativeLibraryRepository(context: Context) {
         store.allVideos().forEach { video ->
             video.thumbPath?.let { path ->
                 runCatching { File(path).takeIf { it.isFile }?.readBytes() }.getOrNull()?.let { bytes ->
-                    add(BackupAsset("video_thumbnail", video.id, Base64.getEncoder().encodeToString(bytes)))
+                    add(BackupAsset("video_thumbnail", video.id, Base64.encodeToString(bytes, Base64.NO_WRAP)))
                 }
             }
         }
@@ -328,13 +328,13 @@ class NativeLibraryRepository(context: Context) {
         val restoredAssetPaths = mutableMapOf<Pair<String, Long>, String>()
         assets.forEach { asset ->
             runCatching {
-                val bytes = Base64.getDecoder().decode(asset.dataBase64)
+                val bytes = Base64.decode(asset.dataBase64, Base64.DEFAULT)
                 val directory = when (asset.kind) {
                     "video_thumbnail" -> File(app.filesDir, "video-thumbnails")
                     "review_cover" -> File(app.filesDir, "review_covers")
                     else -> return@runCatching
                 }.apply { mkdirs() }
-                val target = File(directory, "backup_\${asset.ownerId}.jpg")
+                val target = File(directory, "backup_${asset.ownerId}.jpg")
                 target.writeBytes(bytes)
                 restoredAssetPaths[asset.kind to asset.ownerId] = target.absolutePath
             }
