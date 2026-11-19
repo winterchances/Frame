@@ -28,7 +28,7 @@ object VideoFilenameParser {
 
     private fun rules(vararg entries: Pair<String, String>): List<TagRule> =
         entries.map { (canonical, expression) ->
-            TagRule(canonical, Regex("""(?i)(?<![\\p{L}\\p{N}])(?:$expression)(?![\\p{L}\\p{N}])"""))
+            TagRule(canonical, Regex("""(?i)(?<![\p{L}\p{N}])(?:$expression)(?![\p{L}\p{N}])"""))
         }.sortedByDescending { it.pattern.pattern.length }
 
     private val subtitleRules = rules(
