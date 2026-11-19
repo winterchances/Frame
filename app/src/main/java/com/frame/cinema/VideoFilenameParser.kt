@@ -28,7 +28,7 @@ object VideoFilenameParser {
 
     private fun rules(vararg entries: Pair<String, String>): List<TagRule> =
         entries.map { (canonical, expression) ->
-            TagRule(canonical, Regex("""(?i)(?<![A-Za-z0-9])(?:$expression)(?![A-Za-z0-9])"""))
+            TagRule(canonical, Regex("""(?i)(?<![\\p{L}\\p{N}])(?:$expression)(?![\\p{L}\\p{N}])"""))
         }.sortedByDescending { it.pattern.pattern.length }
 
     private val subtitleRules = rules(
@@ -172,4 +172,13 @@ object VideoFilenameParser {
         }
         return null
     }
+}
+
+
+fun matchesVideoFilenameSearch(video: VideoItem, query: String): Boolean {
+    val normalized = query.trim()
+    if (normalized.isEmpty()) return true
+    return video.name.contains(normalized, ignoreCase = true) ||
+        video.originalFileName.orEmpty().contains(normalized, ignoreCase = true) ||
+        video.filenameMetadataJson.orEmpty().contains(normalized, ignoreCase = true)
 }
