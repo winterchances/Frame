@@ -4337,6 +4337,16 @@ private fun NativePlayerOverlay(
     var timestampNoteText by remember(item.id) { mutableStateOf("") }
     var timestampPositionMs by remember(item.id) { mutableLongStateOf(0L) }
     var subtitleSheetVisible by remember(item.id) { mutableStateOf(false) }
+    val subtitleTextSizePreferences = remember {
+        context.getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
+    }
+    var subtitleTextSizePercent by remember(item.id) {
+        mutableIntStateOf(subtitleTextSizePreferences.getInt("subtitle_text_size_percent", 100).coerceIn(50, 100))
+    }
+    val playerViewReference = remember(item.id) { arrayOfNulls<PlayerView>(1) }
+    fun applySubtitleTextSize(view: PlayerView?) {
+        view?.subtitleView?.setFractionalTextSize(0.0533f * subtitleTextSizePercent / 100f)
+    }
     var subtitleTracks by remember(item.id) { mutableStateOf<List<SubtitleTrackOption>>(emptyList()) }
     var subtitlePreference by remember(item.id) { mutableStateOf(repository.subtitlePreference(item.id)) }
     var hasSubtitleFolderAccess by remember(item.id) { mutableStateOf(repository.hasVideoFolderSource(item.id)) }
@@ -4613,12 +4623,16 @@ private fun NativePlayerOverlay(
                     useController = false
                     setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
                     layoutParams = ViewGroup.LayoutParams(-1, -1)
+                    playerViewReference[0] = this
+                    applySubtitleTextSize(this)
                     videoTextureView = findVideoTextureView(this)
                 }
             },
             modifier = Modifier.fillMaxSize(),
             update = {
                 it.player = player
+                playerViewReference[0] = it
+                applySubtitleTextSize(it)
                 videoTextureView = findVideoTextureView(it)
             }
         )
@@ -4764,6 +4778,26 @@ private fun NativePlayerOverlay(
                         .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 50.dp)
                 ) {
                     SheetHeading("字幕")
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("字幕大小", color = MainText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.weight(1f))
+                        Text("${subtitleTextSizePercent}%", color = ThemeTeal, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Slider(
+                        value = subtitleTextSizePercent.toFloat(),
+                        onValueChange = { value ->
+                            val percent = value.roundToInt().coerceIn(50, 100)
+                            subtitleTextSizePercent = percent
+                            subtitleTextSizePreferences.edit().putInt("subtitle_text_size_percent", percent).apply()
+                            applySubtitleTextSize(playerViewReference[0])
+                        },
+                        valueRange = 50f..100f,
+                        steps = 9,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                     if (subtitleTracks.isEmpty()) {
                         Text("还没有找到字幕，可以从文件中选择，或授权视频文件夹进行自动匹配。", color = MutedText, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(bottom = 16.dp))
                     }
