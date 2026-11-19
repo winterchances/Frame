@@ -22,9 +22,27 @@ data class ReviewEntry(
     val playbackPositionMs: Long? = null
 )
 
+data class BackupWatchTime(val videoId: Long, val dayKey: String, val durationMs: Long)
+data class BackupFolderSource(val videoId: Long, val source: VideoFolderSource)
+data class BackupSubtitlePreference(val videoId: Long, val preference: SubtitlePreference)
+data class BackupSubtitleTrack(val videoId: Long, val track: SubtitleTrackEntry)
+data class BackupAsset(val kind: String, val ownerId: Long, val dataBase64: String)
+data class BackupAppPreferences(
+    val allowBackground: Boolean = true,
+    val keepAwake: Boolean = true,
+    val subtitleTextSizePercent: Int = 100
+)
+
 data class LibraryBackup(
     val videos: List<VideoItem>,
-    val reviews: List<ReviewEntry>
+    val reviews: List<ReviewEntry>,
+    val categories: List<String>? = null,
+    val watchTimes: List<BackupWatchTime>? = null,
+    val folderSources: List<BackupFolderSource>? = null,
+    val subtitlePreferences: List<BackupSubtitlePreference>? = null,
+    val subtitleTracks: List<BackupSubtitleTrack>? = null,
+    val assets: List<BackupAsset>? = null,
+    val appPreferences: BackupAppPreferences? = null
 )
 
 data class VideoItem(
@@ -242,7 +260,15 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         } finally { writableDatabase.endTransaction() }
     }
 
-    @Synchronized fun replaceAll(videos: List<VideoItem>, categories: List<String>, reviews: List<ReviewEntry>? = null) {
+    @Synchronized fun replaceAll(
+        videos: List<VideoItem>,
+        categories: List<String>,
+        reviews: List<ReviewEntry>? = null,
+        watchTimes: List<BackupWatchTime> = emptyList(),
+        folderSources: List<BackupFolderSource> = emptyList(),
+        subtitlePreferences: List<BackupSubtitlePreference> = emptyList(),
+        subtitleTracks: List<BackupSubtitleTrack> = emptyList()
+    ) {
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -288,6 +314,35 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 db.insert("categories", null, ContentValues().apply {
                     put("name", name); put("position", index)
                 })
+            }
+            folderSources.forEach { entry ->
+                db.insertWithOnConflict("video_folder_sources", null, ContentValues().apply {
+                    put("video_id", entry.videoId)
+                    put("tree_uri", entry.source.treeUri)
+                    put("relative_path", entry.source.relativePath)
+                }, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            subtitlePreferences.forEach { entry ->
+                db.insertWithOnConflict("subtitle_preferences", null, ContentValues().apply {
+                    put("video_id", entry.videoId)
+                    if (entry.preference.selectedUri == null) putNull("selected_uri") else put("selected_uri", entry.preference.selectedUri)
+                    put("enabled", if (entry.preference.enabled) 1 else 0)
+                }, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            subtitleTracks.forEach { entry ->
+                db.insertWithOnConflict("subtitle_tracks", null, ContentValues().apply {
+                    put("video_id", entry.videoId)
+                    put("uri", entry.track.uri)
+                    put("display_name", entry.track.name)
+                    put("manual", if (entry.track.manual) 1 else 0)
+                }, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            watchTimes.forEach { entry ->
+                if (entry.durationMs > 0L) db.insertWithOnConflict("watch_time_daily", null, ContentValues().apply {
+                    put("video_id", entry.videoId)
+                    put("day_key", entry.dayKey)
+                    put("duration_ms", entry.durationMs)
+                }, SQLiteDatabase.CONFLICT_REPLACE)
             }
             restoredReviews.forEach { review ->
                 val values = ContentValues().apply {
@@ -428,6 +483,26 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     SubtitleTrackEntry(cursor.getString(0), cursor.getString(1), cursor.getInt(2) != 0)
                 )
             }
+        }
+
+    @Synchronized fun allWatchTimes(): List<BackupWatchTime> =
+        readableDatabase.rawQuery("SELECT video_id, day_key, duration_ms FROM watch_time_daily ORDER BY day_key, video_id", null).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(BackupWatchTime(cursor.getLong(0), cursor.getString(1), cursor.getLong(2))) }
+        }
+
+    @Synchronized fun allFolderSources(): List<BackupFolderSource> =
+        readableDatabase.rawQuery("SELECT video_id, tree_uri, relative_path FROM video_folder_sources", null).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(BackupFolderSource(cursor.getLong(0), VideoFolderSource(cursor.getString(1), cursor.getString(2)))) }
+        }
+
+    @Synchronized fun allSubtitlePreferences(): List<BackupSubtitlePreference> =
+        readableDatabase.rawQuery("SELECT video_id, selected_uri, enabled FROM subtitle_preferences", null).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(BackupSubtitlePreference(cursor.getLong(0), SubtitlePreference(if (cursor.isNull(1)) null else cursor.getString(1), cursor.getInt(2) != 0))) }
+        }
+
+    @Synchronized fun allSubtitleTracks(): List<BackupSubtitleTrack> =
+        readableDatabase.rawQuery("SELECT video_id, uri, display_name, manual FROM subtitle_tracks", null).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(BackupSubtitleTrack(cursor.getLong(0), SubtitleTrackEntry(cursor.getString(1), cursor.getString(2), cursor.getInt(3) != 0))) }
         }
 
     @Synchronized fun addWatchTime(videoId: Long, dayKey: String, durationMs: Long) {
