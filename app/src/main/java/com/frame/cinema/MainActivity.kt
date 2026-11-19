@@ -853,14 +853,18 @@ private fun FrameNativeApp(
                 imported.assets.orEmpty()
             )
             imported.appPreferences?.let { saved ->
-                context.getSharedPreferences("frame_preferences", Context.MODE_PRIVATE).edit()
+                preferences.edit()
                     .putBoolean("allow_background", saved.allowBackground)
                     .putBoolean("keep_awake", saved.keepAwake)
                     .putInt("subtitle_text_size_percent", saved.subtitleTextSizePercent.coerceIn(50, 100))
                     .apply()
+                allowBackground = saved.allowBackground
+                keepAwake = saved.keepAwake
+                onBackgroundPlaybackChanged(saved.allowBackground)
+                onKeepAwake(saved.keepAwake)
             }
             refresh()
-            notify("数据导入成功，若部分视频无法播放，请重新导入视频源")
+            notify("数据导入成功；如视频或外挂字幕无法访问，请重新授权文件/文件夹")
         } catch (_: Exception) {
             notify("数据导入失败")
         }
