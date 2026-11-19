@@ -4833,6 +4833,13 @@ private fun NativePlayerOverlay(
                         },
                         valueRange = 50f..100f,
                         steps = 9,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color.White,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.32f),
+                            activeTickColor = Color.White,
+                            inactiveTickColor = Color.White.copy(alpha = 0.32f)
+                        ),
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                     if (subtitleTracks.isEmpty()) {
