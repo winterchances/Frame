@@ -35,7 +35,7 @@ object VideoFilenameParser {
         "中英双字" to "中英双字|中英字幕|中英双语字幕",
         "双语字幕" to "双语字幕",
         "中文字幕" to "中文字幕|内嵌中字|内封中字|简体中文字幕|繁体中文字幕",
-        "英文字幕" to "英文字幕|内嵌英字|English[ ._-]*Sub(?:title)?s?",
+        "英文字幕" to "英文字幕|内嵌英字|English[ ._-]*Sub(?:title)?s?|ENG[ ._-]*SUB",
         "简中" to "简中|简体中字",
         "繁中" to "繁中|繁体中字",
         "中字" to "中字",
@@ -43,7 +43,12 @@ object VideoFilenameParser {
         "内嵌字幕" to "内嵌字幕|内封字幕",
         "外挂字幕" to "外挂字幕|外置字幕",
         "硬字幕" to "硬字幕",
-        "软字幕" to "软字幕",
+        "软字幕" to "软字幕|SOFTSUB",
+        "硬字幕" to "硬字幕|HARDSUB",
+        "简体字幕" to "CHS",
+        "繁体字幕" to "CHT",
+        "双语字幕" to "DUAL[ ._-]*SUB",
+        "内嵌字幕" to "SUBBED",
         "ASS" to "ASS|SSA",
         "SRT" to "SRT",
         "VTT" to "VTT"
@@ -51,9 +56,9 @@ object VideoFilenameParser {
 
     private val languageRules = rules(
         "繁体中文" to "繁体中文|繁中",
-        "普通话" to "普通话|国语|国配",
-        "粤语" to "粤语|粤语音轨",
-        "中文" to "中文|汉语|华语",
+        "普通话" to "普通话|国语|国配|Mandarin",
+        "粤语" to "粤语|粤语音轨|Cantonese",
+        "中文" to "中文|汉语|华语|Chinese",
         "英语" to "英语|英文|English|EN",
         "日语" to "日语|日文|Japanese|JPN|JP",
         "韩语" to "韩语|韩文|Korean|KOR|KR",
@@ -120,20 +125,25 @@ object VideoFilenameParser {
         }
 
         val subtitleTags = mutableListOf<String>()
-        for (rule in subtitleRules) {
-            if (rule.pattern.containsMatchIn(remaining)) {
-                subtitleTags += rule.canonical
-                remaining = rule.pattern.replace(remaining, " ")
-            }
-        }
-
         val languageTags = mutableListOf<String>()
-        for (rule in languageRules) {
-            if (rule.pattern.containsMatchIn(remaining)) {
-                languageTags += rule.canonical
-                remaining = rule.pattern.replace(remaining, " ")
+        var removedTag: Boolean
+        do {
+            removedTag = false
+            for (rule in subtitleRules) {
+                if (rule.pattern.containsMatchIn(remaining)) {
+                    subtitleTags += rule.canonical
+                    remaining = rule.pattern.replace(remaining, " ")
+                    removedTag = true
+                }
             }
-        }
+            for (rule in languageRules) {
+                if (rule.pattern.containsMatchIn(remaining)) {
+                    languageTags += rule.canonical
+                    remaining = rule.pattern.replace(remaining, " ")
+                    removedTag = true
+                }
+            }
+        } while (removedTag)
 
         remaining = cleanupRegex.replace(remaining, "").replace(separatorRegex, " ").trim()
         if (remaining.isBlank()) return null
