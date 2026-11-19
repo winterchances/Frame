@@ -1448,7 +1448,7 @@ private fun FrameNativeApp(
                             if (query.isBlank()) emptyList()
                             else videos.asSequence()
                                 .filter { matchesVideoFilenameSearch(it, query) }
-                                .distinctBy { displayVideoName(it.name).trim().lowercase(Locale.getDefault()) }
+                                .distinctBy { it.id }
                                 .take(30)
                                 .toList()
                         }
