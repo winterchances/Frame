@@ -369,7 +369,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (intent?.action == ACTION_OPEN_PLAYER) openPlayerRequest.intValue++
+        if (intent?.action == ACTION_OPEN_PLAYER) {
+            openPlayerRequest.intValue++
+            intent.action = null
+        }
         window.statusBarColor = android.graphics.Color.WHITE
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
         repository = NativeLibraryRepository(this)
@@ -414,8 +417,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.action == ACTION_OPEN_PLAYER) {
+            openPlayerRequest.intValue++
+            intent.action = null
+        }
         setIntent(intent)
-        if (intent.action == ACTION_OPEN_PLAYER) openPlayerRequest.intValue++
     }
 
     private fun startNativePlayback(item: VideoItem, positionMs: Long? = null) {
