@@ -5697,6 +5697,7 @@ private fun ActionIcon(
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Modifier.onHeaderDoubleTapToTop(onDoubleTap: () -> Unit): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
