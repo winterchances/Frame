@@ -2563,7 +2563,7 @@ private fun HomePage(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
         ) {
             Box(
                 Modifier.fillMaxWidth()
@@ -3676,13 +3676,7 @@ private fun RecordsPage(
     val watchedCount = completedVideos.size
     val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
     val reviewedCount = reviews.size
-    Box(
-        Modifier.fillMaxSize().clipToBounds().pointerInput(listState) {
-            detectTapGestures(onDoubleTap = {
-                scrollToTopScope.launch { listState.animateScrollToItem(0) }
-            })
-        }
-    ) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -3992,7 +3986,7 @@ private fun RecordsPage(
                                         ) {
                                             Text(
                                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                color = Color(0xFF555555),
+                                                color = Color(0xFF999999),
                                                 fontSize = 11.sp,
                                                 lineHeight = 14.sp,
                                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4095,7 +4089,7 @@ private fun RecordsPage(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                    color = Color(0xFF555555),
+                                    color = Color(0xFF999999),
                                     fontSize = 12.sp,
                                     lineHeight = 16.sp,
                                     maxLines = 1,
