@@ -4476,6 +4476,7 @@ private fun RecordsPage(
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
+                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                 .background(
                     if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
                     else Color.Transparent
