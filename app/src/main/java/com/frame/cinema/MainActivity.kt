@@ -1105,26 +1105,20 @@ private fun FrameNativeApp(
                     Box(
                         Modifier.align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(230.dp)
+                            .height(145.dp)
                             .drawWithCache {
                                 val verticalFade = Brush.verticalGradient(
                                     0f to Color.Transparent,
-                                    0.16f to Color.Transparent,
-                                    0.42f to PageBg.copy(alpha = 0.10f),
-                                    0.72f to PageBg.copy(alpha = 0.48f),
-                                    1f to PageBg.copy(alpha = 0.88f),
+                                    0.20f to Color.Transparent,
+                                    0.48f to PageBg.copy(alpha = 0.04f),
+                                    0.76f to PageBg.copy(alpha = 0.18f),
+                                    1f to PageBg.copy(alpha = 0.42f),
                                     startY = 0f,
                                     endY = size.height
-                                )
-                                val surroundingFade = Brush.radialGradient(
-                                    colors = listOf(PageBg.copy(alpha = 0.10f), Color.Transparent),
-                                    center = Offset(size.width / 2f, size.height),
-                                    radius = size.width * 0.90f
                                 )
                                 onDrawWithContent {
                                     drawContent()
                                     drawRect(verticalFade)
-                                    drawRect(surroundingFade)
                                 }
                             }
                     )
