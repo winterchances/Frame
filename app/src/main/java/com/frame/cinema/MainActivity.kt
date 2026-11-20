@@ -6176,7 +6176,7 @@ private fun SheetActionPair(
             SheetActionButton(
                 confirmText,
                 if (confirmTheme) Color.White else if (confirmDanger) LocalFramePalette.current.danger else MainText,
-                if (confirmTheme) ActiveAccent else Color.White,
+                if (confirmTheme) ActiveAccent else MaterialTheme.colorScheme.surface,
                 onConfirm,
                 Modifier.weight(1f)
             )
@@ -6184,7 +6184,7 @@ private fun SheetActionPair(
             SheetActionButton(
                 confirmText,
                 if (confirmTheme) Color.White else if (confirmDanger) LocalFramePalette.current.danger else MainText,
-                if (confirmTheme) ActiveAccent else Color.White,
+                if (confirmTheme) ActiveAccent else MaterialTheme.colorScheme.surface,
                 onConfirm,
                 Modifier.weight(1f)
             )
