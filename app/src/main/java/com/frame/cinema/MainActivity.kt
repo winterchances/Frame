@@ -2712,10 +2712,11 @@ private fun HomePage(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
         ) {
             Box(
                 Modifier.fillMaxWidth()
+                    .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -2937,6 +2938,7 @@ private fun HomePage(
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
+                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                 .background(
                     if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
                     else Color.Transparent
@@ -3142,7 +3144,8 @@ private fun LibraryPage(
                     translationY = if (multiSelectMode) 0f else -libraryTitleScrollDistancePx.value
                     alpha = if (multiSelectMode) 1f else titleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp)
+                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -3269,6 +3272,7 @@ private fun LibraryPage(
             onOpenCategoryDrawer = onOpenCategoryDrawer,
             alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
+                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                 .graphicsLayer {
                     translationY = if (multiSelectMode) {
                         libraryTitleHeightPx.intValue.toFloat()
@@ -3502,7 +3506,8 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                     translationY = -recentTitleScrollDistancePx.value
                     alpha = titleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp)
+                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -3510,7 +3515,9 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
         }
         if (activeGroupIndex >= 0) {
             Box(
-                Modifier.fillMaxWidth().offset {
+                Modifier.fillMaxWidth()
+                    .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
+                    .offset {
                     val nextOffset = nextHeaderOffsetState.value
                     val pushOffset = if (activeGroupIndex >= 0 && nextOffset != Int.MAX_VALUE) {
                         minOf(0, nextOffset - headerHeightPx)
@@ -3816,10 +3823,11 @@ private fun RecordsPage(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
         ) {
             Box(
                 Modifier.fillMaxWidth()
+                    .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -4382,7 +4390,8 @@ private fun RecordsPage(
                     translationY = -recordsTitleScrollDistancePx.value
                     alpha = recordsTitleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp)
+                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -5681,6 +5690,17 @@ private fun ActionIcon(
     }
 }
 
+
+@Composable
+private fun Modifier.onHeaderDoubleTapToTop(onDoubleTap: () -> Unit): Modifier {
+    val interactionSource = remember { MutableInteractionSource() }
+    return combinedClickable(
+        interactionSource = interactionSource,
+        indication = null,
+        onClick = {},
+        onDoubleClick = onDoubleTap
+    )
+}
 
 private fun Modifier.onBlankAreaDoubleTap(onDoubleTap: () -> Unit): Modifier =
     pointerInput(onDoubleTap) {
