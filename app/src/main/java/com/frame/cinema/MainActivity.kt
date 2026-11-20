@@ -1376,13 +1376,13 @@ private fun FrameNativeApp(
                             }
                         }
                         Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
-                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
+                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)) {
                             SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
-                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                             SettingRow("保持屏幕常亮", keepAwake) { keepAwake = it; preferences.edit().putBoolean("keep_awake", it).apply(); onKeepAwake(it) }
                         }
                         Text("数据与隐私", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
-                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
+                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)) {
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { notify("数据仅保存在本地") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                                 Text(
@@ -1391,15 +1391,15 @@ private fun FrameNativeApp(
                                     fontSize = 11.sp
                                 )
                             }
-                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { exportDataLauncher.launch("Frame-backup.json") }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导出数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { importDataLauncher.launch(arrayOf("application/json")) }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("导入数据", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
                             }
@@ -1420,7 +1420,7 @@ private fun FrameNativeApp(
                                 .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
@@ -1610,7 +1610,7 @@ private fun FrameNativeApp(
                                 .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .padding(15.dp),
                             singleLine = true,
                             decorationBox = { inner ->
@@ -1702,7 +1702,7 @@ private fun FrameNativeApp(
                                 .height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.surface),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             BasicTextField(
@@ -1726,7 +1726,7 @@ private fun FrameNativeApp(
                                 .height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .noRippleClickable {
                                     val newName = editName.trim()
                                     if (newName.isEmpty()) notify("视频名称不能为空")
@@ -1748,7 +1748,7 @@ private fun FrameNativeApp(
                             Modifier.fillMaxWidth()
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                         ) {
                             Row(
                                 Modifier.fillMaxWidth().height(52.dp)
@@ -1770,7 +1770,7 @@ private fun FrameNativeApp(
                             ) {
                                 Text("关联视频", color = MainText, fontSize = 16.sp)
                             }
-                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                             Row(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable { startNewReview(null) }
@@ -1802,7 +1802,7 @@ private fun FrameNativeApp(
                                     Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp)
                                         .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                         .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                        .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp),
+                                        .clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(15.dp),
                                     decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的感想...", color = MutedText, fontSize = 16.sp); inner() },
                                     textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp)
                                 )
@@ -1823,7 +1823,7 @@ private fun FrameNativeApp(
                                     Text("保存记录", color = if (canSaveChild) Color.White else Color(0xFF999999), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                                 }
                                 if (editReviewId != null) {
-                                    Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable {
+                                    Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable {
                                         editReviewId?.let { repository.deleteReview(it) }; refresh(); sheet = SheetType.NONE
                                     }, contentAlignment = Alignment.Center) {
                                         Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -1864,7 +1864,7 @@ private fun FrameNativeApp(
                                         { editReviewTitle = it },
                                         Modifier.fillMaxWidth().heightIn(min = 42.dp)
                                             .shadow(4.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                            .clip(RoundedCornerShape(12.dp)).background(Color.White).padding(11.dp),
+                                            .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface).padding(11.dp),
                                         singleLine = true,
                                         decorationBox = { inner -> if (editReviewTitle.isEmpty()) Text("输入标题（选填）", color = MutedText, fontSize = 14.sp); inner() },
                                         textStyle = TextStyle(fontSize = 14.sp, color = MainText, fontWeight = FontWeight.Medium)
@@ -1878,7 +1878,7 @@ private fun FrameNativeApp(
                                 Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp)
                                     .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                     .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                    .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp),
+                                    .clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(15.dp),
                                 decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你的感想...", color = MutedText, fontSize = 16.sp); inner() },
                                 textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp)
                             )
@@ -1901,7 +1901,7 @@ private fun FrameNativeApp(
                                 Text("保存记录", color = if (canSaveStandalone) Color.White else Color(0xFF999999), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                             }
                             if (editReviewId != null) {
-                                Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable {
+                                Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable {
                                     editReviewId?.let { repository.deleteReview(it) }; refresh(); sheet = SheetType.NONE
                                 }, contentAlignment = Alignment.Center) {
                                     Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -1982,7 +1982,7 @@ private fun FrameNativeApp(
                                 RatingStars(editRating, 30.dp, onRate = { editRating = it }, spacing = 5.dp)
                             }
                         }
-                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText, fontSize = 16.sp); inner() }, textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp))
+                        BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText, fontSize = 16.sp); inner() }, textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp))
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
@@ -2006,7 +2006,7 @@ private fun FrameNativeApp(
                                 Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp)
                                     .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(Color.White)
+                                    .background(MaterialTheme.colorScheme.surface)
                                     .noRippleClickable {
                                         editReviewId?.let { repository.deleteReview(it) }
                                         refresh()
@@ -2031,7 +2031,7 @@ private fun FrameNativeApp(
                                 .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                                 
                                 .padding(15.dp),
                             singleLine = true,
@@ -2126,7 +2126,7 @@ private fun FrameNativeApp(
                             modifier = Modifier.fillMaxWidth().height(52.dp)
                                 .onFocusChanged { sheetKeyboardUp = it.isFocused }
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 20.dp),
+                                .clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(horizontal = 20.dp),
                             singleLine = true,
                             decorationBox = { inner ->
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
@@ -2263,7 +2263,7 @@ private fun FrameNativeApp(
                         }
                         .shadow(16.dp, RoundedCornerShape(18.dp))
                         .clip(RoundedCornerShape(18.dp))
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(18.dp))
                         .padding(vertical = 4.dp)
                         .zIndex(2f)
@@ -2283,11 +2283,11 @@ private fun FrameNativeApp(
                 androidx.compose.animation.AnimatedVisibility(visible = showClearDataDialog,
                     enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
                     exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(Color.White).noRippleClickable { }.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable { }.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("清空全部数据？", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText)
                         Text("此操作会删除片库条目、分类、封面和本地记录，且无法撤销。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 26.dp, bottom = 22.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(LocalFramePalette.current.secondarySurface).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
                             Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFF3B30)).noRippleClickable { repository.clearAll(); refresh(); showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("确认清空", color = Color.White, fontWeight = FontWeight.SemiBold) }
                         }
                     }
@@ -2299,11 +2299,11 @@ private fun FrameNativeApp(
                 androidx.compose.animation.AnimatedVisibility(visible = showImportDataDialog,
                     enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
                     exit = androidx.compose.animation.scaleOut(targetScale = .9f, animationSpec = tween(240, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))) + fadeOut(tween(240))) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(Color.White).noRippleClickable { }.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp).shadow(18.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable { }.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("导入并覆盖数据？", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText)
                         Text("导入会覆盖当前片库中的全部数据，且无法撤销。确定继续吗？", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 26.dp, bottom = 22.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF2F2F4)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(LocalFramePalette.current.secondarySurface).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
                             Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(ThemeTeal).noRippleClickable {
                                 val uri = pendingImportUri
                                 showImportDataDialog = false
@@ -2529,7 +2529,7 @@ private fun FrameNativeApp(
                                 onValueChange = { newCategoryName = it },
                                 modifier = Modifier.fillMaxWidth().height(52.dp)
                                     .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                                    .clip(RoundedCornerShape(16.dp)).background(Color.White).padding(horizontal = 20.dp),
+                                    .clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(horizontal = 20.dp),
                                 singleLine = true,
                                 decorationBox = { inner ->
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
@@ -5007,7 +5007,7 @@ private fun NativePlayerOverlay(
                         Row(
                             Modifier.fillMaxWidth().padding(bottom = 12.dp).height(52.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .noRippleClickable {
                                     selectSubtitle(option)
                                     subtitleSheetVisible = false
@@ -5067,7 +5067,7 @@ private fun NativePlayerOverlay(
                             .focusRequester(timestampNoteFocusRequester)
                             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
+                            .background(MaterialTheme.colorScheme.surface)
                             .padding(15.dp),
                         textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp),
                         decorationBox = { inner ->
@@ -5988,8 +5988,8 @@ private fun AnimatedDropdownPopup(
                     modifier = modifier
                         .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
                         .clip(menuShape)
-                        .background(Color.White)
-                        .border(0.7.dp, Color(0xFFEEEEEE), menuShape),
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(0.7.dp, LocalFramePalette.current.divider, menuShape),
                     content = content
                 )
             }
