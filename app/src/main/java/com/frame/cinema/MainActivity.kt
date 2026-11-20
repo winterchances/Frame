@@ -2558,13 +2558,7 @@ private fun HomePage(
             listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
         }
     }
-    Box(
-        Modifier.fillMaxSize().clipToBounds().pointerInput(listState) {
-            detectTapGestures(onDoubleTap = {
-                scrollToTopScope.launch { listState.animateScrollToItem(0) }
-            })
-        }
-    ) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -2573,6 +2567,13 @@ private fun HomePage(
         ) {
             Box(
                 Modifier.fillMaxWidth()
+                    .zIndex(3f)
+                    .pointerInput(listState) {
+                        detectTapGestures(
+                            onTap = {},
+                            onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
+                        )
+                    }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -2912,11 +2913,6 @@ private fun LibraryPage(
     Box(
         Modifier.fillMaxSize().clipToBounds()
             .onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }
-            .pointerInput(listState) {
-                detectTapGestures(onDoubleTap = {
-                    scrollToTopScope.launch { listState.animateScrollToItem(0) }
-                })
-            }
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
@@ -3130,6 +3126,12 @@ private fun LibraryPage(
             onOpenCategoryDrawer = onOpenCategoryDrawer,
             alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
+                .pointerInput(listState) {
+                    detectTapGestures(
+                        onTap = {},
+                        onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
+                    )
+                }
                 .graphicsLayer {
                     translationY = if (multiSelectMode) {
                         libraryTitleHeightPx.intValue.toFloat()
@@ -3309,13 +3311,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
             else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
         }
     }
-    Box(
-        Modifier.fillMaxSize().clipToBounds().pointerInput(listState) {
-            detectTapGestures(onDoubleTap = {
-                scrollToTopScope.launch { listState.animateScrollToItem(0) }
-            })
-        }
-    ) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
@@ -3381,7 +3377,13 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                         minOf(0, nextOffset - headerHeightPx)
                     } else 0
                     androidx.compose.ui.unit.IntOffset(0, pushOffset)
-                }.zIndex(2f)
+                }.zIndex(3f)
+                    .pointerInput(listState) {
+                        detectTapGestures(
+                            onTap = {},
+                            onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
+                        )
+                    }
             ) {
                 RecentDateHeader(
                     groups[activeGroupIndex].first,
@@ -3685,10 +3687,16 @@ private fun RecordsPage(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
         ) {
             Box(
                 Modifier.fillMaxWidth()
+                    .pointerInput(listState) {
+                        detectTapGestures(
+                            onTap = {},
+                            onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
+                        )
+                    }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -5464,7 +5472,7 @@ private fun VideoCardTitle(
     Column(modifier, horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
         if (combineEnglish) {
             Text(
-                listOfNotNull(primaryTitle, englishTitle?.takeIf { it.isNotBlank() }).joinToString(" "),
+                primaryTitle,
                 color = color,
                 fontSize = fontSize,
                 fontWeight = fontWeight,
