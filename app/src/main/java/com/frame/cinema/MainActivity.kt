@@ -1278,7 +1278,7 @@ private fun FrameNativeApp(
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
                         .background(Glass)
-                        .border(0.3.dp, Color(0xFFE6E6E6), CircleShape)
+                        .border(0.3.dp, LocalFramePalette.current.divider, CircleShape)
                         .noRippleClickable { showFab = !showFab },
                     contentAlignment = Alignment.Center
                 ) {
@@ -1481,7 +1481,7 @@ private fun FrameNativeApp(
                                                 sheet = SheetType.NONE
                                             },
                                         shape = RoundedCornerShape(16.dp),
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.surface,
                                         shadowElevation = 0.dp
                                     ) {
                                         Row(
@@ -1559,7 +1559,7 @@ private fun FrameNativeApp(
                                                 sheet = SheetType.NONE
                                             },
                                         shape = RoundedCornerShape(16.dp),
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.surface,
                                         shadowElevation = 0.dp
                                     ) {
                                         Row(
@@ -1659,7 +1659,7 @@ private fun FrameNativeApp(
                                                 playVideo(video)
                                             },
                                         shape = RoundedCornerShape(16.dp),
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.surface,
                                         shadowElevation = 0.dp
                                     ) {
                                         Row(
@@ -1820,7 +1820,7 @@ private fun FrameNativeApp(
                                         } else Modifier),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("保存记录", color = if (canSaveChild) Color.White else Color(0xFF999999), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                                    Text("保存记录", color = if (canSaveChild) Color.White else LocalFramePalette.current.tertiaryText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                                 }
                                 if (editReviewId != null) {
                                     Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable {
@@ -1854,8 +1854,8 @@ private fun FrameNativeApp(
                                 ) {
                                     if (coverBitmap != null) Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                     else Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                        Icon(Icons.Outlined.Image, null, tint = Color(0xFF999999), modifier = Modifier.size(22.dp))
-                                        Text("添加封面", color = Color(0xFF999999), fontSize = 10.sp)
+                                        Icon(Icons.Outlined.Image, null, tint = LocalFramePalette.current.tertiaryText, modifier = Modifier.size(22.dp))
+                                        Text("添加封面", color = LocalFramePalette.current.tertiaryText, fontSize = 10.sp)
                                     }
                                 }
                                 Column(Modifier.weight(1f).height(100.dp), verticalArrangement = Arrangement.SpaceBetween) {
@@ -1898,7 +1898,7 @@ private fun FrameNativeApp(
                                     } else Modifier),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("保存记录", color = if (canSaveStandalone) Color.White else Color(0xFF999999), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                                Text("保存记录", color = if (canSaveStandalone) Color.White else LocalFramePalette.current.tertiaryText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                             }
                             if (editReviewId != null) {
                                 Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable {
@@ -2066,7 +2066,7 @@ private fun FrameNativeApp(
                                                 sheet = SheetType.NOTE
                                             },
                                         shape = RoundedCornerShape(16.dp),
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.surface,
                                         shadowElevation = 0.dp
                                     ) {
                                         Row(
@@ -2375,7 +2375,7 @@ private fun FrameNativeApp(
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(if (!categoryEditMode && category == value) Color.White else Color.Transparent)
+                                        .background(if (!categoryEditMode && category == value) LocalFramePalette.current.secondarySurface else Color.Transparent)
                                         .then(if (!categoryEditMode) Modifier.noRippleClickable { category = value; showCategoryDrawer = false } else Modifier)
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -2418,13 +2418,13 @@ private fun FrameNativeApp(
                                             }
                                         } else Modifier)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(if (!categoryEditMode && category == value) Color.White else Color.Transparent)
+                                        .background(if (!categoryEditMode && category == value) LocalFramePalette.current.secondarySurface else Color.Transparent)
                                         .then(if (!categoryEditMode) Modifier.noRippleClickable { category = value; showCategoryDrawer = false } else Modifier)
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(Modifier.size(21.dp), contentAlignment = Alignment.Center) {
-                                        if (categoryEditMode) Icon(Icons.Outlined.Menu, "拖动排序", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
+                                        if (categoryEditMode) Icon(Icons.Outlined.Menu, "拖动排序", tint = LocalFramePalette.current.tertiaryText, modifier = Modifier.size(18.dp))
                                         else Icon(Icons.Outlined.Folder, null, tint = MainText, modifier = Modifier.size(21.dp))
                                     }
                                     if (editingCategoryName == value) {
@@ -2457,7 +2457,7 @@ private fun FrameNativeApp(
                                             editingCategoryName = null
                                             editingCategoryDraft = ""
                                         }, contentAlignment = Alignment.CenterEnd) {
-                                            Icon(Icons.Outlined.Close, "取消重命名", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Outlined.Close, "取消重命名", tint = LocalFramePalette.current.tertiaryText, modifier = Modifier.size(18.dp))
                                         }
                                     } else {
                                         Text(
@@ -2479,7 +2479,7 @@ private fun FrameNativeApp(
                                             pendingCategoryDelete = value
                                             sheet = SheetType.DELETE_CATEGORY
                                         }, contentAlignment = Alignment.CenterEnd) {
-                                            Icon(Icons.Outlined.DeleteOutline, "删除分类", tint = Color(0xFF999999), modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Outlined.DeleteOutline, "删除分类", tint = LocalFramePalette.current.tertiaryText, modifier = Modifier.size(18.dp))
                                         }
                                     } else if (editingCategoryName != value) {
                                         Text(count.toString(), color = MutedText, fontSize = 13.sp)
@@ -3337,11 +3337,11 @@ private fun LibraryFilterHeader(
                         Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .noRippleClickable { onCategory(value) },
                         shape = CircleShape,
-                        color = if (category == value) ThemeTeal else Color.White,
+                        color = if (category == value) ThemeTeal else MaterialTheme.colorScheme.surface,
                         shadowElevation = 0.dp,
                     ) {
                         val label = when (value) { "全部" -> "全部"; "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
-                        Text(label, color = if (category == value) Color.White else Color(0xFF666666), fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        Text(label, color = if (category == value) Color.White else MutedText, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
                 }
             }
@@ -3543,8 +3543,8 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
                     modifier = Modifier.fillMaxWidth()
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("总时长${formatClock(video.durationMs)}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
-                    Text("播放至${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = Color(0xFF999999), maxLines = 1, overflow = TextOverflow.Clip, softWrap = false, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                    Text("总时长${formatClock(video.durationMs)}", fontSize = 11.sp, lineHeight = 13.sp, color = MutedText, maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                    Text("播放至${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = MutedText, maxLines = 1, overflow = TextOverflow.Clip, softWrap = false, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                 }
             }
             Box(Modifier.align(Alignment.BottomEnd).offset(x = 4.dp).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomEnd) {
@@ -5890,7 +5890,7 @@ private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 private fun ContextMenuAction(icon: ImageVector, label: String, danger: Boolean = false, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().height(42.dp).noRippleClickable(onClick).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, contentDescription = null, tint = if (danger) Color(0xFFFF3B30) else Color(0xFF666666), modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = if (danger) Color(0xFFFF3B30) else MutedText, modifier = Modifier.size(18.dp))
         Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
 }
