@@ -316,6 +316,8 @@ private val PageBg: Color
 private val MainText: Color
     @Composable get() = LocalFramePalette.current.primaryText
 private val ThemeTeal = FrameThemeColors.Light.accent
+private val ActiveAccent: Color
+    @Composable get() = LocalFramePalette.current.accent
 private val MutedText: Color
     @Composable get() = LocalFramePalette.current.secondaryText
 private val Glass: Color
@@ -1261,7 +1263,7 @@ private fun FrameNativeApp(
                         .then(if (showFab) Modifier.noRippleClickable { search = ""; sheet = SheetType.SEARCH; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ActiveAccent.copy(alpha = .4f), spotColor = ActiveAccent.copy(alpha = .4f)).clip(CircleShape).background(ActiveAccent), contentAlignment = Alignment.Center) {
                         Icon(Icons.Outlined.Search, "搜索", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -1276,7 +1278,7 @@ private fun FrameNativeApp(
                         .then(if (showFab) Modifier.noRippleClickable { sheet = SheetType.IMPORT; showFab = false } else Modifier),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ThemeTeal.copy(alpha = .4f), spotColor = ThemeTeal.copy(alpha = .4f)).clip(CircleShape).background(ThemeTeal), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(48.dp).shadow(4.dp, CircleShape, ambientColor = ActiveAccent.copy(alpha = .4f), spotColor = ActiveAccent.copy(alpha = .4f)).clip(CircleShape).background(ActiveAccent), contentAlignment = Alignment.Center) {
                         Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -1374,7 +1376,7 @@ private fun FrameNativeApp(
                                             onAppearanceModeChange(option.first)
                                         },
                                         colors = RadioButtonDefaults.colors(
-                                            selectedColor = ThemeTeal,
+                                            selectedColor = ActiveAccent,
                                             unselectedColor = LocalFramePalette.current.tertiaryText
                                         )
                                     )
@@ -1410,7 +1412,7 @@ private fun FrameNativeApp(
                             }
                             Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text("清空所有数据", color = Color(0xFFFF3B30), fontSize = 16.sp)
+                                Text("清空所有数据", color = LocalFramePalette.current.danger, fontSize = 16.sp)
                             }
                         }
                     }
@@ -1505,7 +1507,7 @@ private fun FrameNativeApp(
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 if (video != null) Thumbnail(video, Modifier.fillMaxSize())
-                                                else Text("感想", color = ThemeTeal, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                                else Text("感想", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                             }
                                             Column(Modifier.weight(1f)) {
                                                 Text(
@@ -1820,7 +1822,7 @@ private fun FrameNativeApp(
                                     Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp)
                                         .shadow(if (canSaveChild) 4.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (canSaveChild) ThemeTeal else LocalFramePalette.current.secondarySurface)
+                                        .background(if (canSaveChild) ActiveAccent else LocalFramePalette.current.secondarySurface)
                                         .then(if (canSaveChild) Modifier.noRippleClickable {
                                             val groupId = editStandaloneGroupId!!
                                             val saved = if (editReviewId == null) repository.addStandaloneChildReview(groupId, editReview)
@@ -1835,7 +1837,7 @@ private fun FrameNativeApp(
                                     Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable {
                                         editReviewId?.let { repository.deleteReview(it) }; refresh(); sheet = SheetType.NONE
                                     }, contentAlignment = Alignment.Center) {
-                                        Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                        Text("删除这条感想", color = LocalFramePalette.current.danger, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                                     }
                                 }
                             } else {
@@ -1896,7 +1898,7 @@ private fun FrameNativeApp(
                                 Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp)
                                     .shadow(if (canSaveStandalone) 4.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(if (canSaveStandalone) ThemeTeal else LocalFramePalette.current.secondarySurface)
+                                    .background(if (canSaveStandalone) ActiveAccent else LocalFramePalette.current.secondarySurface)
                                     .then(if (canSaveStandalone) Modifier.noRippleClickable {
                                         val saved = if (editReviewId == null) {
                                             repository.addStandaloneReview(editReviewTitle, editReview, editRating, editReviewCoverUri)
@@ -1913,7 +1915,7 @@ private fun FrameNativeApp(
                                 Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable {
                                     editReviewId?.let { repository.deleteReview(it) }; refresh(); sheet = SheetType.NONE
                                 }, contentAlignment = Alignment.Center) {
-                                    Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    Text("删除这条感想", color = LocalFramePalette.current.danger, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
                             }
@@ -1929,7 +1931,7 @@ private fun FrameNativeApp(
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (linkedVideo != null) ThemeTeal else MaterialTheme.colorScheme.surface)
+                                        .background(if (linkedVideo != null) ActiveAccent else MaterialTheme.colorScheme.surface)
                                         .noRippleClickable {
                                             reviewVideoSearch = ""
                                             sheet = SheetType.REVIEW_VIDEO_PICKER
@@ -1950,7 +1952,7 @@ private fun FrameNativeApp(
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (linkedVideo == null) ThemeTeal else MaterialTheme.colorScheme.surface)
+                                        .background(if (linkedVideo == null) ActiveAccent else MaterialTheme.colorScheme.surface)
                                         .noRippleClickable {
                                             editReviewVideoId = null
                                             selected = null
@@ -1992,7 +1994,7 @@ private fun FrameNativeApp(
                             }
                         }
                         BasicTextField(editReview, { editReview = it }, Modifier.fillMaxWidth().padding(bottom = 20.dp).height(120.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(15.dp), decorationBox = { inner -> if (editReview.isEmpty()) Text("写下你此刻的观影感受...", color = MutedText, fontSize = 16.sp); inner() }, textStyle = TextStyle(fontSize = 16.sp, color = MainText, lineHeight = 24.sp))
-                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ThemeTeal).noRippleClickable {
+                        Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ActiveAccent).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
                             } else if (canSetVideoRating && editRating == 0f) {
@@ -2023,7 +2025,7 @@ private fun FrameNativeApp(
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("删除这条感想", color = Color(0xFFE5484D), fontSize = 16.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                                Text("删除这条感想", color = LocalFramePalette.current.danger, fontSize = 16.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                             }
                         }
                         }
@@ -2297,7 +2299,7 @@ private fun FrameNativeApp(
                         Text("此操作会删除片库条目、分类、封面和本地记录，且无法撤销。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 26.dp, bottom = 22.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(LocalFramePalette.current.secondarySurface).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFFF3B30)).noRippleClickable { repository.clearAll(); refresh(); showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("确认清空", color = Color.White, fontWeight = FontWeight.SemiBold) }
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(LocalFramePalette.current.danger).noRippleClickable { repository.clearAll(); refresh(); showClearDataDialog = false }, contentAlignment = Alignment.Center) { Text("确认清空", color = Color.White, fontWeight = FontWeight.SemiBold) }
                         }
                     }
                 }
@@ -2313,7 +2315,7 @@ private fun FrameNativeApp(
                         Text("导入会覆盖当前片库中的全部数据，且无法撤销。确定继续吗？", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(top = 26.dp, bottom = 22.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(LocalFramePalette.current.secondarySurface).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) { Text("取消", color = MainText, fontWeight = FontWeight.Medium) }
-                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(ThemeTeal).noRippleClickable {
+                            Box(Modifier.weight(1f).height(46.dp).clip(RoundedCornerShape(14.dp)).background(ActiveAccent).noRippleClickable {
                                 val uri = pendingImportUri
                                 showImportDataDialog = false
                                 pendingImportUri = null
@@ -2460,7 +2462,7 @@ private fun FrameNativeApp(
                                                 }
                                             }
                                         }, contentAlignment = Alignment.CenterEnd) {
-                                            Icon(Icons.Outlined.Check, "保存分类名称", tint = ThemeTeal, modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Outlined.Check, "保存分类名称", tint = ActiveAccent, modifier = Modifier.size(18.dp))
                                         }
                                         Box(Modifier.size(28.dp).noRippleClickable {
                                             editingCategoryName = null
@@ -2789,7 +2791,7 @@ private fun HomePage(
                                         Spacer(Modifier.height(2.dp))
                                         Text("播放至 ${formatTime((video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong())}", color = Color.White.copy(alpha = .8f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                                         Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
-                                            Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ThemeTeal))
+                                            Box(Modifier.fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).fillMaxHeight().background(ActiveAccent))
                                         }
                                     }
                                 }
@@ -3101,7 +3103,7 @@ private fun LibraryPage(
                             Box(
                                 Modifier.align(Alignment.TopEnd).padding(7.dp).size(25.dp)
                                     .clip(CircleShape)
-                                    .background(if (video.id in selectedVideoIds) ThemeTeal else Color.Black.copy(alpha = .42f))
+                                    .background(if (video.id in selectedVideoIds) ActiveAccent else Color.Black.copy(alpha = .42f))
                                     .border(1.5.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -3125,14 +3127,14 @@ private fun LibraryPage(
         ) {
             if (multiSelectMode) {
                 TextButton(onClick = { selectedVideoIds = emptySet(); onMultiSelectModeChange(false) }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text("取消", color = ThemeTeal, fontSize = 16.sp)
+                    Text("取消", color = ActiveAccent, fontSize = 16.sp)
                 }
                 Text("已选 $selectedCount 项", Modifier.weight(1f), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = MainText, textAlign = TextAlign.Center, maxLines = 1)
                 TextButton(onClick = {
                     val visibleIds = filtered.map { it.id }.toSet()
                     selectedVideoIds = if (visibleIds.isNotEmpty() && visibleIds.all { it in selectedVideoIds }) selectedVideoIds - visibleIds else selectedVideoIds + visibleIds
                 }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ThemeTeal, fontSize = 16.sp)
+                    Text(if (filtered.isNotEmpty() && filtered.all { it.id in selectedVideoIds }) "取消全选" else "全选", color = ActiveAccent, fontSize = 16.sp)
                 }
             } else {
                 Text("片库", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -3234,8 +3236,8 @@ private fun LibraryPage(
                     }
                 }
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showDeleteDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Outlined.DeleteOutline, null, tint = Color(0xFFFF3B30), modifier = Modifier.size(19.dp))
-                    Text("批量移除", fontSize = 11.sp, color = Color(0xFFFF3B30), modifier = Modifier.padding(top = 1.dp))
+                    Icon(Icons.Outlined.DeleteOutline, null, tint = LocalFramePalette.current.danger, modifier = Modifier.size(19.dp))
+                    Text("批量移除", fontSize = 11.sp, color = LocalFramePalette.current.danger, modifier = Modifier.padding(top = 1.dp))
                 }
             }
         }
@@ -3327,7 +3329,7 @@ private fun LibraryFilterHeader(
             listOf("全部", "未看", "在看", "已看").forEach { value ->
                 Column(Modifier.noRippleClickable { onStatus(value) }, horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(value, color = if (status == value) MainText else MutedText, fontWeight = FontWeight.Medium, fontSize = 17.sp)
-                    if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ThemeTeal))
+                    if (status == value) Spacer(Modifier.padding(top = 5.dp).width(20.dp).height(3.dp).clip(CircleShape).background(ActiveAccent))
                 }
             }
         }
@@ -3346,7 +3348,7 @@ private fun LibraryFilterHeader(
                         Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .noRippleClickable { onCategory(value) },
                         shape = CircleShape,
-                        color = if (category == value) ThemeTeal else MaterialTheme.colorScheme.surface,
+                        color = if (category == value) ActiveAccent else MaterialTheme.colorScheme.surface,
                         shadowElevation = 0.dp,
                     ) {
                         val label = when (value) { "全部" -> "全部"; "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
@@ -4023,7 +4025,7 @@ private fun RecordsPage(
                                 }
                             }
                             val entryTextColor by androidx.compose.animation.animateColorAsState(
-                                if (entryHighlight) ThemeTeal else MutedText,
+                                if (entryHighlight) ActiveAccent else MutedText,
                                 animationSpec = tween(420),
                                 label = "record-review-highlight-${entry.id}"
                             )
@@ -4050,7 +4052,7 @@ private fun RecordsPage(
                                         val axisX = 7.dp.toPx()
                                         val dotCenterY = 8.dp.toPx()
                                         val lineWidth = 1.dp.toPx()
-                                        val lineColor = ThemeTeal
+                                        val lineColor = ActiveAccent
                                         if (entries.size > 1) {
                                             when (index) {
                                                 0 -> drawLine(
@@ -4074,7 +4076,7 @@ private fun RecordsPage(
                                             }
                                         }
                                         drawCircle(
-                                            color = ThemeTeal,
+                                            color = ActiveAccent,
                                             radius = 4.dp.toPx(),
                                             center = Offset(axisX, dotCenterY)
                                         )
@@ -4108,7 +4110,7 @@ private fun RecordsPage(
                                                 Text(
                                                     formatTime(positionMs),
                                                     modifier = Modifier.noRippleClickable { onSeekToTimestamp(video, positionMs) },
-                                                    color = ThemeTeal,
+                                                    color = ActiveAccent,
                                                     fontSize = 11.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4139,7 +4141,7 @@ private fun RecordsPage(
                         entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
                     }
                     val entryTextColor by androidx.compose.animation.animateColorAsState(
-                        if (entryHighlight) ThemeTeal else MutedText,
+                        if (entryHighlight) ActiveAccent else MutedText,
                         animationSpec = tween(420),
                         label = "standalone-review-text-highlight-${entry.id}"
                     )
@@ -4313,7 +4315,7 @@ private fun RecordsPage(
                                                     val axisX = 7.dp.toPx()
                                                     val dotCenterY = 8.dp.toPx()
                                                     drawCircle(
-                                                        color = ThemeTeal,
+                                                        color = ActiveAccent,
                                                         radius = 4.dp.toPx(),
                                                         center = Offset(axisX, dotCenterY)
                                                     )
@@ -4983,7 +4985,7 @@ private fun NativePlayerOverlay(
                     ) {
                         Text("字幕大小", color = MainText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.weight(1f))
-                        Text("${subtitleTextSizePercent}%", color = ThemeTeal, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text("${subtitleTextSizePercent}%", color = ActiveAccent, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                     Slider(
                         value = subtitleTextSizePercent.toFloat(),
@@ -5032,7 +5034,7 @@ private fun NativePlayerOverlay(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            if (selected) Icon(Icons.Outlined.Check, contentDescription = "当前字幕", tint = ThemeTeal)
+                            if (selected) Icon(Icons.Outlined.Check, contentDescription = "当前字幕", tint = ActiveAccent)
                         }
                     }
                     SheetAction("从文件中选择字幕") {
@@ -5495,7 +5497,7 @@ private fun PlayerProgressBar(
     ) {
         val fraction = progress.coerceIn(0f, 1f)
         Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = .3f)))
-        Box(Modifier.fillMaxWidth(fraction).height(4.dp).clip(RoundedCornerShape(2.dp)).background(ThemeTeal))
+        Box(Modifier.fillMaxWidth(fraction).height(4.dp).clip(RoundedCornerShape(2.dp)).background(ActiveAccent))
         Box(
             Modifier.align(Alignment.CenterStart).offset(x = maxWidth * fraction - 6.dp)
                 .size(12.dp).clip(CircleShape).background(Color.White)
@@ -5745,7 +5747,7 @@ private fun SectionHeading(
             .then(if (onToggle != null) Modifier.clickable(interactionSource = interactionSource, indication = null) { onToggle() } else Modifier),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeTeal))
+        Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ActiveAccent))
         Text(
             text, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = MainText,
             modifier = Modifier.padding(start = 8.dp).weight(1f).graphicsLayer { scaleX = titleScale; scaleY = titleScale }
@@ -5761,7 +5763,7 @@ private fun Stat(label: String, value: String, unit: String, modifier: Modifier 
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                value, fontSize = 22.sp, lineHeight = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111),
+                value, fontSize = 22.sp, lineHeight = 22.sp, fontWeight = FontWeight.ExtraBold, color = MainText,
                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
             )
             Text(
@@ -5777,7 +5779,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(bottom = 16.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
-            if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
+            if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ActiveAccent))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
             VideoCardTitle(video.name, fontSize = 15.sp, color = MainText, englishFontSize = 13.sp, englishColor = MutedText, fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true, englishSpacing = 2.dp)
@@ -5814,7 +5816,7 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) {
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = .22f)))
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ActiveAccent))
             }
             if (video.isFav) Text("♥", color = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(7.dp))
         }
@@ -5890,7 +5892,7 @@ private fun EmptyHint(
 
 @Composable
 private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Surface(shape = CircleShape, color = ThemeTeal, shadowElevation = 4.dp, modifier = Modifier.size(48.dp).noRippleClickable(onClick)) {
+    Surface(shape = CircleShape, color = ActiveAccent, shadowElevation = 4.dp, modifier = Modifier.size(48.dp).noRippleClickable(onClick)) {
         Box(contentAlignment = Alignment.Center) { Icon(icon, label, tint = Color.White) }
     }
 }
@@ -5899,8 +5901,8 @@ private fun FabAction(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
 private fun ContextMenuAction(icon: ImageVector, label: String, danger: Boolean = false, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().height(42.dp).noRippleClickable(onClick).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, contentDescription = null, tint = if (danger) Color(0xFFFF3B30) else MutedText, modifier = Modifier.size(18.dp))
-        Text(label, color = if (danger) Color(0xFFFF3B30) else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Icon(icon, contentDescription = null, tint = if (danger) LocalFramePalette.current.danger else MutedText, modifier = Modifier.size(18.dp))
+        Text(label, color = if (danger) LocalFramePalette.current.danger else MainText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -5931,7 +5933,7 @@ private fun RatingStars(
                 Icon(
                     if (fullStar) FrameStarFilledIcon else FrameStarOutlineIcon,
                     contentDescription = "评分 ${value - if (halfStar) 0.5f else 0f} 星",
-                    tint = ThemeTeal,
+                    tint = ActiveAccent,
                     modifier = Modifier.size(size)
                 )
                 if (halfStar) {
@@ -5942,7 +5944,7 @@ private fun RatingStars(
                         Icon(
                             FrameStarFilledIcon,
                             contentDescription = null,
-                            tint = ThemeTeal,
+                            tint = ActiveAccent,
                             modifier = Modifier.size(size)
                         )
                     }
@@ -6021,7 +6023,7 @@ private fun CustomSortMenuItem(
     ) {
         Text(
             text,
-            color = if (isSelected) ThemeTeal else MainText,
+            color = if (isSelected) ActiveAccent else MainText,
             fontSize = 15.sp,
             fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
         )
@@ -6029,7 +6031,7 @@ private fun CustomSortMenuItem(
             Icon(
                 Icons.Outlined.Check,
                 contentDescription = null,
-                tint = ThemeTeal,
+                tint = ActiveAccent,
                 modifier = Modifier.size(18.dp)
             )
         } else {
@@ -6056,7 +6058,7 @@ private fun SortOptionRow(
         label = "sort-direction-indicator"
     )
     val indicatorColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isSelected) ThemeTeal else Color.Transparent,
+        targetValue = if (isSelected) ActiveAccent else Color.Transparent,
         animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
         label = "sort-direction-indicator-color"
     )
@@ -6140,13 +6142,13 @@ private fun SheetAction(
             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
             .clip(RoundedCornerShape(16.dp)).noRippleClickable(onClick),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 0.dp
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text,
-                color = if (danger) Color(0xFFFF3B30) else MainText,
+                color = if (danger) LocalFramePalette.current.danger else MainText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
@@ -6171,20 +6173,20 @@ private fun SheetActionPair(
             SheetActionButton(cancelText, MainText, MaterialTheme.colorScheme.surface, onCancel, Modifier.weight(1f))
             SheetActionButton(
                 confirmText,
-                if (confirmTheme) Color.White else if (confirmDanger) Color(0xFFFF3B30) else MainText,
-                if (confirmTheme) ThemeTeal else Color.White,
+                if (confirmTheme) Color.White else if (confirmDanger) LocalFramePalette.current.danger else MainText,
+                if (confirmTheme) ActiveAccent else Color.White,
                 onConfirm,
                 Modifier.weight(1f)
             )
         } else {
             SheetActionButton(
                 confirmText,
-                if (confirmTheme) Color.White else if (confirmDanger) Color(0xFFFF3B30) else MainText,
-                if (confirmTheme) ThemeTeal else Color.White,
+                if (confirmTheme) Color.White else if (confirmDanger) LocalFramePalette.current.danger else MainText,
+                if (confirmTheme) ActiveAccent else Color.White,
                 onConfirm,
                 Modifier.weight(1f)
             )
-            SheetActionButton(cancelText, MainText, Color.White, onCancel, Modifier.weight(1f))
+            SheetActionButton(cancelText, MainText, MaterialTheme.colorScheme.surface, onCancel, Modifier.weight(1f))
         }
     }
 }
@@ -6215,7 +6217,7 @@ private fun SheetActionButton(
 private fun SettingRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = MainText, fontSize = 16.sp, modifier = Modifier.weight(1f))
-        Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ThemeTeal else LocalFramePalette.current.secondarySurface).noRippleClickable { onChecked(!checked) }) {
+        Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ActiveAccent else LocalFramePalette.current.secondarySurface).noRippleClickable { onChecked(!checked) }) {
             val knobOffset by animateDpAsState(if (checked) 22.dp else 2.dp, tween(300), label = "setting-switch")
             Box(Modifier.align(Alignment.CenterStart).offset(x = knobOffset).size(20.dp).clip(CircleShape).background(Color.White))
         }
