@@ -4047,12 +4047,13 @@ private fun RecordsPage(
                                     ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
+                                val timelineAccent = ActiveAccent
                                 Row(
                                     Modifier.fillMaxWidth().drawBehind {
                                         val axisX = 7.dp.toPx()
                                         val dotCenterY = 8.dp.toPx()
                                         val lineWidth = 1.dp.toPx()
-                                        val lineColor = ActiveAccent
+                                        val lineColor = timelineAccent
                                         if (entries.size > 1) {
                                             when (index) {
                                                 0 -> drawLine(
@@ -4309,13 +4310,14 @@ private fun RecordsPage(
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 (listOf(entry) + reviews.filter { it.standaloneGroupId == entry.id }.sortedByDescending { it.createdAt })
                                     .forEach { timelineEntry ->
+                                        val timelineAccent = ActiveAccent
                                         Row(
                                             Modifier.fillMaxWidth()
                                                 .drawBehind {
                                                     val axisX = 7.dp.toPx()
                                                     val dotCenterY = 8.dp.toPx()
                                                     drawCircle(
-                                                        color = ActiveAccent,
+                                                        color = timelineAccent,
                                                         radius = 4.dp.toPx(),
                                                         center = Offset(axisX, dotCenterY)
                                                     )
