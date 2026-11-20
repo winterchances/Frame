@@ -4949,7 +4949,7 @@ private fun NativePlayerOverlay(
                             subtitleSheetVisible = true
                         }
                         Spacer(Modifier.width(15.dp))
-                        PlayerIconButton(Icons.Outlined.AddComment, "记录此刻") {
+                        PlayerIconButton(Icons.Outlined.AddComment, "记录此刻", iconSize = 18) {
                             timestampPositionMs = player.currentPosition.coerceAtLeast(0L)
                             player.pause()
                             timestampNoteText = ""
@@ -5483,14 +5483,14 @@ private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap
     }
 
 @Composable
-private fun PlayerIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+private fun PlayerIconButton(icon: ImageVector, description: String, iconSize: Int = 20, onClick: () -> Unit) {
     Box(
         Modifier.size(40.dp).clip(CircleShape)
             .background(Color.White.copy(alpha = .2f))
             .noRippleClickable(onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = description, tint = Color.White, modifier = Modifier.size(iconSize.dp))
     }
 }
 
