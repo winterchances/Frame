@@ -1100,6 +1100,33 @@ private fun FrameNativeApp(
 
         if (playing == null) {
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
+                if (!(page == MainPage.LIBRARY && libraryMultiSelectMode)) {
+                    Box(
+                        Modifier.align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(190.dp)
+                            .drawWithCache {
+                                val verticalFade = Brush.verticalGradient(
+                                    0f to Color.Transparent,
+                                    0.38f to PageBg.copy(alpha = 0.14f),
+                                    0.72f to PageBg.copy(alpha = 0.52f),
+                                    1f to PageBg.copy(alpha = 0.88f),
+                                    startY = 0f,
+                                    endY = size.height
+                                )
+                                val surroundingFade = Brush.radialGradient(
+                                    colors = listOf(PageBg.copy(alpha = 0.28f), Color.Transparent),
+                                    center = Offset(size.width / 2f, size.height),
+                                    radius = size.width * 0.78f
+                                )
+                                onDrawWithContent {
+                                    drawContent()
+                                    drawRect(verticalFade)
+                                    drawRect(surroundingFade)
+                                }
+                            }
+                    )
+                }
                 AnimatedVisibility(
                     visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode),
                     enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
