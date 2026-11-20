@@ -623,10 +623,12 @@ private fun FrameNativeApp(
     }
     var allowBackground by remember { mutableStateOf(true) }
     var keepAwake by remember { mutableStateOf(true) }
+    var appearanceMode by remember { mutableStateOf("system") }
     val preferences = remember { context.getSharedPreferences("frame_preferences", android.content.Context.MODE_PRIVATE) }
     LaunchedEffect(Unit) {
         allowBackground = preferences.getBoolean("allow_background", true)
         keepAwake = preferences.getBoolean("keep_awake", true)
+        appearanceMode = preferences.getString("appearance_mode", "system") ?: "system"
         onBackgroundPlaybackChanged(allowBackground)
         onKeepAwake(keepAwake)
     }
@@ -1304,7 +1306,35 @@ private fun FrameNativeApp(
                     }
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
-                        Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
+                        Text("外观", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
+                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
+                            listOf("system" to "跟随系统", "light" to "浅色模式", "dark" to "深色模式").forEachIndexed { index, option ->
+                                Row(
+                                    Modifier.fillMaxWidth().height(52.dp).noRippleClickable {
+                                        appearanceMode = option.first
+                                        preferences.edit().putString("appearance_mode", option.first).apply()
+                                    }.padding(horizontal = 20.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(option.second, Modifier.weight(1f), color = MainText, fontSize = 16.sp)
+                                    RadioButton(
+                                        selected = appearanceMode == option.first,
+                                        onClick = {
+                                            appearanceMode = option.first
+                                            preferences.edit().putString("appearance_mode", option.first).apply()
+                                        },
+                                        colors = RadioButtonDefaults.colors(
+                                            selectedColor = ThemeTeal,
+                                            unselectedColor = Color(0xFFAAAAAA)
+                                        )
+                                    )
+                                }
+                                if (index < 2) {
+                                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                                }
+                            }
+                        }
+                        Text("播放偏好", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
                             SettingRow("允许后台播放", allowBackground) { allowBackground = it; onBackgroundPlaybackChanged(it); preferences.edit().putBoolean("allow_background", it).apply() }
                             Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
