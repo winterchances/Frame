@@ -3141,10 +3141,10 @@ private fun LibraryPage(
                     ) {
                         CustomSortMenuItem("2列大图", !compact) { onCompactChange(false); showSortMenu = false }
                         CustomSortMenuItem("3列小图", compact) { onCompactChange(true); showSortMenu = false }
-                        HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
+                        HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
                         CustomSortMenuItem("按添加时间", sort == SortMode.ADDED) { onSortModeChange(SortMode.ADDED); showSortMenu = false }
                         CustomSortMenuItem("按名称", sort == SortMode.NAME) { onSortModeChange(SortMode.NAME); showSortMenu = false }
-                        HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
+                        HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
                         CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) { onSortDirectionChange(SortDirection.ASCENDING); showSortMenu = false }
                         CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) { onSortDirectionChange(SortDirection.DESCENDING); showSortMenu = false }
                     }
@@ -3161,7 +3161,7 @@ private fun LibraryPage(
                 Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 16.dp)
                     .height(58.dp)
                     .shadow(8.dp, RoundedCornerShape(90.dp), ambientColor = Color.Black.copy(alpha = .08f), spotColor = Color.Black.copy(alpha = .10f))
-                    .clip(RoundedCornerShape(90.dp)).background(Color.White),
+                    .clip(RoundedCornerShape(90.dp)).background(MaterialTheme.colorScheme.surface),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
@@ -3884,7 +3884,7 @@ private fun RecordsPage(
                                     modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
-                                    color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
+                                    color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
                                     englishFontSize = 14.sp,
                                     englishColor = MutedText,
                                     lineHeight = 22.sp,
@@ -3904,7 +3904,7 @@ private fun RecordsPage(
                                 Spacer(Modifier.weight(1f))
                                 Text(
                                     if (completed) video.date + " · 已看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                    color = Color(0xFF999999),
+                                    color = MutedText,
                                     fontSize = 12.sp,
                                     lineHeight = 16.sp,
                                     maxLines = 1,
@@ -3915,7 +3915,7 @@ private fun RecordsPage(
                             }
                         }
                         Spacer(Modifier.height(16.dp))
-                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                         Spacer(Modifier.height(16.dp))
                         Row(
                             Modifier.fillMaxWidth().padding(end = 4.dp),
@@ -3923,7 +3923,7 @@ private fun RecordsPage(
                         ) {
                             Text(
                                 "随记",
-                                color = Color(0xFF555555),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -3932,7 +3932,7 @@ private fun RecordsPage(
                             Text(
                                 "${entries.size} 条",
                                 modifier = Modifier,
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -3963,21 +3963,21 @@ private fun RecordsPage(
                                         }
                                     } else Modifier
                                 ),
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "添加",
                                 modifier = Modifier.noRippleClickable { onCreate(video) },
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 if (entries.isEmpty()) "展开" else if (expanded) "关闭" else "展开",
                                 modifier = Modifier.then(
@@ -3985,7 +3985,7 @@ private fun RecordsPage(
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
                                 ),
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4014,7 +4014,7 @@ private fun RecordsPage(
                                 }
                             }
                             val entryTextColor by androidx.compose.animation.animateColorAsState(
-                                if (entryHighlight) ThemeTeal else Color(0xFF555555),
+                                if (entryHighlight) ThemeTeal else MutedText,
                                 animationSpec = tween(420),
                                 label = "record-review-highlight-${entry.id}"
                             )
@@ -4083,7 +4083,7 @@ private fun RecordsPage(
                                         ) {
                                             Text(
                                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                color = Color(0xFF999999),
+                                                color = MutedText,
                                                 fontSize = 11.sp,
                                                 lineHeight = 14.sp,
                                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4091,7 +4091,7 @@ private fun RecordsPage(
                                             entry.playbackPositionMs?.let { positionMs ->
                                                 Text(
                                                     "|",
-                                                    color = Color(0xFF999999),
+                                                    color = MutedText,
                                                     fontSize = 11.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4130,7 +4130,7 @@ private fun RecordsPage(
                         entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
                     }
                     val entryTextColor by androidx.compose.animation.animateColorAsState(
-                        if (entryHighlight) ThemeTeal else Color(0xFF555555),
+                        if (entryHighlight) ThemeTeal else MutedText,
                         animationSpec = tween(420),
                         label = "standalone-review-text-highlight-${entry.id}"
                     )
@@ -4153,13 +4153,13 @@ private fun RecordsPage(
                                 Modifier.size(80.dp, 106.dp)
                                     .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFFECEDEF)),
+                                    .background(LocalFramePalette.current.secondarySurface),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (coverBitmap != null) {
                                     Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                 } else {
-                                    Icon(Icons.Outlined.Image, null, tint = Color(0xFFB5B5B5), modifier = Modifier.size(25.dp))
+                                    Icon(Icons.Outlined.Image, null, tint = LocalFramePalette.current.tertiaryText, modifier = Modifier.size(25.dp))
                                 }
                             }
                             Column(Modifier.weight(1f).height(106.dp)) {
@@ -4168,7 +4168,7 @@ private fun RecordsPage(
                                     modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
-                                    color = if (entry.title.isBlank()) MutedText else Color(0xFF222222),
+                                    color = if (entry.title.isBlank()) MutedText else MainText,
                                     englishFontSize = 14.sp,
                                     englishColor = MutedText,
                                     lineHeight = 22.sp,
@@ -4186,7 +4186,7 @@ private fun RecordsPage(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                    color = Color(0xFF999999),
+                                    color = MutedText,
                                     fontSize = 12.sp,
                                     lineHeight = 16.sp,
                                     maxLines = 1,
@@ -4197,7 +4197,7 @@ private fun RecordsPage(
                             }
                         }
                         Spacer(Modifier.height(16.dp))
-                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                         Spacer(Modifier.height(16.dp))
                         Row(
                             Modifier.fillMaxWidth().padding(end = 4.dp),
@@ -4205,7 +4205,7 @@ private fun RecordsPage(
                         ) {
                             Text(
                                 "随记",
-                                color = Color(0xFF555555),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4214,7 +4214,7 @@ private fun RecordsPage(
                             Text(
                                 "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
                                 modifier = Modifier,
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
@@ -4242,27 +4242,27 @@ private fun RecordsPage(
                                         }
                                     } else Modifier
                                 ),
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "添加",
                                 modifier = Modifier.noRippleClickable { onCreateStandalone(entry.id) },
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
-                            Text(" 〡 ", color = Color(0xFF999999), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 if (expanded) "关闭" else "展开",
                                 modifier = Modifier.noRippleClickable {
                                     setStandaloneReviewExpanded(entry.id, !expanded)
                                 },
-                                color = Color(0xFF999999),
+                                color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4319,7 +4319,7 @@ private fun RecordsPage(
                                             ) {
                                                 Text(
                                                     SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(timelineEntry.createdAt)),
-                                                    color = Color(0xFF999999),
+                                                    color = MutedText,
                                                     fontSize = 11.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4384,7 +4384,7 @@ private fun RecordsPage(
                             showRecordSortMenu = false
                         }
                         HorizontalDivider(
-                            color = Color(0xFFF0F0F0),
+                            color = LocalFramePalette.current.divider,
                             thickness = 0.5.dp,
                             modifier = Modifier.padding(horizontal = 12.dp)
                         )
