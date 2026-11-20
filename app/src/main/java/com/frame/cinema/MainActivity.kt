@@ -57,6 +57,7 @@ import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.Image
@@ -128,6 +129,7 @@ import dev.chrisbanes.haze.hazeSource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -1383,16 +1385,20 @@ private fun FrameNativeApp(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(option.second, Modifier.weight(1f), color = MainText, fontSize = 16.sp)
-                                    RadioButton(
-                                        selected = appearanceMode == option.first,
-                                        onClick = {
-                                            onAppearanceModeChange(option.first)
-                                        },
-                                        colors = RadioButtonDefaults.colors(
-                                            selectedColor = ActiveAccent,
-                                            unselectedColor = LocalFramePalette.current.tertiaryText
+                                    val radioSelected = appearanceMode == option.first
+                                    val radioColor = if (radioSelected) ActiveAccent else LocalFramePalette.current.tertiaryText
+                                    Canvas(Modifier.size(20.dp)) {
+                                        drawCircle(
+                                            color = radioColor,
+                                            style = Stroke(width = 1.25.dp.toPx())
                                         )
-                                    )
+                                        if (radioSelected) {
+                                            drawCircle(
+                                                color = radioColor,
+                                                radius = 4.5.dp.toPx()
+                                            )
+                                        }
+                                    }
                                 }
                                 if (index < 2) {
                                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
