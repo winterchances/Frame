@@ -3759,6 +3759,7 @@ private fun RecordsPage(
                                     englishFontSize = 14.sp,
                                     englishColor = Color(0xFF888888),
                                     lineHeight = 22.sp,
+                                    englishSpacing = 2.dp,
                                     maxLines = 1,
                                     showEnglish = true
                                 )
@@ -3953,7 +3954,7 @@ private fun RecordsPage(
                                         ) {
                                             Text(
                                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                color = Color(0xFFDDDDDD),
+                                                color = Color(0xFF555555),
                                                 fontSize = 11.sp,
                                                 lineHeight = 14.sp,
                                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -4056,7 +4057,7 @@ private fun RecordsPage(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                    color = Color(0xFF999999),
+                                    color = Color(0xFF555555),
                                     fontSize = 12.sp,
                                     lineHeight = 16.sp,
                                     maxLines = 1,
@@ -5426,7 +5427,8 @@ private fun VideoCardTitle(
     modifier: Modifier = Modifier,
     lineHeight: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified,
     textAlign: TextAlign = TextAlign.Start,
-    combineEnglish: Boolean = false
+    combineEnglish: Boolean = false,
+    englishSpacing: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     val (primaryTitle, englishTitle) = splitDisplayVideoTitle(name)
     Column(modifier, horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
@@ -5457,6 +5459,7 @@ private fun VideoCardTitle(
             )
         }
         if (!combineEnglish && showEnglish && !englishTitle.isNullOrBlank()) {
+            Spacer(Modifier.height(englishSpacing))
             Text(
                 englishTitle,
                 color = englishColor,
@@ -5598,7 +5601,7 @@ private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), englishFontSize = 13.sp, englishColor = Color(0xFF888888), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true)
+            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), englishFontSize = 13.sp, englishColor = Color(0xFF888888), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true, englishSpacing = 2.dp)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
@@ -5640,6 +5643,7 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
             video.name,
             fontSize = 13.sp,
             color = Color(0xFF222222),
+            englishColor = Color(0xFF888888),
             fontWeight = FontWeight.Medium,
             maxLines = if (compact) 2 else 1,
             showEnglish = !compact,
