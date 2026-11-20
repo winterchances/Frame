@@ -308,13 +308,17 @@ private object FrameThemeColors {
     )
 }
 
-// Keep the existing light-theme aliases unchanged until each UI component is
-// explicitly migrated to the selected palette.
-private val PageBg = FrameThemeColors.Light.pageBackground
-private val MainText = FrameThemeColors.Light.primaryText
+private val LocalFramePalette = staticCompositionLocalOf { FrameThemeColors.Light }
+
+private val PageBg: Color
+    @Composable get() = LocalFramePalette.current.pageBackground
+private val MainText: Color
+    @Composable get() = LocalFramePalette.current.primaryText
 private val ThemeTeal = FrameThemeColors.Light.accent
-private val MutedText = FrameThemeColors.Light.secondaryText
-private val Glass = FrameThemeColors.Light.glass
+private val MutedText: Color
+    @Composable get() = LocalFramePalette.current.secondaryText
+private val Glass: Color
+    @Composable get() = LocalFramePalette.current.glass
 
 private val thumbnailBitmapCache = object : LruCache<String, Bitmap>(
     (Runtime.getRuntime().maxMemory() / 1024L / 4L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
@@ -394,6 +398,7 @@ class MainActivity : ComponentActivity() {
     private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
     private lateinit var repository: NativeLibraryRepository
     private var backgroundPlaybackAllowed = true
+    private var appearanceMode by mutableStateOf("system")
     private val openPlayerRequest = mutableIntStateOf(0)
     private val appIconBytes: ByteArray? by lazy {
         runCatching {
@@ -419,8 +424,8 @@ class MainActivity : ComponentActivity() {
             openPlayerRequest.intValue++
             intent.action = null
         }
-        window.statusBarColor = android.graphics.Color.WHITE
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
+        appearanceMode = getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
+            .getString("appearance_mode", "system") ?: "system"
         repository = NativeLibraryRepository(this)
         val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
         val future = MediaController.Builder(this, token).buildAsync()
@@ -430,11 +435,47 @@ class MainActivity : ComponentActivity() {
                 runCatching { future.get() }.onSuccess { controller ->
                     player = controller
                     setContent {
-                        MaterialTheme(colorScheme = lightColorScheme(background = PageBg, surface = PageBg, primary = ThemeTeal, onBackground = MainText)) {
+                        val systemDark = isSystemInDarkTheme()
+                        val useDarkTheme = when (appearanceMode) {
+                            "dark" -> true
+                            "light" -> false
+                            else -> systemDark
+                        }
+                        val palette = if (useDarkTheme) FrameThemeColors.Dark else FrameThemeColors.Light
+                        SideEffect {
+                            window.statusBarColor = if (useDarkTheme) android.graphics.Color.rgb(23, 27, 27) else android.graphics.Color.WHITE
+                            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !useDarkTheme
+                        }
+                        CompositionLocalProvider(LocalFramePalette provides palette) {
+                            MaterialTheme(
+                                colorScheme = if (useDarkTheme) {
+                                    darkColorScheme(
+                                        background = palette.pageBackground,
+                                        surface = palette.cardBackground,
+                                        primary = palette.accent,
+                                        onBackground = palette.primaryText,
+                                        onSurface = palette.primaryText
+                                    )
+                                } else {
+                                    lightColorScheme(
+                                        background = palette.pageBackground,
+                                        surface = palette.cardBackground,
+                                        primary = palette.accent,
+                                        onBackground = palette.primaryText,
+                                        onSurface = palette.primaryText
+                                    )
+                                }
+                            ) {
                             FrameNativeApp(
                                 repository = repository,
                                 player = controller,
                                 openPlayerRequest = openPlayerRequest,
+                                appearanceMode = appearanceMode,
+                                onAppearanceModeChange = { mode ->
+                                    appearanceMode = mode
+                                    getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
+                                        .edit().putString("appearance_mode", mode).apply()
+                                },
                                 onPlay = { item -> startNativePlayback(item) },
                                 onPlayAt = { item, positionMs -> startNativePlayback(item, positionMs) },
                                 onBackgroundPlaybackChanged = { backgroundPlaybackAllowed = it },
@@ -454,6 +495,7 @@ class MainActivity : ComponentActivity() {
                                     window.statusBarColor = android.graphics.Color.rgb(channel, channel, channel)
                                 }
                             )
+                            }
                         }
                     }
                 }
@@ -532,6 +574,8 @@ private fun FrameNativeApp(
     repository: NativeLibraryRepository,
     player: Player,
     openPlayerRequest: State<Int>,
+    appearanceMode: String,
+    onAppearanceModeChange: (String) -> Unit,
     onPlay: (VideoItem) -> Unit,
     onPlayAt: (VideoItem, Long) -> Unit,
     onBackgroundPlaybackChanged: (Boolean) -> Unit,
@@ -623,12 +667,10 @@ private fun FrameNativeApp(
     }
     var allowBackground by remember { mutableStateOf(true) }
     var keepAwake by remember { mutableStateOf(true) }
-    var appearanceMode by remember { mutableStateOf("system") }
     val preferences = remember { context.getSharedPreferences("frame_preferences", android.content.Context.MODE_PRIVATE) }
     LaunchedEffect(Unit) {
         allowBackground = preferences.getBoolean("allow_background", true)
         keepAwake = preferences.getBoolean("keep_awake", true)
-        appearanceMode = preferences.getString("appearance_mode", "system") ?: "system"
         onBackgroundPlaybackChanged(allowBackground)
         onKeepAwake(keepAwake)
     }
@@ -1311,8 +1353,7 @@ private fun FrameNativeApp(
                             listOf("system" to "跟随系统", "light" to "浅色模式", "dark" to "深色模式").forEachIndexed { index, option ->
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp).noRippleClickable {
-                                        appearanceMode = option.first
-                                        preferences.edit().putString("appearance_mode", option.first).apply()
+                                        onAppearanceModeChange(option.first)
                                     }.padding(horizontal = 20.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -1320,8 +1361,7 @@ private fun FrameNativeApp(
                                     RadioButton(
                                         selected = appearanceMode == option.first,
                                         onClick = {
-                                            appearanceMode = option.first
-                                            preferences.edit().putString("appearance_mode", option.first).apply()
+                                            onAppearanceModeChange(option.first)
                                         },
                                         colors = RadioButtonDefaults.colors(
                                             selectedColor = ThemeTeal,
