@@ -3674,7 +3674,13 @@ private fun RecordsPage(
     val watchedCount = completedVideos.size
     val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
     val reviewedCount = reviews.size
-    Box(Modifier.fillMaxSize().clipToBounds()) {
+    Box(
+        Modifier.fillMaxSize().clipToBounds().pointerInput(listState) {
+            detectTapGestures(onDoubleTap = {
+                scrollToTopScope.launch { listState.animateScrollToItem(0) }
+            })
+        }
+    ) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
