@@ -134,6 +134,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -2558,22 +2559,17 @@ private fun HomePage(
             listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
         }
     }
-    Box(Modifier.fillMaxSize().clipToBounds()) {
+    Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
+        scrollToTopScope.launch { listState.animateScrollToItem(0) }
+    }) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
+            modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .zIndex(3f)
-                    .pointerInput(listState) {
-                        detectTapGestures(
-                            onTap = {},
-                            onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
-                        )
-                    }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -2913,6 +2909,7 @@ private fun LibraryPage(
     Box(
         Modifier.fillMaxSize().clipToBounds()
             .onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }
+            .onBlankAreaDoubleTap { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
@@ -3126,12 +3123,6 @@ private fun LibraryPage(
             onOpenCategoryDrawer = onOpenCategoryDrawer,
             alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
-                .pointerInput(listState) {
-                    detectTapGestures(
-                        onTap = {},
-                        onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
-                    )
-                }
                 .graphicsLayer {
                     translationY = if (multiSelectMode) {
                         libraryTitleHeightPx.intValue.toFloat()
@@ -3311,7 +3302,9 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
             else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
         }
     }
-    Box(Modifier.fillMaxSize().clipToBounds()) {
+    Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
+        scrollToTopScope.launch { listState.animateScrollToItem(0) }
+    }) {
         LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
@@ -3378,12 +3371,6 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                     } else 0
                     androidx.compose.ui.unit.IntOffset(0, pushOffset)
                 }.zIndex(3f)
-                    .pointerInput(listState) {
-                        detectTapGestures(
-                            onTap = {},
-                            onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
-                        )
-                    }
             ) {
                 RecentDateHeader(
                     groups[activeGroupIndex].first,
@@ -3676,21 +3663,17 @@ private fun RecordsPage(
     val watchedCount = completedVideos.size
     val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
     val reviewedCount = reviews.size
-    Box(Modifier.fillMaxSize().clipToBounds()) {
+    Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
+        scrollToTopScope.launch { listState.animateScrollToItem(0) }
+    }) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
+            modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .pointerInput(listState) {
-                        detectTapGestures(
-                            onTap = {},
-                            onDoubleTap = { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
-                        )
-                    }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -5549,6 +5532,47 @@ private fun ActionIcon(
         Icon(icon, description, iconModifier.size(iconSize), tint = Color(0xFF333333))
     }
 }
+
+
+private fun Modifier.onBlankAreaDoubleTap(onDoubleTap: () -> Unit): Modifier =
+    pointerInput(onDoubleTap) {
+        awaitPointerEventScope {
+            var previousTapTime = 0L
+            var previousTapPosition = Offset.Zero
+            while (true) {
+                val downEvent = awaitPointerEvent(PointerEventPass.Final)
+                val down = downEvent.changes.firstOrNull { it.pressed && !it.previousPressed } ?: continue
+                if (down.isConsumed) continue
+
+                var validTap = true
+                var released: androidx.compose.ui.input.pointer.PointerInputChange? = null
+                while (released == null) {
+                    val event = awaitPointerEvent(PointerEventPass.Final)
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (change.isConsumed ||
+                        (change.position - down.position).getDistance() > viewConfiguration.touchSlop
+                    ) validTap = false
+                    if (!change.pressed) released = change
+                }
+                val up = released ?: continue
+                if (!validTap || up.uptimeMillis - down.uptimeMillis > viewConfiguration.longPressTimeoutMillis) {
+                    previousTapTime = 0L
+                    continue
+                }
+
+                val isDoubleTap = previousTapTime > 0L &&
+                    up.uptimeMillis - previousTapTime <= viewConfiguration.doubleTapTimeoutMillis &&
+                    (up.position - previousTapPosition).getDistance() <= viewConfiguration.doubleTapSlop
+                if (isDoubleTap) {
+                    onDoubleTap()
+                    previousTapTime = 0L
+                } else {
+                    previousTapTime = up.uptimeMillis
+                    previousTapPosition = up.position
+                }
+            }
+        }
+    }
 
 private fun titleFadeAlpha(
     scrollOffsetPx: Float,
