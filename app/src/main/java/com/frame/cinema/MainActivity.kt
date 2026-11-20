@@ -2507,6 +2507,7 @@ private fun HomePage(
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val context = LocalContext.current
+    val scrollToTopScope = rememberCoroutineScope()
     val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.sortedByDescending { it.lastPlayedAt }.take(4) }
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(10) }
     val homeExpansionPreferences = remember {
@@ -2557,7 +2558,13 @@ private fun HomePage(
             listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
         }
     }
-    Box(Modifier.fillMaxSize().clipToBounds()) {
+    Box(
+        Modifier.fillMaxSize().clipToBounds().pointerInput(listState) {
+            detectTapGestures(onDoubleTap = {
+                scrollToTopScope.launch { listState.animateScrollToItem(0) }
+            })
+        }
+    ) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -2848,6 +2855,7 @@ private fun LibraryPage(
     onBatchStatus: (Set<Long>, String) -> Unit,
     onBatchRemove: (Set<Long>) -> Unit
 ) {
+    val scrollToTopScope = rememberCoroutineScope()
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
@@ -2901,7 +2909,15 @@ private fun LibraryPage(
             }
         }
     }
-    Box(Modifier.fillMaxSize().clipToBounds().onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }) {
+    Box(
+        Modifier.fillMaxSize().clipToBounds()
+            .onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }
+            .pointerInput(listState) {
+                detectTapGestures(onDoubleTap = {
+                    scrollToTopScope.launch { listState.animateScrollToItem(0) }
+                })
+            }
+    ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
             state = listState,
@@ -3229,6 +3245,7 @@ private fun LibraryFilterHeader(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
+    val scrollToTopScope = rememberCoroutineScope()
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
@@ -3292,7 +3309,13 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
             else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
         }
     }
-    Box(Modifier.fillMaxSize().clipToBounds()) {
+    Box(
+        Modifier.fillMaxSize().clipToBounds().pointerInput(listState) {
+            detectTapGestures(onDoubleTap = {
+                scrollToTopScope.launch { listState.animateScrollToItem(0) }
+            })
+        }
+    ) {
         LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
@@ -3496,6 +3519,7 @@ private fun RecordsPage(
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
+    val scrollToTopScope = rememberCoroutineScope()
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     var showRecordSortMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
