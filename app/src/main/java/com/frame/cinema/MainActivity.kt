@@ -1200,6 +1200,7 @@ private fun FrameNativeApp(
         }
 
         if (playing == null) {
+            val bottomFadePageBg = PageBg
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
                 if (!(page == MainPage.LIBRARY && libraryMultiSelectMode)) {
                     Box(
@@ -1210,9 +1211,9 @@ private fun FrameNativeApp(
                                 val verticalFade = Brush.verticalGradient(
                                     0f to Color.Transparent,
                                     0.20f to Color.Transparent,
-                                    0.48f to PageBg.copy(alpha = 0.04f),
-                                    0.76f to PageBg.copy(alpha = 0.18f),
-                                    1f to PageBg.copy(alpha = 0.42f),
+                                    0.48f to bottomFadePageBg.copy(alpha = 0.04f),
+                                    0.76f to bottomFadePageBg.copy(alpha = 0.18f),
+                                    1f to bottomFadePageBg.copy(alpha = 0.42f),
                                     startY = 0f,
                                     endY = size.height
                                 )
@@ -2684,6 +2685,7 @@ private fun HomePage(
             listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
         }
     }
+    val homePageBg = PageBg
     Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
         scrollToTopScope.launch { listState.animateScrollToItem(0) }
     }) {
@@ -2726,7 +2728,7 @@ private fun HomePage(
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                         .drawBehind {
                             val bleed = 20.dp.toPx()
-                            drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
+                            drawRect(homePageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
 
                         }
                 ) {
@@ -2889,7 +2891,7 @@ private fun HomePage(
                     .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 10.dp, noiseFactor = 0f))
                     .drawBehind {
                         val bleed = 20.dp.toPx()
-                        drawRect(PageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
+                        drawRect(homePageBg, topLeft = Offset(-bleed, 0f), size = Size(size.width + bleed * 2f, size.height))
                     }
             ) {
                 Row(
@@ -4077,7 +4079,7 @@ private fun RecordsPage(
                                             }
                                         }
                                         drawCircle(
-                                            color = ActiveAccent,
+                                            color = timelineAccent,
                                             radius = 4.dp.toPx(),
                                             center = Offset(axisX, dotCenterY)
                                         )
