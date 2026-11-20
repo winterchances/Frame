@@ -2587,13 +2587,13 @@ private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetB
                 .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                 .clip(RoundedCornerShape(28.dp))
                 .background(Glass)
-                .border(0.3.dp, Color(0xFFE6E6E6), RoundedCornerShape(28.dp))
+                .border(0.3.dp, LocalFramePalette.current.divider, RoundedCornerShape(28.dp))
                 .padding(5.dp)
         ) {
             val slot = (navWidth - 10.dp) / 4
             val target = slot * entries.indexOfFirst { it.first == current }
             val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
-            Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(Color.Black.copy(alpha = .06f)))
+            Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(MainText.copy(alpha = .07f)))
             Row(Modifier.fillMaxSize()) {
                 entries.forEach { (item, icon) ->
                     Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -3523,7 +3523,7 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
     Row(
         modifier.fillMaxWidth().padding(bottom = if (isLastInGroup) 0.dp else 16.dp)
             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
-            .background(Color.White).noRippleClickable(onClick).padding(12.dp),
+            .background(MaterialTheme.colorScheme.surface).noRippleClickable(onClick).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
     ) {
         Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
@@ -3533,9 +3533,9 @@ private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () 
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {                VideoCardTitle(
                     video.name,
                     fontSize = 15.sp,
-                    color = Color(0xFF222222),
+                    color = MainText,
                     englishFontSize = 13.sp,
-                    englishColor = Color(0xFF888888),
+                    englishColor = MutedText,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     showEnglish = true,
@@ -3861,7 +3861,7 @@ private fun RecordsPage(
                             .padding(bottom = 16.dp)
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
+                            .background(MaterialTheme.colorScheme.surface)
                             .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
                     ) {
                         Row(
@@ -3886,7 +3886,7 @@ private fun RecordsPage(
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else Color(0xFF222222),
                                     englishFontSize = 14.sp,
-                                    englishColor = Color(0xFF888888),
+                                    englishColor = MutedText,
                                     lineHeight = 22.sp,
                                     englishSpacing = 2.dp,
                                     maxLines = 1,
@@ -4140,7 +4140,7 @@ private fun RecordsPage(
                             .padding(bottom = 16.dp)
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
+                            .background(MaterialTheme.colorScheme.surface)
                             .noRippleClickable { onEdit(entry) }
                             .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
                     ) {
@@ -4170,7 +4170,7 @@ private fun RecordsPage(
                                     fontSize = 16.sp,
                                     color = if (entry.title.isBlank()) MutedText else Color(0xFF222222),
                                     englishFontSize = 14.sp,
-                                    englishColor = Color(0xFF888888),
+                                    englishColor = MutedText,
                                     lineHeight = 22.sp,
                                     maxLines = 2,
                                     showEnglish = true
@@ -5639,11 +5639,11 @@ private fun ActionIcon(
         modifier = Modifier.size(36.dp)
             .shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
             .clip(CircleShape)
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .noRippleClickable(onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, description, iconModifier.size(iconSize), tint = Color(0xFF333333))
+        Icon(icon, description, iconModifier.size(iconSize), tint = MainText)
     }
 }
 
@@ -5702,7 +5702,7 @@ private fun titleFadeAlpha(
 private fun Header(title: String, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText, letterSpacing = .5.sp)
-        Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(Color.White).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(36.dp).shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(CircleShape).background(MaterialTheme.colorScheme.surface).noRippleClickable { onSettings() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Settings, "设置", Modifier.size(22.dp), tint = MainText)
         }
     }
@@ -5765,13 +5765,13 @@ private fun Stat(label: String, value: String, unit: String, modifier: Modifier 
 
 @Composable
 private fun VideoRow(video: VideoItem, subtitle: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(bottom = 16.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 16.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).noRippleClickable(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(100.dp, 65.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex)), contentAlignment = Alignment.Center) {
             Thumbnail(video, Modifier.fillMaxSize())
             if (video.progress > 0f) Box(Modifier.align(Alignment.BottomStart).fillMaxWidth((video.progress / 100f).coerceIn(0f, 1f)).height(3.dp).background(ThemeTeal))
         }
         Column(Modifier.weight(1f).padding(start = 15.dp)) {
-            VideoCardTitle(video.name, fontSize = 15.sp, color = Color(0xFF222222), englishFontSize = 13.sp, englishColor = Color(0xFF888888), fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true, englishSpacing = 2.dp)
+            VideoCardTitle(video.name, fontSize = 15.sp, color = MainText, englishFontSize = 13.sp, englishColor = MutedText, fontWeight = FontWeight.Medium, maxLines = 1, showEnglish = true, englishSpacing = 2.dp)
             Text(subtitle, fontSize = 12.sp, color = MutedText, modifier = Modifier.padding(top = 6.dp))
         }
     }
@@ -5812,8 +5812,8 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
         VideoCardTitle(
             video.name,
             fontSize = 13.sp,
-            color = Color(0xFF222222),
-            englishColor = Color(0xFF888888),
+            color = MainText,
+            englishColor = MutedText,
             fontWeight = FontWeight.Medium,
             maxLines = if (compact) 2 else 1,
             showEnglish = !compact,
