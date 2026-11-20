@@ -1492,7 +1492,7 @@ private fun FrameNativeApp(
                                             Box(
                                                 Modifier.size(width = 84.dp, height = 58.dp)
                                                     .clip(RoundedCornerShape(10.dp))
-                                                    .background(if (video != null) PosterBrush(video.bgIndex) else Brush.linearGradient(listOf(Color(0xFFF1F4F4), Color(0xFFF1F4F4)))),
+                                                    .background(if (video != null) PosterBrush(video.bgIndex) else Brush.linearGradient(listOf(LocalFramePalette.current.secondarySurface, LocalFramePalette.current.secondarySurface))),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 if (video != null) Thumbnail(video, Modifier.fillMaxSize())
@@ -1517,7 +1517,7 @@ private fun FrameNativeApp(
                                                 if (entry.content.isNotBlank()) {
                                                     Text(
                                                         entry.content,
-                                                        color = Color(0xFF777777),
+                                                        color = MutedText,
                                                         fontSize = 13.sp,
                                                         lineHeight = 19.sp,
                                                         maxLines = 2,
@@ -1811,7 +1811,7 @@ private fun FrameNativeApp(
                                     Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp)
                                         .shadow(if (canSaveChild) 4.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (canSaveChild) ThemeTeal else Color(0xFFE5E5E5))
+                                        .background(if (canSaveChild) ThemeTeal else LocalFramePalette.current.secondarySurface)
                                         .then(if (canSaveChild) Modifier.noRippleClickable {
                                             val groupId = editStandaloneGroupId!!
                                             val saved = if (editReviewId == null) repository.addStandaloneChildReview(groupId, editReview)
@@ -1887,7 +1887,7 @@ private fun FrameNativeApp(
                                 Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp)
                                     .shadow(if (canSaveStandalone) 4.dp else 0.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(if (canSaveStandalone) ThemeTeal else Color(0xFFE5E5E5))
+                                    .background(if (canSaveStandalone) ThemeTeal else LocalFramePalette.current.secondarySurface)
                                     .then(if (canSaveStandalone) Modifier.noRippleClickable {
                                         val saved = if (editReviewId == null) {
                                             repository.addStandaloneReview(editReviewTitle, editReview, editRating, editReviewCoverUri)
@@ -1920,7 +1920,7 @@ private fun FrameNativeApp(
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (linkedVideo != null) ThemeTeal else Color.White)
+                                        .background(if (linkedVideo != null) ThemeTeal else MaterialTheme.colorScheme.surface)
                                         .noRippleClickable {
                                             reviewVideoSearch = ""
                                             sheet = SheetType.REVIEW_VIDEO_PICKER
@@ -1941,7 +1941,7 @@ private fun FrameNativeApp(
                                 Box(
                                     Modifier.weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (linkedVideo == null) ThemeTeal else Color.White)
+                                        .background(if (linkedVideo == null) ThemeTeal else MaterialTheme.colorScheme.surface)
                                         .noRippleClickable {
                                             editReviewVideoId = null
                                             selected = null
@@ -2387,7 +2387,7 @@ private fun FrameNativeApp(
                             }
                             item(key = "category-fixed-divider") {
                                 Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                    Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(Color(0xFFE6E6E6)))
+                                    Spacer(Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(0.5.dp).background(LocalFramePalette.current.divider))
                                 }
                             }
                             items(categories.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct(), key = { it }) { value ->
