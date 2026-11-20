@@ -1282,7 +1282,7 @@ private fun FrameNativeApp(
                         .noRippleClickable { showFab = !showFab },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(FrameHamburgerIcon, null, tint = Color(0xFF333333), modifier = Modifier.size(20.dp).rotate(fabRotation))
+                    Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
                 }
         }
@@ -1579,7 +1579,7 @@ private fun FrameNativeApp(
                                                 color = MainText,
                                                 fontSize = 16.sp,
                                                 englishFontSize = 14.sp,
-                                                englishColor = Color(0xFF888888),
+                                                englishColor = MutedText,
                                                 fontWeight = FontWeight.Medium,
                                                 lineHeight = 21.sp,
                                                 maxLines = 1,
@@ -1679,7 +1679,7 @@ private fun FrameNativeApp(
                                                 color = MainText,
                                                 fontSize = 16.sp,
                                                 englishFontSize = 14.sp,
-                                                englishColor = Color(0xFF888888),
+                                                englishColor = MutedText,
                                                 fontWeight = FontWeight.Medium,
                                                 lineHeight = 21.sp,
                                                 maxLines = 1,
@@ -1964,7 +1964,7 @@ private fun FrameNativeApp(
                                 color = MainText,
                                 fontSize = 14.sp,
                                 englishFontSize = 12.sp,
-                                englishColor = Color(0xFF888888),
+                                englishColor = MutedText,
                                 fontWeight = FontWeight.Normal,
                                 maxLines = 1,
                                 showEnglish = true,
@@ -2084,7 +2084,7 @@ private fun FrameNativeApp(
                                                 color = MainText,
                                                 fontSize = 15.sp,
                                                 englishFontSize = 13.sp,
-                                                englishColor = Color(0xFF888888),
+                                                englishColor = MutedText,
                                                 fontWeight = FontWeight.Medium,
                                                 lineHeight = 21.sp,
                                                 maxLines = 1,
