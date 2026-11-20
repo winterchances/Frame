@@ -5562,7 +5562,7 @@ private fun Modifier.onBlankAreaDoubleTap(onDoubleTap: () -> Unit): Modifier =
 
                 val isDoubleTap = previousTapTime > 0L &&
                     up.uptimeMillis - previousTapTime <= viewConfiguration.doubleTapTimeoutMillis &&
-                    (up.position - previousTapPosition).getDistance() <= viewConfiguration.doubleTapSlop
+                    (up.position - previousTapPosition).getDistance() <= viewConfiguration.touchSlop * 2f
                 if (isDoubleTap) {
                     onDoubleTap()
                     previousTapTime = 0L
