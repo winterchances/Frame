@@ -1339,11 +1339,20 @@ private fun FrameNativeApp(
                             ) { fullHeight -> fullHeight }
                         )
                         .fillMaxWidth()
-                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                        .then(
+                            if (displayedSheet == SheetType.SETTINGS) {
+                                Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .5f)
+                            } else {
+                                Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                            }
+                        )
                         .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
-                        .verticalScroll(rememberScrollState())
+                        .then(
+                            if (displayedSheet == SheetType.SETTINGS) Modifier
+                            else Modifier.verticalScroll(rememberScrollState())
+                        )
                         .clickable(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -1361,6 +1370,9 @@ private fun FrameNativeApp(
                     }
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
+                        Column(
+                            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                        ) {
                         Text("外观", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)) {
                             listOf("system" to "跟随系统", "light" to "浅色模式", "dark" to "深色模式").forEachIndexed { index, option ->
@@ -1415,6 +1427,7 @@ private fun FrameNativeApp(
                             Row(Modifier.fillMaxWidth().height(52.dp).noRippleClickable { showClearDataDialog = true; sheet = SheetType.NONE }.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("清空所有数据", color = LocalFramePalette.current.danger, fontSize = 16.sp)
                             }
+                        }
                         }
                     }
                     SheetType.RECORD_SEARCH -> Column(
