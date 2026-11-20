@@ -442,7 +442,7 @@ class MainActivity : ComponentActivity() {
                             else -> systemDark
                         }
                         val palette = if (useDarkTheme) FrameThemeColors.Dark else FrameThemeColors.Light
-                        SideEffect {
+                        LaunchedEffect(useDarkTheme) {
                             window.statusBarColor = if (useDarkTheme) android.graphics.Color.rgb(23, 27, 27) else android.graphics.Color.WHITE
                             WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !useDarkTheme
                         }
@@ -1349,7 +1349,7 @@ private fun FrameNativeApp(
                     SheetType.SETTINGS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                         SheetHeading("设置")
                         Text("外观", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, bottom = 8.dp))
-                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
+                        Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)) {
                             listOf("system" to "跟随系统", "light" to "浅色模式", "dark" to "深色模式").forEachIndexed { index, option ->
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp).noRippleClickable {
@@ -1370,7 +1370,7 @@ private fun FrameNativeApp(
                                     )
                                 }
                                 if (index < 2) {
-                                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color(0xFFF0F0F0)))
+                                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                                 }
                             }
                         }
