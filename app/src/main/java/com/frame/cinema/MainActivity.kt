@@ -1375,7 +1375,7 @@ private fun FrameNativeApp(
                                         },
                                         colors = RadioButtonDefaults.colors(
                                             selectedColor = ThemeTeal,
-                                            unselectedColor = Color(0xFFAAAAAA)
+                                            unselectedColor = LocalFramePalette.current.tertiaryText
                                         )
                                     )
                                 }
@@ -1396,7 +1396,7 @@ private fun FrameNativeApp(
                                 Text("关于与隐私", Modifier.weight(1f), color = MainText, fontSize = 16.sp)
                                 Text(
                                     if (appVersion.isBlank()) "" else "v$appVersion",
-                                    color = Color(0xFFAAAAAA),
+                                    color = LocalFramePalette.current.tertiaryText,
                                     fontSize = 11.sp
                                 )
                             }
@@ -1851,7 +1851,7 @@ private fun FrameNativeApp(
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
                                 Box(
                                     Modifier.size(75.dp, 100.dp).clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFFECEDEF))
+                                        .background(LocalFramePalette.current.secondarySurface)
                                         .noRippleClickable {
                                             reviewCoverPicker.launch(
                                                 androidx.activity.result.PickVisualMediaRequest(
@@ -6168,7 +6168,7 @@ private fun SheetActionPair(
 ) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
         if (confirmOnRight) {
-            SheetActionButton(cancelText, MainText, Color.White, onCancel, Modifier.weight(1f))
+            SheetActionButton(cancelText, MainText, MaterialTheme.colorScheme.surface, onCancel, Modifier.weight(1f))
             SheetActionButton(
                 confirmText,
                 if (confirmTheme) Color.White else if (confirmDanger) Color(0xFFFF3B30) else MainText,
@@ -6215,7 +6215,7 @@ private fun SheetActionButton(
 private fun SettingRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, color = MainText, fontSize = 16.sp, modifier = Modifier.weight(1f))
-        Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ThemeTeal else Color(0xFFE0E0E0)).noRippleClickable { onChecked(!checked) }) {
+        Box(Modifier.size(44.dp, 24.dp).clip(CircleShape).background(if (checked) ThemeTeal else LocalFramePalette.current.secondarySurface).noRippleClickable { onChecked(!checked) }) {
             val knobOffset by animateDpAsState(if (checked) 22.dp else 2.dp, tween(300), label = "setting-switch")
             Box(Modifier.align(Alignment.CenterStart).offset(x = knobOffset).size(20.dp).clip(CircleShape).background(Color.White))
         }
