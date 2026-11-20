@@ -492,8 +492,17 @@ class MainActivity : ComponentActivity() {
                                     if (visible) controller.show(WindowInsetsCompat.Type.statusBars()) else controller.hide(WindowInsetsCompat.Type.statusBars())
                                 },
                                 onCategoryDrawerOverlay = { progress ->
-                                    val channel = (255f * (1f - 0.28f * progress.coerceIn(0f, 1f))).toInt().coerceIn(0, 255)
-                                    window.statusBarColor = android.graphics.Color.rgb(channel, channel, channel)
+                                    val factor = 1f - 0.28f * progress.coerceIn(0f, 1f)
+                                    window.statusBarColor = if (useDarkTheme) {
+                                        android.graphics.Color.rgb(
+                                            (23f * factor).toInt(),
+                                            (27f * factor).toInt(),
+                                            (27f * factor).toInt()
+                                        )
+                                    } else {
+                                        val channel = (255f * factor).toInt().coerceIn(0, 255)
+                                        android.graphics.Color.rgb(channel, channel, channel)
+                                    }
                                 }
                             )
                             }
