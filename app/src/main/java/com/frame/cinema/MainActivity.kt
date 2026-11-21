@@ -1201,6 +1201,7 @@ private fun FrameNativeApp(
                 onWatchTime = { deltaMs ->
                     playing?.let { repository.recordWatchTime(it.id, deltaMs) }
                 },
+                onFlushWatchTime = { repository.flushWatchTime() },
                 onSaveTimestampRecord = { positionMs, content ->
                     playing?.let { currentVideo ->
                         if (repository.addTimestampReview(currentVideo.id, content, positionMs)) {
@@ -4500,6 +4501,7 @@ private fun NativePlayerOverlay(
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onProgress: (Long, Long) -> Unit,
     onWatchTime: (Long) -> Unit,
+    onFlushWatchTime: () -> Unit,
     onSaveTimestampRecord: (Long, String) -> Unit
 ) {
     val context = LocalContext.current
@@ -4729,21 +4731,26 @@ private fun NativePlayerOverlay(
         var lastPersistedAt = 0L
         var previousTick = SystemClock.elapsedRealtime()
         var wasPlaying = player.isPlaying
-        while (true) {
-            if (!isSeeking) current = player.currentPosition.coerceAtLeast(0L)
-            if (player.duration > 0L) duration = player.duration
-            val now = System.currentTimeMillis()
-            val elapsedNow = SystemClock.elapsedRealtime()
-            val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
-            val playingNow = player.isPlaying
-            if (playingNow && wasPlaying) onWatchTime(elapsed)
-            wasPlaying = playingNow
-            previousTick = elapsedNow
-            if (!isSeeking && now - lastPersistedAt >= 5000L && player.playbackState != Player.STATE_ENDED) {
-                onProgress(current, duration)
-                lastPersistedAt = now
+        try {
+            while (true) {
+                if (!isSeeking) current = player.currentPosition.coerceAtLeast(0L)
+                if (player.duration > 0L) duration = player.duration
+                val now = System.currentTimeMillis()
+                val elapsedNow = SystemClock.elapsedRealtime()
+                val elapsed = (elapsedNow - previousTick).coerceAtLeast(0L)
+                val playingNow = player.isPlaying
+                if (playingNow && wasPlaying) onWatchTime(elapsed)
+                if (wasPlaying && !playingNow) onFlushWatchTime()
+                wasPlaying = playingNow
+                previousTick = elapsedNow
+                if (!isSeeking && now - lastPersistedAt >= 5000L && player.playbackState != Player.STATE_ENDED) {
+                    onProgress(current, duration)
+                    lastPersistedAt = now
+                }
+                delay(500)
             }
-            delay(500)
+        } finally {
+            onFlushWatchTime()
         }
     }
     LaunchedEffect(centerMessage) {
