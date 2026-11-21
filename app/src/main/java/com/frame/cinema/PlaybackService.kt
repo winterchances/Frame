@@ -3,6 +3,8 @@ package com.frame.cinema
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -18,6 +20,37 @@ import com.google.common.util.concurrent.Futures
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
+    private lateinit var playbackRepository: NativeLibraryRepository
+    private val progressHandler = Handler(Looper.getMainLooper())
+    private val progressSaveRunnable = object : Runnable {
+        override fun run() {
+            mediaSession?.player?.let(::savePlaybackProgress)
+            progressHandler.postDelayed(this, 5_000L)
+        }
+    }
+
+    private fun savePlaybackProgress(player: Player) {
+        val mediaId = player.currentMediaItem?.mediaId
+        val videoId = mediaId?.toLongOrNull() ?: return
+        if (player.playbackState != Player.STATE_READY &&
+            player.playbackState != Player.STATE_ENDED
+        ) return
+
+        val positionMs = player.currentPosition.coerceAtLeast(0L)
+        val durationMs = player.duration.takeIf {
+            it > 0L && it != androidx.media3.common.C.TIME_UNSET
+        } ?: playbackRepository.backupVideos()
+            .firstOrNull { it.id == videoId }?.durationMs ?: 0L
+
+        if (positionMs > 0L || player.playbackState == Player.STATE_ENDED) {
+            playbackRepository.updatePlayback(
+                videoId,
+                positionMs,
+                durationMs,
+                player.playbackState == Player.STATE_ENDED
+            )
+        }
+    }
 
     private val rewindCommand = SessionCommand("com.frame.cinema.REWIND_15", Bundle.EMPTY)
     private val forwardCommand = SessionCommand("com.frame.cinema.FORWARD_15", Bundle.EMPTY)
@@ -25,6 +58,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
+        playbackRepository = NativeLibraryRepository(this)
         val notificationProvider = DefaultMediaNotificationProvider.Builder(this).build()
         notificationProvider.setSmallIcon(R.drawable.ic_notification)
         setMediaNotificationProvider(notificationProvider)
@@ -33,6 +67,19 @@ class PlaybackService : MediaSessionService() {
             .setAudioAttributes(androidx.media3.common.AudioAttributes.DEFAULT, true)
             .setHandleAudioBecomingNoisy(true)
             .build()
+
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (!isPlaying) savePlaybackProgress(player)
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) {
+                    savePlaybackProgress(player)
+                }
+            }
+        })
+        progressHandler.postDelayed(progressSaveRunnable, 5_000L)
 
         val rewindButton = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
             .setDisplayName("快退 15 秒")
@@ -113,6 +160,7 @@ class PlaybackService : MediaSessionService() {
                             player.seekTo(if (duration != androidx.media3.common.C.TIME_UNSET) targetPosition.coerceAtMost(duration) else targetPosition)
                         }
                         closeCommand.customAction -> {
+                            savePlaybackProgress(player)
                             player.stop()
                             player.clearMediaItems()
                             stopSelf()
@@ -133,8 +181,18 @@ class PlaybackService : MediaSessionService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
     override fun onDestroy() {
-        mediaSession?.run {
-            player.release()
+        progressHandler.removeCallbacks(progressSaveRunnable)
+        mediaSession?.let { session ->
+            savePlaybackProgress(session.player)
+            session.player.release()
+            session.release()
+        }
+        if (::playbackRepository.isInitialized) playbackRepository.close()
+        mediaSession = null
+        super.onDestroy()
+    }
+}
+
             release()
         }
         mediaSession = null
