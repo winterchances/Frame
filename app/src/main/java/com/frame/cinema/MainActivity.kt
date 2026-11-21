@@ -3812,7 +3812,7 @@ private fun RecordsPage(
             val primary = when (sortMode) {
                 RecordSortMode.NAME -> compareNaturalVideoNames(a.title, b.title)
                 RecordSortMode.RATING -> a.rating.compareTo(b.rating)
-                RecordSortMode.RECORD_TIME, RecordSortMode.WATCHED -> a.createdAt.compareTo(b.createdAt)
+                RecordSortMode.ADDED, RecordSortMode.RECORD_TIME, RecordSortMode.WATCHED -> a.createdAt.compareTo(b.createdAt)
             }
             val directed = if (sortMode == RecordSortMode.RATING && (a.rating == 0f || b.rating == 0f)) {
                 when {
