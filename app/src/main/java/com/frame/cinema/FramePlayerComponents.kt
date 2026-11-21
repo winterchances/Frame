@@ -188,6 +188,7 @@ internal fun findVideoTextureView(view: android.view.View): TextureView? {
     return null
 }
 
+@Composable
 internal fun PlayerIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     PlayerIconButton(icon, description, 20, onClick)
 }
