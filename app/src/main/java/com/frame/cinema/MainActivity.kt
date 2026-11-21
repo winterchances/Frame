@@ -241,7 +241,7 @@ private val FrameSortDirectionIcon: ImageVector = ImageVector.Builder("FrameSort
         moveTo(6f, 10f); lineTo(12f, 4f); lineTo(18f, 10f)
     }
 }.build()
-private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp, 24.dp, 24f, 24f).apply {
+internal val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(3f, 3f); lineTo(10f, 3f); lineTo(10f, 10f); lineTo(3f, 10f); close()
         moveTo(14f, 3f); lineTo(21f, 3f); lineTo(21f, 10f); lineTo(14f, 10f); close()
@@ -250,7 +250,7 @@ private val FrameGridIcon: ImageVector = ImageVector.Builder("FrameGrid", 24.dp,
     }
 }.build()
 
-private val FrameSearchIcon: ImageVector = ImageVector.Builder("FrameSearch", 24.dp, 24.dp, 24f, 24f).apply {
+internal val FrameSearchIcon: ImageVector = ImageVector.Builder("FrameSearch", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(11f, 3f); curveTo(15.42f, 3f, 19f, 6.58f, 19f, 11f); curveTo(19f, 15.42f, 15.42f, 19f, 11f, 19f); curveTo(6.58f, 19f, 3f, 15.42f, 3f, 11f); curveTo(3f, 6.58f, 6.58f, 3f, 11f, 3f); close()
         moveTo(21f, 21f); lineTo(16.65f, 16.65f)
@@ -310,18 +310,18 @@ private object FrameThemeColors {
     )
 }
 
-private val LocalFramePalette = staticCompositionLocalOf { FrameThemeColors.Light }
+internal val LocalFramePalette = staticCompositionLocalOf { FrameThemeColors.Light }
 
 internal val PageBg: Color
     @Composable get() = LocalFramePalette.current.pageBackground
 internal val MainText: Color
     @Composable get() = LocalFramePalette.current.primaryText
 private val ThemeTeal = FrameThemeColors.Light.accent
-private val ActiveAccent: Color
+internal val ActiveAccent: Color
     @Composable get() = LocalFramePalette.current.accent
 internal val MutedText: Color
     @Composable get() = LocalFramePalette.current.secondaryText
-private val Glass: Color
+internal val Glass: Color
     @Composable get() = LocalFramePalette.current.glass
 
 private val thumbnailBitmapCache = object : LruCache<String, Bitmap>(
@@ -390,8 +390,8 @@ private fun subtitleConfiguration(uri: Uri, name: String? = null): MediaItem.Sub
         .build()
 
 private enum class SortMode { ADDED, NAME }
-private enum class SortDirection { ASCENDING, DESCENDING }
-private enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
+internal enum class SortDirection { ASCENDING, DESCENDING }
+internal enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -3467,864 +3467,6 @@ private fun RecordActionGlyph(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun RecordsPage(
-    hazeState: HazeState,
-    listState: LazyListState,
-    videos: List<VideoItem>,
-    reviews: List<ReviewEntry>,
-    targetReviewId: Long?,
-    targetVideoId: Long?,
-    sortMode: RecordSortMode,
-    sortDirection: SortDirection,
-    onRecordSortModeChange: (RecordSortMode) -> Unit,
-    onRecordSortDirectionChange: (SortDirection) -> Unit,
-    onSearch: () -> Unit,
-    onCreate: (VideoItem?) -> Unit,
-    onCreateStandalone: (Long) -> Unit,
-    onEdit: (ReviewEntry) -> Unit,
-    onRateVideo: (VideoItem, Float) -> Unit,
-    onPlayVideo: (VideoItem) -> Unit,
-    onSeekToTimestamp: (VideoItem, Long) -> Unit,
-    onTargetHandled: () -> Unit
-) {
-    val softListFlingBehavior = rememberSoftListFlingBehavior()
-    var showRecordSortMenu by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    val exportScope = rememberCoroutineScope()
-    var exportingReviewVideoId by remember { mutableStateOf<Long?>(null) }
-    var exportingStandaloneReviewId by remember { mutableStateOf<Long?>(null) }
-    val recordExpansionPreferences = remember {
-        context.getSharedPreferences("frame_record_expansion", Context.MODE_PRIVATE)
-    }
-    val expandedVideoReviews = remember {
-        mutableStateMapOf<Long, Boolean>().apply {
-            recordExpansionPreferences.all.forEach { (key, value) ->
-                if (key.startsWith("video_") && value is Boolean) {
-                    key.removePrefix("video_").toLongOrNull()?.let { this[it] = value }
-                }
-            }
-        }
-    }
-    val expandedStandaloneReviews = remember {
-        mutableStateMapOf<Long, Boolean>().apply {
-            recordExpansionPreferences.all.forEach { (key, value) ->
-                if (key.startsWith("standalone_") && value is Boolean) {
-                    key.removePrefix("standalone_").toLongOrNull()?.let { this[it] = value }
-                }
-            }
-        }
-    }
-    fun setVideoReviewsExpanded(id: Long, expanded: Boolean) {
-        expandedVideoReviews[id] = expanded
-        recordExpansionPreferences.edit().putBoolean("video_$id", expanded).apply()
-    }
-    fun setStandaloneReviewExpanded(id: Long, expanded: Boolean) {
-        expandedStandaloneReviews[id] = expanded
-        recordExpansionPreferences.edit().putBoolean("standalone_$id", expanded).apply()
-    }
-    val showTopBar by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20
-        }
-    }
-    val density = LocalDensity.current
-    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
-    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
-    val recordsTopFadeStartPx = statusBarBottomPx + with(density) { 48.dp.toPx() }
-    val recordsBottomFadeEndPx = with(density) { (LocalConfiguration.current.screenHeightDp.dp - 72.dp).toPx() }
-    val recordsFadeLengthPx = with(density) { 48.dp.toPx() }
-    val recordsTitleTopPx = remember { mutableFloatStateOf(0f) }
-    val recordsTitleAlphaState = remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 0f
-            else titleFadeAlpha(
-                listState.firstVisibleItemScrollOffset.toFloat(),
-                recordsTitleTopPx.floatValue,
-                statusBarBottomPx,
-                titleSafetyGapPx
-            )
-        }
-    }
-    val recordsTitleHeightPx = remember { mutableIntStateOf(0) }
-    val recordsOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val recordsTitleScrollDistancePx = remember {
-        derivedStateOf {
-            when (listState.firstVisibleItemIndex) {
-                0 -> listState.firstVisibleItemScrollOffset.toFloat()
-                1 -> (recordsTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> recordsTitleHeightPx.intValue + recordsOffscreenPx
-            }
-        }
-    }
-    val recordsOverlayOffsets by remember(listState) {
-        derivedStateOf {
-            listState.layoutInfo.visibleItemsInfo.associate { it.key to it.offset.toFloat() }
-        }
-    }
-    val completedVideos = remember(videos) {
-        videos.filter { it.status == "watched" || it.progress >= 100f }
-    }
-    val reviewsByVideo = remember(reviews) {
-        reviews.filter { it.videoId != null }.groupBy { it.videoId!! }
-    }
-    val sortedReviewsByVideo = remember(reviewsByVideo) {
-        reviewsByVideo.mapValues { (_, entries) -> entries.sortedByDescending { it.createdAt } }
-    }
-    val displayVideos = remember(videos, reviewsByVideo, sortMode, sortDirection) {
-        videos.filter { video ->
-            val completed = video.status == "watched" || video.progress >= 100f
-            val hasReviews = reviewsByVideo[video.id].orEmpty().isNotEmpty()
-            completed || hasReviews
-        }.sortedWith { a, b ->
-            val primary = when (sortMode) {
-                RecordSortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
-                RecordSortMode.RECORD_TIME -> {
-                    val aRecordTime = reviewsByVideo[a.id].orEmpty().maxOfOrNull { it.createdAt } ?: a.lastPlayedAt
-                    val bRecordTime = reviewsByVideo[b.id].orEmpty().maxOfOrNull { it.createdAt } ?: b.lastPlayedAt
-                    aRecordTime.compareTo(bRecordTime)
-                }
-                RecordSortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
-                RecordSortMode.RATING -> a.rating.compareTo(b.rating)
-                RecordSortMode.WATCHED -> a.lastPlayedAt.compareTo(b.lastPlayedAt)
-            }
-            val directed = if (sortMode == RecordSortMode.RATING && (a.rating == 0f || b.rating == 0f)) {
-                when {
-                    a.rating == 0f && b.rating > 0f -> 1
-                    a.rating > 0f && b.rating == 0f -> -1
-                    else -> 0
-                }
-            } else if (sortDirection == SortDirection.ASCENDING) primary else -primary
-            if (directed != 0) directed else {
-                val addedComparison = a.addedAt.compareTo(b.addedAt)
-                if (addedComparison != 0) addedComparison else a.id.compareTo(b.id)
-            }
-        }
-    }
-    val standaloneReviews = remember(reviews, sortMode, sortDirection) {
-        val roots = reviews.filter { it.videoId == null && it.standaloneGroupId == null }
-        roots.sortedWith { a, b ->
-            val primary = when (sortMode) {
-                RecordSortMode.NAME -> compareNaturalVideoNames(a.title, b.title)
-                RecordSortMode.RATING -> a.rating.compareTo(b.rating)
-                RecordSortMode.ADDED, RecordSortMode.RECORD_TIME, RecordSortMode.WATCHED -> a.createdAt.compareTo(b.createdAt)
-            }
-            val directed = if (sortMode == RecordSortMode.RATING && (a.rating == 0f || b.rating == 0f)) {
-                when {
-                    a.rating == 0f && b.rating > 0f -> 1
-                    a.rating > 0f && b.rating == 0f -> -1
-                    else -> 0
-                }
-            } else if (sortDirection == SortDirection.ASCENDING) primary else -primary
-            if (directed != 0) directed else a.createdAt.compareTo(b.createdAt)
-        }
-    }
-    val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
-    LaunchedEffect(targetReviewId, targetVideoId, displayVideos, standaloneReviews) {
-        val videoTargetId = targetVideoId
-        if (videoTargetId != null) {
-            val videoIndex = displayVideos.indexOfFirst { it.id == videoTargetId }
-            if (videoIndex >= 0) {
-                listState.animateScrollToItem(5 + videoIndex)
-                onTargetHandled()
-            } else onTargetHandled()
-            return@LaunchedEffect
-        }
-        val targetId = targetReviewId ?: return@LaunchedEffect
-        val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
-        if (videoIndex >= 0) {
-            setVideoReviewsExpanded(displayVideos[videoIndex].id, true)
-            listState.animateScrollToItem(5 + videoIndex)
-        } else {
-            val standaloneRootId = standaloneReviews.firstOrNull { root ->
-                root.id == targetId || reviews.any { it.id == targetId && it.standaloneGroupId == root.id }
-            }?.id
-            val standaloneIndex = standaloneReviews.indexOfFirst { it.id == standaloneRootId }
-            if (standaloneIndex >= 0) {
-                setStandaloneReviewExpanded(standaloneRootId!!, true)
-                listState.animateScrollToItem(5 + displayVideos.size + standaloneIndex)
-            } else onTargetHandled()
-        }
-    }
-    val watchedCount = completedVideos.size
-    val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
-    val reviewedCount = reviews.size
-    Box(Modifier.fillMaxSize().clipToBounds()) {
-        AnimatedVisibility(
-            visible = showTopBar,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .background(PageBg)
-                    .statusBarsPadding()
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText, modifier = Modifier.graphicsLayer { alpha = 0f })
-            }
-        }
-        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().clipToBounds(), contentPadding = PaddingValues(bottom = 88.dp)) {
-            item(key = "records-large-title") {
-                Row(
-                    Modifier.fillMaxWidth().zIndex(1f)
-                    .onGloballyPositioned {
-                        recordsTitleHeightPx.intValue = it.size.height
-                        if (listState.firstVisibleItemIndex == 0) {
-                            recordsTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
-                        }
-                    }
-                    .graphicsLayer { alpha = 0f }
-                    .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                        ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
-                    }
-                }
-            }
-            item(key = "records-stat-panel") {
-                Column(
-                    Modifier.fillMaxWidth()
-                        .graphicsLayer { alpha = 0f }
-                        .background(PageBg.copy(alpha = .95f))
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .padding(bottom = 10.dp)
-                            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Glass)
-                            .padding(horizontal = 10.dp, vertical = 15.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Stat("已看完", watchedCount.toString(), "个", Modifier.weight(1f))
-                        Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                        Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
-                        Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                        Stat("写下感想", reviewedCount.toString(), "篇", Modifier.weight(1f))
-                    }
-                }
-            }
-            if (!hasRecords) {
-                item {
-                    EmptyHint("暂无观影记录，点击右上角＋新增感想")
-                    Spacer(Modifier.height(20.dp))
-                }
-            } else {
-                item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(4.dp)) }
-                item(key = "records-list-heading") { SectionHeading("观看记录", horizontalPadding = 20.dp) }
-                item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
-                items(displayVideos, key = { "video_${it.id}" }) { video ->
-                    val entries = sortedReviewsByVideo[video.id].orEmpty()
-                    val completed = video.status == "watched" || video.progress >= 100f
-                    val expanded = expandedVideoReviews[video.id] ?: true
-                    Column(
-                        Modifier.fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .padding(bottom = 16.dp)
-                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Box(
-                                Modifier.size(80.dp, 106.dp)
-                                    .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(PosterBrush(video.bgIndex))
-                                    .noRippleClickable { onPlayVideo(video) }
-                            ) { Thumbnail(video, Modifier.fillMaxSize()) }
-                            Column(
-                                Modifier.weight(1f).height(106.dp)
-                            ) {
-                                VideoCardTitle(
-                                    video.name,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 16.sp,
-                                    color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
-                                    englishFontSize = 14.sp,
-                                    englishColor = MutedText,
-                                    lineHeight = 22.sp,
-                                    englishSpacing = 2.dp,
-                                    maxLines = 1,
-                                    showEnglish = true
-                                )
-                                Spacer(Modifier.weight(1f))
-                                RatingStars(
-                                    video.rating,
-                                    14.dp,
-                                    onRate = { onRateVideo(video, it) },
-                                    spacing = 1.dp,
-                                    modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Spacer(Modifier.weight(1f))
-                                Text(
-                                    if (completed) video.date + " · 已看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                    color = MutedText,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
-                                Spacer(Modifier.weight(1f))
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
-                        Spacer(Modifier.height(16.dp))
-                        Row(
-                            Modifier.fillMaxWidth().padding(end = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "随记",
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "${entries.size} 条",
-                                modifier = Modifier,
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Text(
-                                "导出",
-                                modifier = Modifier.then(
-                                    if (exportingReviewVideoId == null) Modifier.noRippleClickable {
-                                        exportingReviewVideoId = video.id
-                                        exportScope.launch {
-                                            var bitmap: Bitmap? = null
-                                            val saved = try {
-                                                bitmap = withContext(Dispatchers.Default) {
-                                                    createReviewExportBitmap(video, entries)
-                                                }
-                                                saveVideoScreenshot(context, bitmap!!)
-                                            } catch (_: Exception) {
-                                                false
-                                            } finally {
-                                                bitmap?.recycle()
-                                                exportingReviewVideoId = null
-                                            }
-                                            Toast.makeText(
-                                                context,
-                                                if (saved) "观影记录图片已保存到图片/一帧" else "观影记录图片保存失败",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    } else Modifier
-                                ),
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                "添加",
-                                modifier = Modifier.noRippleClickable { onCreate(video) },
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                if (entries.isEmpty()) "展开" else if (expanded) "关闭" else "展开",
-                                modifier = Modifier.then(
-                                    if (entries.isNotEmpty()) Modifier.noRippleClickable {
-                                        setVideoReviewsExpanded(video.id, !expanded)
-                                    } else Modifier
-                                ),
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                        }
-                        val timelineTopSpacing by animateDpAsState(
-                            targetValue = if (entries.isNotEmpty() && expanded) 16.dp else 0.dp,
-                            animationSpec = tween(
-                                durationMillis = 300,
-                                easing = androidx.compose.animation.core.FastOutSlowInEasing
-                            ),
-                            label = "record-timeline-spacing-${video.id}"
-                        )
-                        Spacer(Modifier.height(timelineTopSpacing))
-                        entries.forEachIndexed { index, entry ->
-                            val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
-                            val entryHighlight = entry.id == targetReviewId || reviews.any { it.id == targetReviewId && it.standaloneGroupId == entry.id }
-                            val expandDelay = index * 60
-                            val collapseDelay = (entries.size - index - 1) * 60
-                            LaunchedEffect(targetReviewId, expanded) {
-                                if (entryHighlight && expanded) {
-                                    delay(360 + expandDelay.toLong())
-                                    entryBringIntoView.bringIntoView()
-                                    delay(1500)
-                                    onTargetHandled()
-                                }
-                            }
-                            val entryTextColor by androidx.compose.animation.animateColorAsState(
-                                if (entryHighlight) ActiveAccent else MutedText,
-                                animationSpec = tween(420),
-                                label = "record-review-highlight-${entry.id}"
-                            )
-                            AnimatedVisibility(
-                                visible = expanded,
-                                enter = expandVertically(
-                                    animationSpec = tween(300, delayMillis = expandDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                ) + fadeIn(tween(220, delayMillis = expandDelay)) +
-                                    slideInVertically(
-                                        initialOffsetY = { it / 8 },
-                                        animationSpec = tween(300, delayMillis = expandDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                    ),
-                                exit = shrinkVertically(
-                                    animationSpec = tween(300, delayMillis = collapseDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                ) + fadeOut(tween(220, delayMillis = collapseDelay)) +
-                                    slideOutVertically(
-                                        targetOffsetY = { it / 8 },
-                                        animationSpec = tween(300, delayMillis = collapseDelay, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                    ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                val timelineAccent = ActiveAccent
-                                Row(
-                                    Modifier.fillMaxWidth().drawBehind {
-                                        val axisX = 7.dp.toPx()
-                                        val dotCenterY = 8.dp.toPx()
-                                        val lineWidth = 1.dp.toPx()
-                                        val lineColor = timelineAccent
-                                        if (entries.size > 1) {
-                                            when (index) {
-                                                0 -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, dotCenterY),
-                                                    Offset(axisX, size.height),
-                                                    strokeWidth = lineWidth
-                                                )
-                                                entries.lastIndex -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, 0f),
-                                                    Offset(axisX, dotCenterY),
-                                                    strokeWidth = lineWidth
-                                                )
-                                                else -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, 0f),
-                                                    Offset(axisX, size.height),
-                                                    strokeWidth = lineWidth
-                                                )
-                                            }
-                                        }
-                                        drawCircle(
-                                            color = timelineAccent,
-                                            radius = 4.dp.toPx(),
-                                            center = Offset(axisX, dotCenterY)
-                                        )
-                                    }
-                                ) {
-                                    Spacer(Modifier.width(14.dp))
-                                    Column(
-                                        Modifier.weight(1f).padding(start = 10.dp, top = 1.dp, bottom = 8.dp)
-                                            .bringIntoViewRequester(entryBringIntoView)
-                                            .noRippleClickable { onEdit(entry) }
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                        ) {
-                                            Text(
-                                                SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                color = MutedText,
-                                                fontSize = 11.sp,
-                                                lineHeight = 14.sp,
-                                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                            )
-                                            entry.playbackPositionMs?.let { positionMs ->
-                                                Text(
-                                                    "|",
-                                                    color = MutedText,
-                                                    fontSize = 11.sp,
-                                                    lineHeight = 14.sp,
-                                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                                )
-                                                Text(
-                                                    formatTime(positionMs),
-                                                    modifier = Modifier.noRippleClickable { onSeekToTimestamp(video, positionMs) },
-                                                    color = ActiveAccent,
-                                                    fontSize = 11.sp,
-                                                    lineHeight = 14.sp,
-                                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                                )
-                                            }
-                                        }
-                                        Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 5.dp))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                items(standaloneReviews, key = { "review_${it.id}" }) { entry ->
-                    val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
-                    val entryHighlight = entry.id == targetReviewId
-                    val expanded = expandedStandaloneReviews[entry.id] ?: true
-                    LaunchedEffect(targetReviewId, expanded) {
-                        if (entryHighlight && expanded) {
-                            delay(360)
-                            entryBringIntoView.bringIntoView()
-                            delay(1500)
-                            onTargetHandled()
-                        }
-                    }
-                    val standaloneTitle = entry.title.ifBlank { "未命名" }
-                    val coverBitmap = remember(entry.coverPath) {
-                        entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
-                    }
-                    val entryTextColor by androidx.compose.animation.animateColorAsState(
-                        if (entryHighlight) ActiveAccent else MutedText,
-                        animationSpec = tween(420),
-                        label = "standalone-review-text-highlight-${entry.id}"
-                    )
-                    Column(
-                        Modifier.fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .padding(bottom = 16.dp)
-                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .noRippleClickable { onEdit(entry) }
-                            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Box(
-                                Modifier.size(80.dp, 106.dp)
-                                    .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(LocalFramePalette.current.secondarySurface),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (coverBitmap != null) {
-                                    Image(coverBitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                } else {
-                                    Icon(Icons.Outlined.Image, null, tint = LocalFramePalette.current.tertiaryText, modifier = Modifier.size(25.dp))
-                                }
-                            }
-                            Column(Modifier.weight(1f).height(106.dp)) {
-                                VideoCardTitle(
-                                    standaloneTitle,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 16.sp,
-                                    color = if (entry.title.isBlank()) MutedText else MainText,
-                                    englishFontSize = 14.sp,
-                                    englishColor = MutedText,
-                                    lineHeight = 22.sp,
-                                    maxLines = 2,
-                                    showEnglish = true
-                                )
-                                Spacer(Modifier.weight(1f))
-                                RatingStars(
-                                    entry.rating,
-                                    14.dp,
-                                    onRate = null,
-                                    spacing = 1.dp,
-                                    modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                    color = MutedText,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
-                                Spacer(Modifier.weight(1f))
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
-                        Spacer(Modifier.height(16.dp))
-                        Row(
-                            Modifier.fillMaxWidth().padding(end = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "随记",
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "${1 + reviews.count { it.standaloneGroupId == entry.id }} 条",
-                                modifier = Modifier,
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Text(
-                                "导出",
-                                modifier = Modifier.then(
-                                    if (exportingStandaloneReviewId == null) Modifier.noRippleClickable {
-                                        exportingStandaloneReviewId = entry.id
-                                        exportScope.launch {
-                                            var bitmap: Bitmap? = null
-                                            val timelineEntries = listOf(entry) + reviews.filter { it.standaloneGroupId == entry.id }.sortedByDescending { it.createdAt }
-                                            val saved = try {
-                                                bitmap = withContext(Dispatchers.Default) {
-                                                    createStandaloneReviewExportBitmap(entry, timelineEntries)
-                                                }
-                                                saveVideoScreenshot(context, bitmap!!)
-                                            } catch (_: Exception) {
-                                                false
-                                            } finally {
-                                                bitmap?.recycle()
-                                                exportingStandaloneReviewId = null
-                                            }
-                                            Toast.makeText(context, if (saved) "观影记录图片已保存到图片/一帧" else "观影记录图片保存失败", Toast.LENGTH_SHORT).show()
-                                        }
-                                    } else Modifier
-                                ),
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                "添加",
-                                modifier = Modifier.noRippleClickable { onCreateStandalone(entry.id) },
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            Text(
-                                if (expanded) "关闭" else "展开",
-                                modifier = Modifier.noRippleClickable {
-                                    setStandaloneReviewExpanded(entry.id, !expanded)
-                                },
-                                color = MutedText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                        }
-                        val timelineTopSpacing by animateDpAsState(
-                            targetValue = if (expanded) 16.dp else 0.dp,
-                            animationSpec = tween(
-                                durationMillis = 300,
-                                easing = androidx.compose.animation.core.FastOutSlowInEasing
-                            ),
-                            label = "standalone-timeline-spacing-${entry.id}"
-                        )
-                        Spacer(Modifier.height(timelineTopSpacing))
-                        AnimatedVisibility(
-                            visible = expanded,
-                            enter = expandVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                            ) + fadeIn(tween(220)) +
-                                slideInVertically(
-                                    initialOffsetY = { it / 8 },
-                                    animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                ),
-                            exit = shrinkVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                            ) + fadeOut(tween(220)) +
-                                slideOutVertically(
-                                    targetOffsetY = { it / 8 },
-                                    animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                                ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                (listOf(entry) + reviews.filter { it.standaloneGroupId == entry.id }.sortedByDescending { it.createdAt })
-                                    .forEach { timelineEntry ->
-                                        val timelineAccent = ActiveAccent
-                                        Row(
-                                            Modifier.fillMaxWidth()
-                                                .drawBehind {
-                                                    val axisX = 7.dp.toPx()
-                                                    val dotCenterY = 8.dp.toPx()
-                                                    drawCircle(
-                                                        color = timelineAccent,
-                                                        radius = 4.dp.toPx(),
-                                                        center = Offset(axisX, dotCenterY)
-                                                    )
-                                                }
-                                        ) {
-                                            Spacer(Modifier.width(14.dp))
-                                            Column(
-                                                Modifier.weight(1f)
-                                                    .padding(start = 10.dp, top = 1.dp, bottom = 8.dp)
-                                                    .then(if (timelineEntry.id == entry.id) Modifier.bringIntoViewRequester(entryBringIntoView) else Modifier)
-                                                    .noRippleClickable { onEdit(timelineEntry) }
-                                            ) {
-                                                Text(
-                                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(timelineEntry.createdAt)),
-                                                    color = MutedText,
-                                                    fontSize = 11.sp,
-                                                    lineHeight = 14.sp,
-                                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                                )
-                                                Text(
-                                                    timelineEntry.content,
-                                                    color = entryTextColor,
-                                                    fontSize = 14.sp,
-                                                    lineHeight = 21.sp,
-                                                    modifier = Modifier.padding(top = 5.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                            }
-                        }
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(20.dp)) }
-        }
-
-        Row(
-            Modifier.fillMaxWidth().zIndex(1f)
-                .graphicsLayer {
-                    translationY = -recordsTitleScrollDistancePx.value
-                    alpha = recordsTitleAlphaState.value
-                }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ActionIcon(FrameSearchIcon, "搜索观影感想", onSearch)
-                ActionIcon(Icons.Outlined.Add, "新增感想", { onCreate(null) }, iconSize = 24.dp)
-                Box {
-                    ActionIcon(FrameGridIcon, "记录排序与视图", { showRecordSortMenu = true })
-                    AnimatedDropdownPopup(
-                        expanded = showRecordSortMenu,
-                        onDismissRequest = { showRecordSortMenu = false },
-                        offset = androidx.compose.ui.unit.IntOffset.Zero,
-                        modifier = Modifier.width(192.dp)
-                    ) {
-                        CustomSortMenuItem("按添加时间", sortMode == RecordSortMode.ADDED) {
-                            onRecordSortModeChange(RecordSortMode.ADDED)
-                            showRecordSortMenu = false
-                        }
-                        CustomSortMenuItem("按记录时间", sortMode == RecordSortMode.RECORD_TIME) {
-                            onRecordSortModeChange(RecordSortMode.RECORD_TIME)
-                            showRecordSortMenu = false
-                        }
-                        CustomSortMenuItem("按名称", sortMode == RecordSortMode.NAME) {
-                            onRecordSortModeChange(RecordSortMode.NAME)
-                            showRecordSortMenu = false
-                        }
-                        CustomSortMenuItem("按看完时间", sortMode == RecordSortMode.WATCHED) {
-                            onRecordSortModeChange(RecordSortMode.WATCHED)
-                            showRecordSortMenu = false
-                        }
-                        CustomSortMenuItem("按评分", sortMode == RecordSortMode.RATING) {
-                            onRecordSortModeChange(RecordSortMode.RATING)
-                            showRecordSortMenu = false
-                        }
-                        HorizontalDivider(
-                            color = LocalFramePalette.current.divider,
-                            thickness = 0.5.dp,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
-                        CustomSortMenuItem("正序", sortDirection == SortDirection.ASCENDING) {
-                            onRecordSortDirectionChange(SortDirection.ASCENDING)
-                            showRecordSortMenu = false
-                        }
-                        CustomSortMenuItem("倒序", sortDirection == SortDirection.DESCENDING) {
-                            onRecordSortDirectionChange(SortDirection.DESCENDING)
-                            showRecordSortMenu = false
-                        }
-                    }
-                }
-            }
-        }
-        val recordsStatsOffset = recordsOverlayOffsets["records-stat-panel"]
-        if (recordsStatsOffset != null) {
-            Column(
-                Modifier.fillMaxWidth()
-                    .graphicsLayer { translationY = recordsStatsOffset }
-                    .background(PageBg.copy(alpha = .95f))
-            ) {
-                Row(
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 10.dp)
-                        .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .07f), spotColor = Color.Black.copy(alpha = .05f))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Glass)
-                        .padding(horizontal = 10.dp, vertical = 15.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Stat("已看完", watchedCount.toString(), "个", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("累计时长", totalHours.toString(), "h", Modifier.weight(1f))
-                    Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = .05f)))
-                    Stat("写下感想", reviewedCount.toString(), "篇", Modifier.weight(1f))
-                }
-            }
-        }
-
-        val showStickyTitle = showTopBar && recordsTitleAlphaState.value <= 0f
-        val stickyTitleVisibility = remember { MutableTransitionState(false) }
-        stickyTitleVisibility.targetState = showStickyTitle
-        Box(
-            Modifier.align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .noRippleClickable { }
-                .background(
-                    if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
-                    else Color.Transparent
-                )
-                .statusBarsPadding()
-                .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            AnimatedVisibility(
-                visibleState = stickyTitleVisibility,
-                enter = fadeIn(tween(200)),
-                exit = fadeOut(tween(200))
-            ) {
-                Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
-            }
-        }
-    }
-}
 @Composable
 private fun NativePlayerOverlay(
     item: VideoItem, player: Player, repository: NativeLibraryRepository, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
@@ -5030,7 +4172,7 @@ private fun wrapReviewExportText(
 private fun splitReviewExportTitle(title: String): Pair<String, String?> =
     splitChineseEnglishTitle(title)
 
-private fun createReviewExportBitmap(
+internal fun createReviewExportBitmap(
     video: VideoItem,
     entries: List<ReviewEntry>
 ): Bitmap {
@@ -5053,7 +4195,7 @@ private fun createReviewExportBitmap(
     )
 }
 
-private fun createStandaloneReviewExportBitmap(
+internal fun createStandaloneReviewExportBitmap(
     entry: ReviewEntry,
     timelineEntries: List<ReviewEntry>
 ): Bitmap {
@@ -5258,7 +4400,7 @@ private fun createUnifiedReviewExportBitmap(
     return bitmap
 }
 
-private suspend fun saveVideoScreenshot(context: android.content.Context, bitmap: Bitmap): Boolean =
+internal suspend fun saveVideoScreenshot(context: android.content.Context, bitmap: Bitmap): Boolean =
     withContext(Dispatchers.IO) {
         val fileName = "一帧_${SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())}.png"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -5371,7 +4513,7 @@ private fun PlayerProgressBar(
     }
 }
 
-private fun formatTime(ms: Long): String {
+internal fun formatTime(ms: Long): String {
     val seconds = (ms / 1000).coerceAtLeast(0)
     return String.format(
         Locale.getDefault(), "%02d:%02d:%02d",
@@ -5444,14 +4586,14 @@ internal fun VideoCardTitle(
 }
 
 @Composable
-private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
+internal fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
     return this.clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun Modifier.noRippleCombinedClickable(onClick: () -> Unit, onLongClick: () -> Unit): Modifier {
+internal fun Modifier.noRippleCombinedClickable(onClick: () -> Unit, onLongClick: () -> Unit): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
     return this.combinedClickable(interactionSource = interactionSource, indication = null, onClick = onClick, onLongClick = onLongClick)
 }
@@ -5508,7 +4650,7 @@ private fun Header(title: String, onSettings: () -> Unit) {
 }
 
 @Composable
-private fun SectionHeading(
+internal fun SectionHeading(
     text: String,
     expanded: Boolean? = null,
     onToggle: (() -> Unit)? = null,
@@ -5545,7 +4687,7 @@ private fun SectionHeading(
 }
 
 @Composable
-private fun Stat(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
+internal fun Stat(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, fontSize = 12.sp, color = MutedText)
         Spacer(Modifier.height(4.dp))
@@ -5695,7 +4837,7 @@ private fun ContextMenuAction(icon: ImageVector, label: String, danger: Boolean 
 }
 
 @Composable
-private fun RatingStars(
+internal fun RatingStars(
     rating: Float,
     size: androidx.compose.ui.unit.Dp,
     onRate: ((Float) -> Unit)? = null,
@@ -5744,7 +4886,7 @@ private fun RatingStars(
 
 
 @Composable
-private fun AnimatedDropdownPopup(
+internal fun AnimatedDropdownPopup(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
@@ -5797,7 +4939,7 @@ private fun AnimatedDropdownPopup(
 }
 
 @Composable
-private fun CustomSortMenuItem(
+internal fun CustomSortMenuItem(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit
