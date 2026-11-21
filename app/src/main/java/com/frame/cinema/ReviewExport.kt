@@ -489,4 +489,3 @@ internal suspend fun saveVideoScreenshot(context: android.content.Context, bitma
         }
     }
 
-@Composable
