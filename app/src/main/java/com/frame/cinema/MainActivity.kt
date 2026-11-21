@@ -971,8 +971,7 @@ private fun FrameNativeApp(
                     .putInt("subtitle_text_size_percent", saved.subtitleTextSizePercent.coerceIn(50, 100))
                     .apply()
                 saved.appearanceMode?.takeIf { it == "system" || it == "light" || it == "dark" }?.let { mode ->
-                    preferences.edit().putString("appearance_mode", mode).apply()
-                    appearanceMode = mode
+                    onAppearanceModeChange(mode)
                 }
                 allowBackground = saved.allowBackground
                 keepAwake = saved.keepAwake
