@@ -244,6 +244,7 @@ internal fun NativePlayerOverlay(
     var volume by remember { mutableFloatStateOf(player.volume) }
     var unlockVisible by remember { mutableStateOf(false) }
     var centerMessage by remember { mutableStateOf("") }
+    var isLevelAdjusting by remember { mutableStateOf(false) }
     var dragMode by remember { mutableStateOf("none") }
     var dragStartX by remember { mutableFloatStateOf(0f) }
     var dragStartY by remember { mutableFloatStateOf(0f) }
@@ -432,8 +433,8 @@ internal fun NativePlayerOverlay(
             onFlushWatchTime()
         }
     }
-    LaunchedEffect(centerMessage) {
-        if (centerMessage.isNotEmpty()) {
+    LaunchedEffect(centerMessage, isLevelAdjusting) {
+        if (centerMessage.isNotEmpty() && !isLevelAdjusting) {
             delay(800)
             centerMessage = ""
         }
@@ -497,6 +498,7 @@ internal fun NativePlayerOverlay(
                                 else -> "progress"
                             }
                             if (dragMode == "progress") isSeeking = true
+                            isLevelAdjusting = dragMode == "brightness" || dragMode == "volume"
                         }
                     },
                     onDragEnd = {
@@ -504,10 +506,12 @@ internal fun NativePlayerOverlay(
                             player.seekTo(current)
                             isSeeking = false
                         }
+                        isLevelAdjusting = false
                         dragMode = "none"
                     },
                     onDragCancel = {
                         if (dragMode == "progress") isSeeking = false
+                        isLevelAdjusting = false
                         dragMode = "none"
                     },
                     onDrag = { change, _ ->
@@ -517,7 +521,7 @@ internal fun NativePlayerOverlay(
                             val dy = change.position.y - dragStartY
                             when {
                                 dragMode == "brightness" && abs(dy) > abs(dx) -> {
-                                    brightnessMask = (dragStartBrightness - dy / 200f).coerceIn(0f, .8f)
+                                    brightnessMask = (dragStartBrightness + dy / 200f).coerceIn(0f, .8f)
                                     centerMessage = "亮度 ${((1f - brightnessMask) * 100).toInt()}%"
                                 }
                                 dragMode == "volume" && abs(dy) > abs(dx) -> {
