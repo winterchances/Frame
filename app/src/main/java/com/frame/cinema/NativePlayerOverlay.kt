@@ -411,7 +411,7 @@ internal fun NativePlayerOverlay(
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
     }
-    LaunchedEffect(player) {
+    LaunchedEffect(player, item.id) {
         var lastPersistedAt = 0L
         var previousTick = SystemClock.elapsedRealtime()
         var wasPlaying = player.isPlaying
