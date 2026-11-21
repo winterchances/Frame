@@ -15,21 +15,24 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -46,6 +49,17 @@ internal fun MovieReviewListPage(
     val showTopBar by remember {
         derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 20 }
     }
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val titleTopPx = remember { mutableFloatStateOf(0f) }
+    val titleAlpha by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else titleFadeAlpha(listState.firstVisibleItemScrollOffset.toFloat(), titleTopPx.floatValue, statusBarBottomPx, titleSafetyGapPx)
+        }
+    }
+    val showStickyTitle = showTopBar && titleAlpha <= 0f
     Box(Modifier.fillMaxSize().background(PageBg)) {
         LazyColumn(
             state = listState,
@@ -54,7 +68,12 @@ internal fun MovieReviewListPage(
         ) {
             item(key = "movie-reviews-title") {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
+                    Modifier.fillMaxWidth()
+                        .onGloballyPositioned {
+                            titleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
+                        }
+                        .graphicsLayer { alpha = titleAlpha }
+                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     androidx.compose.material3.Icon(
@@ -109,7 +128,7 @@ internal fun MovieReviewListPage(
             }
         }
         AnimatedVisibility(
-            visible = showTopBar,
+            visible = showStickyTitle,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
             modifier = Modifier.align(Alignment.TopCenter)
@@ -133,12 +152,23 @@ internal fun MovieReviewDetailPage(
 ) {
     var showDeleteConfirm by remember(entry.id) { mutableStateOf(false) }
     val scrollState = rememberScrollState()
-    val showTopBar by remember { derivedStateOf { scrollState.value > 20 } }
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val titleTopPx = remember { mutableFloatStateOf(0f) }
+    val titleAlpha by remember {
+        derivedStateOf { titleFadeAlpha(scrollState.value.toFloat(), titleTopPx.floatValue, statusBarBottomPx, titleSafetyGapPx) }
+    }
+    val showTopBar by remember { derivedStateOf { scrollState.value > 20 && titleAlpha <= 0f } }
     Box(Modifier.fillMaxSize().background(PageBg)) {
         Column(
             Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = 20.dp).padding(bottom = 48.dp)
         ) {
-            MovieReviewLargeHeader("影评详情", onBack, action = "编辑", onAction = onEdit)
+            MovieReviewLargeHeader(
+                "影评详情", onBack, action = "编辑", onAction = onEdit,
+                modifier = Modifier.onGloballyPositioned { titleTopPx.floatValue = it.positionInWindow().y + scrollState.value }
+                    .graphicsLayer { alpha = titleAlpha }
+            )
             Text(entry.title.ifBlank { "未命名影评" }, fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold, color = if (entry.title.isBlank()) MutedText else MainText)
             Spacer(Modifier.height(10.dp))
             Text(formatMovieReviewDate(entry.createdAt), fontSize = 11.sp, color = MutedText)
@@ -160,7 +190,8 @@ internal fun MovieReviewDetailPage(
             text = { Text("删除后无法恢复，但不会影响作品评分和随记。", color = MutedText) },
             confirmButton = { TextButton(onClick = { showDeleteConfirm = false; onDelete() }) { Text("删除", color = ActiveAccent) } },
             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("取消", color = MutedText) } },
-            containerColor = PageBg
+            containerColor = PageBg,
+            shape = RoundedCornerShape(30.dp)
         )
     }
 }
@@ -177,11 +208,23 @@ internal fun MovieReviewEditorPage(
     var title by remember(video.id, isEditing, initialTitle) { mutableStateOf(initialTitle) }
     var content by remember(video.id, isEditing, initialContent) { mutableStateOf(initialContent) }
     val scrollState = rememberScrollState()
-    val showTopBar by remember { derivedStateOf { scrollState.value > 20 } }
+    val density = LocalDensity.current
+    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
+    val titleTopPx = remember { mutableFloatStateOf(0f) }
+    val titleAlpha by remember {
+        derivedStateOf { titleFadeAlpha(scrollState.value.toFloat(), titleTopPx.floatValue, statusBarBottomPx, titleSafetyGapPx) }
+    }
+    val showTopBar by remember { derivedStateOf { scrollState.value > 20 && titleAlpha <= 0f } }
     val canSave = content.isNotBlank()
     Box(Modifier.fillMaxSize().background(PageBg).imePadding()) {
         Column(Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = 20.dp).padding(bottom = 32.dp)) {
-            MovieReviewLargeHeader(if (isEditing) "编辑影评" else "写影评", onBack, action = "保存", onAction = { if (canSave) onSave(title, content) }, actionEnabled = canSave)
+            MovieReviewLargeHeader(
+                if (isEditing) "编辑影评" else "写影评", onBack, action = "保存",
+                onAction = { if (canSave) onSave(title, content) }, actionEnabled = canSave,
+                modifier = Modifier.onGloballyPositioned { titleTopPx.floatValue = it.positionInWindow().y + scrollState.value }
+                    .graphicsLayer { alpha = titleAlpha }
+            )
             Text(video.name, fontSize = 13.sp, color = MutedText, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(24.dp))
             BasicTextField(
@@ -227,10 +270,11 @@ private fun MovieReviewLargeHeader(
     onBack: () -> Unit,
     action: String,
     onAction: () -> Unit,
-    actionEnabled: Boolean = true
+    actionEnabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 40.dp, bottom = 24.dp),
+        modifier.fillMaxWidth().padding(top = 40.dp, bottom = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         androidx.compose.material3.Icon(
