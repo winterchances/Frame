@@ -203,11 +203,12 @@ internal fun MovieReviewEditorPage(
     initialTitle: String,
     initialContent: String,
     isEditing: Boolean,
+    sessionKey: Int,
     onBack: () -> Unit,
     onSave: (String, String) -> Unit
 ) {
-    var title by rememberSaveable(video.id, isEditing, initialTitle) { mutableStateOf(initialTitle) }
-    var content by rememberSaveable(video.id, isEditing, initialContent) { mutableStateOf(initialContent) }
+    var title by rememberSaveable(sessionKey, video.id, isEditing, initialTitle) { mutableStateOf(initialTitle) }
+    var content by rememberSaveable(sessionKey, video.id, isEditing, initialContent) { mutableStateOf(initialContent) }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
