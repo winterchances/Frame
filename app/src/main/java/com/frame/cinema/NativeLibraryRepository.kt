@@ -35,6 +35,8 @@ class NativeLibraryRepository(context: Context) {
     fun videos(): List<VideoItem> = store.libraryVideos()
     fun backupVideos(): List<VideoItem> = store.allVideos()
     fun reviews(): List<ReviewEntry> = store.allReviews()
+    fun movieReviews(): List<MovieReviewEntry> = store.allMovieReviews()
+    fun backupMovieReviews(): List<MovieReviewEntry> = store.allMovieReviews()
     fun categories(): List<String> = store.categories()
     fun backupWatchTimes(): List<BackupWatchTime> {
         flushWatchTime()
@@ -59,6 +61,24 @@ class NativeLibraryRepository(context: Context) {
                 }
             }
         }
+    }
+
+    fun addMovieReview(videoId: Long, title: String, content: String): Long? {
+        val cleanContent = content.trim()
+        if (cleanContent.isEmpty() || store.allVideos().none { it.id == videoId }) return null
+        return store.addMovieReview(videoId, title.trim(), cleanContent, System.currentTimeMillis())
+    }
+
+    fun updateMovieReview(id: Long, title: String, content: String): Boolean {
+        val cleanContent = content.trim()
+        if (cleanContent.isEmpty()) return false
+        val existing = store.allMovieReviews().firstOrNull { it.id == id } ?: return false
+        store.updateMovieReview(id, title.trim(), cleanContent, System.currentTimeMillis())
+        return true
+    }
+
+    fun deleteMovieReview(id: Long) {
+        store.deleteMovieReview(id)
     }
 
     fun addReview(videoId: Long?, content: String, rating: Float) {
@@ -334,7 +354,8 @@ class NativeLibraryRepository(context: Context) {
         folderSources: List<BackupFolderSource> = emptyList(),
         subtitlePreferences: List<BackupSubtitlePreference> = emptyList(),
         subtitleTracks: List<BackupSubtitleTrack> = emptyList(),
-        assets: List<BackupAsset> = emptyList()
+        assets: List<BackupAsset> = emptyList(),
+        movieReviews: List<MovieReviewEntry>? = null
     ) {
         val oldThumbnails = store.allVideos().mapNotNull { it.thumbPath }.toSet()
         val oldReviewCovers = store.allReviews().mapNotNull { it.coverPath }.toSet()
@@ -373,7 +394,7 @@ class NativeLibraryRepository(context: Context) {
         }
         store.replaceAll(
             restored, restoredCategories, restoredReviews,
-            watchTimes, folderSources, subtitlePreferences, subtitleTracks
+            watchTimes, folderSources, subtitlePreferences, subtitleTracks, movieReviews
         )
         (oldThumbnails - restored.mapNotNull { it.thumbPath }.toSet()).forEach { ThumbnailStore.delete(app, it) }
         (oldReviewCovers - restoredReviews.orEmpty().mapNotNull { it.coverPath }.toSet()).forEach { File(it).delete() }
