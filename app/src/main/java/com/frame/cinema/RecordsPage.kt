@@ -185,6 +185,7 @@ internal fun RecordsPage(
     listState: LazyListState,
     videos: List<VideoItem>,
     reviews: List<ReviewEntry>,
+    movieReviews: List<MovieReviewEntry>,
     targetReviewId: Long?,
     targetVideoId: Long?,
     sortMode: RecordSortMode,
@@ -196,6 +197,7 @@ internal fun RecordsPage(
     onCreateStandalone: (Long) -> Unit,
     onEdit: (ReviewEntry) -> Unit,
     onRateVideo: (VideoItem, Float) -> Unit,
+    onOpenMovieReviews: (VideoItem) -> Unit,
     onPlayVideo: (VideoItem) -> Unit,
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
@@ -279,6 +281,9 @@ internal fun RecordsPage(
     }
     val reviewsByVideo = remember(reviews) {
         reviews.filter { it.videoId != null }.groupBy { it.videoId!! }
+    }
+    val movieReviewCounts = remember(movieReviews) {
+        movieReviews.groupingBy { it.videoId }.eachCount()
     }
     val sortedReviewsByVideo = remember(reviewsByVideo) {
         reviewsByVideo.mapValues { (_, entries) -> entries.sortedByDescending { it.createdAt } }
@@ -484,15 +489,29 @@ internal fun RecordsPage(
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Spacer(Modifier.weight(1f))
-                                Text(
-                                    if (completed) video.date + " · 已看完" else "尚未看完 · ${video.progress.toInt()}%",
-                                    color = MutedText,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        if (completed) video.date + " · 已看完" else "尚未看完 · ${video.progress.toInt()}%",
+                                        color = MutedText,
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    )
+                                    if (completed) {
+                                        val count = movieReviewCounts[video.id] ?: 0
+                                        Text(
+                                            if (count > 0) " · 影评 ${count} 条" else " · 写影评",
+                                            color = ActiveAccent,
+                                            fontSize = 12.sp,
+                                            lineHeight = 16.sp,
+                                            maxLines = 1,
+                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                            modifier = Modifier.clickable { onOpenMovieReviews(video) }
+                                        )
+                                    }
+                                }
                                 Spacer(Modifier.weight(1f))
                             }
                         }
