@@ -1082,7 +1082,12 @@ private fun FrameNativeApp(
                                         onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
                                         onEdit = { openReviewEditor(it) },
                                         onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
-                                        onOpenMovieReviews = { openMovieReviewList(it) },
+                                        onOpenMovieReviews = { video ->
+                                            openMovieReviewList(video)
+                                            if (movieReviewEntries.none { it.videoId == video.id }) {
+                                                openMovieReviewEditor()
+                                            }
+                                        },
                                         onPlayVideo = { video -> playVideo(video) },
                                         onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                         onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
