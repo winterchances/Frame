@@ -432,6 +432,7 @@ class MainActivity : ComponentActivity() {
         appearanceMode = when (getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
             .getString("appearance_mode", "system")) {
             "dark" -> "dark"
+            "light" -> "light"
             else -> "system"
         }
         repository = NativeLibraryRepository(this)
@@ -1390,7 +1391,7 @@ private fun FrameNativeApp(
                                 val selected = appearanceMode == option.first
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp).noRippleClickable {
-                                        onAppearanceModeChange(option.first)
+                                        onAppearanceModeChange(if (selected) "light" else option.first)
                                     }.padding(horizontal = 20.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
