@@ -338,8 +338,11 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
     }
 
-    private fun startNativePlayback(item: VideoItem, positionMs: Long? = null) {
+    private fun startNativePlayback(requestedItem: VideoItem, positionMs: Long? = null) {
         val controller = player ?: return
+        // Page state can lag behind SQLite after playback progress is saved.
+        // Always resolve the latest persisted video before choosing the start position.
+        val item = repository.backupVideos().firstOrNull { it.id == requestedItem.id } ?: requestedItem
         val iconBytes = appIconBytes
         val metadataBuilder = MediaMetadata.Builder()
             .setTitle(item.name)
