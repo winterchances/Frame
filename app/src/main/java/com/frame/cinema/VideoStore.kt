@@ -22,6 +22,15 @@ data class ReviewEntry(
     val playbackPositionMs: Long? = null
 )
 
+data class MovieReviewEntry(
+    val id: Long,
+    val videoId: Long,
+    val title: String = "",
+    val content: String,
+    val createdAt: Long,
+    val updatedAt: Long = createdAt
+)
+
 data class BackupWatchTime(val videoId: Long, val dayKey: String, val durationMs: Long)
 data class BackupFolderSource(val videoId: Long, val source: VideoFolderSource)
 data class BackupSubtitlePreference(val videoId: Long, val preference: SubtitlePreference)
@@ -43,7 +52,8 @@ data class LibraryBackup(
     val subtitlePreferences: List<BackupSubtitlePreference>? = null,
     val subtitleTracks: List<BackupSubtitleTrack>? = null,
     val assets: List<BackupAsset>? = null,
-    val appPreferences: BackupAppPreferences? = null
+    val appPreferences: BackupAppPreferences? = null,
+    val movieReviews: List<MovieReviewEntry>? = null
 )
 
 data class VideoItem(
@@ -78,7 +88,7 @@ data class SubtitlePreference(val selectedUri: String? = null, val enabled: Bool
 data class SubtitleTrackEntry(val uri: String, val name: String, val manual: Boolean = true)
 data class VideoFolderSource(val treeUri: String, val relativePath: String)
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 13) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 14) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -121,6 +131,14 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             cover_path TEXT,
             standalone_group_id INTEGER,
             playback_position_ms INTEGER
+        )""".trimIndent())
+        db.execSQL("""CREATE TABLE movie_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            video_id INTEGER NOT NULL,
+            title TEXT NOT NULL DEFAULT '',
+            content TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
         )""".trimIndent())
         listOf("全部分类", "我的最爱").forEachIndexed { index, name ->
             val values = ContentValues().apply { put("name", name); put("position", index) }
@@ -184,6 +202,16 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         if (oldVersion < 13) {
             db.execSQL("ALTER TABLE videos ADD COLUMN playback_position_ms INTEGER")
             db.execSQL("ALTER TABLE videos ADD COLUMN playback_completed INTEGER NOT NULL DEFAULT 0")
+        }
+        if (oldVersion < 14) {
+            db.execSQL("""CREATE TABLE movie_reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                video_id INTEGER NOT NULL,
+                title TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            )""".trimIndent())
         }
         if (oldVersion < 5) {
             db.execSQL("""
@@ -316,7 +344,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         watchTimes: List<BackupWatchTime> = emptyList(),
         folderSources: List<BackupFolderSource> = emptyList(),
         subtitlePreferences: List<BackupSubtitlePreference> = emptyList(),
-        subtitleTracks: List<BackupSubtitleTrack> = emptyList()
+        subtitleTracks: List<BackupSubtitleTrack> = emptyList(),
+        movieReviews: List<MovieReviewEntry>? = null
     ) {
         val db = writableDatabase
         db.beginTransaction()
@@ -327,6 +356,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             db.delete("subtitle_tracks", null, null)
             db.delete("watch_time_daily", null, null)
             db.delete("reviews", null, null)
+            db.delete("movie_reviews", null, null)
             db.delete("categories", null, null)
 
             val restoredReviews = reviews ?: videos.filter { it.review.isNotBlank() }.map {
@@ -410,6 +440,19 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 }
                 db.insertWithOnConflict("reviews", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             }
+            movieReviews.orEmpty().forEach { review ->
+                if (review.content.isNotBlank() && review.videoId in videos.map { it.id }.toSet()) {
+                    val values = ContentValues().apply {
+                        if (review.id > 0L) put("id", review.id)
+                        put("video_id", review.videoId)
+                        put("title", review.title)
+                        put("content", review.content)
+                        put("created_at", review.createdAt)
+                        put("updated_at", review.updatedAt.coerceAtLeast(review.createdAt))
+                    }
+                    db.insertWithOnConflict("movie_reviews", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+                }
+            }
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
@@ -437,6 +480,47 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 )
             }
         }
+    }
+
+    @Synchronized fun allMovieReviews(): List<MovieReviewEntry> = readableDatabase.rawQuery(
+        "SELECT id, video_id, title, content, created_at, updated_at FROM movie_reviews ORDER BY created_at DESC, id DESC", null
+    ).use { cursor ->
+        buildList {
+            while (cursor.moveToNext()) {
+                add(MovieReviewEntry(
+                    id = cursor.getLong(0),
+                    videoId = cursor.getLong(1),
+                    title = cursor.getString(2),
+                    content = cursor.getString(3),
+                    createdAt = cursor.getLong(4),
+                    updatedAt = cursor.getLong(5)
+                ))
+            }
+        }
+    }
+
+    @Synchronized fun addMovieReview(videoId: Long, title: String, content: String, now: Long): Long {
+        val values = ContentValues().apply {
+            put("video_id", videoId)
+            put("title", title)
+            put("content", content)
+            put("created_at", now)
+            put("updated_at", now)
+        }
+        return writableDatabase.insert("movie_reviews", null, values)
+    }
+
+    @Synchronized fun updateMovieReview(id: Long, title: String, content: String, updatedAt: Long) {
+        val values = ContentValues().apply {
+            put("title", title)
+            put("content", content)
+            put("updated_at", updatedAt)
+        }
+        writableDatabase.update("movie_reviews", values, "id=?", arrayOf(id.toString()))
+    }
+
+    @Synchronized fun deleteMovieReview(id: Long) {
+        writableDatabase.delete("movie_reviews", "id=?", arrayOf(id.toString()))
     }
 
     @Synchronized fun addReview(videoId: Long?, content: String, rating: Float, createdAt: Long, title: String = "", coverPath: String? = null, standaloneGroupId: Long? = null, playbackPositionMs: Long? = null): Long {
@@ -599,6 +683,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.beginTransaction()
         try {
             writableDatabase.delete("reviews", "video_id=?", arrayOf(id.toString()))
+            writableDatabase.delete("movie_reviews", "video_id=?", arrayOf(id.toString()))
             writableDatabase.delete("videos", "id=?", arrayOf(id.toString()))
             writableDatabase.delete("video_folder_sources", "video_id=?", arrayOf(id.toString()))
             writableDatabase.delete("subtitle_preferences", "video_id=?", arrayOf(id.toString()))
@@ -610,6 +695,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.beginTransaction()
         try {
             writableDatabase.delete("reviews", null, null)
+            writableDatabase.delete("movie_reviews", null, null)
             writableDatabase.delete("videos", null, null)
             writableDatabase.delete("video_folder_sources", null, null)
             writableDatabase.delete("subtitle_preferences", null, null)
