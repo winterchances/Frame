@@ -715,6 +715,7 @@ private fun FrameNativeApp(
                         subtitlePreferences = repository.backupSubtitlePreferences(),
                         subtitleTracks = repository.backupSubtitleTracks(),
                         assets = repository.backupAssets(),
+                        movieReviews = repository.backupMovieReviews(),
                         appPreferences = BackupAppPreferences(
                             allowBackground = appPreferences.getBoolean("allow_background", true),
                             keepAwake = appPreferences.getBoolean("keep_awake", true),
@@ -780,6 +781,7 @@ private fun FrameNativeApp(
                 require(backup.videos.map { it.uri }.distinct().size == backup.videos.size)
                 val ids = backup.videos.map { it.id }.toSet()
                 require(backup.reviews.all { it.content.isNotBlank() && (it.videoId == null || it.videoId in ids) })
+                require(backup.movieReviews.orEmpty().all { it.content.isNotBlank() && it.videoId in ids })
                 backup
             } catch (_: Exception) {
                 notify("文件格式错误")
@@ -793,7 +795,8 @@ private fun FrameNativeApp(
                 imported.folderSources.orEmpty(),
                 imported.subtitlePreferences.orEmpty(),
                 imported.subtitleTracks.orEmpty(),
-                imported.assets.orEmpty()
+                imported.assets.orEmpty(),
+                imported.movieReviews
             )
             imported.appPreferences?.let { saved ->
                 preferences.edit()
