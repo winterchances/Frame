@@ -887,7 +887,8 @@ private fun FrameNativeApp(
                         appPreferences = BackupAppPreferences(
                             allowBackground = appPreferences.getBoolean("allow_background", true),
                             keepAwake = appPreferences.getBoolean("keep_awake", true),
-                            subtitleTextSizePercent = appPreferences.getInt("subtitle_text_size_percent", 100).coerceIn(50, 100)
+                            subtitleTextSizePercent = appPreferences.getInt("subtitle_text_size_percent", 100).coerceIn(50, 100),
+                            appearanceMode = appPreferences.getString("appearance_mode", "system") ?: "system"
                         )
                     )
                 )
@@ -969,6 +970,10 @@ private fun FrameNativeApp(
                     .putBoolean("keep_awake", saved.keepAwake)
                     .putInt("subtitle_text_size_percent", saved.subtitleTextSizePercent.coerceIn(50, 100))
                     .apply()
+                saved.appearanceMode?.takeIf { it == "system" || it == "light" || it == "dark" }?.let { mode ->
+                    preferences.edit().putString("appearance_mode", mode).apply()
+                    appearanceMode = mode
+                }
                 allowBackground = saved.allowBackground
                 keepAwake = saved.keepAwake
                 onBackgroundPlaybackChanged(saved.allowBackground)
@@ -1119,6 +1124,7 @@ private fun FrameNativeApp(
                                         else -> item.copy(
                                             progress = 100f,
                                             status = "watched",
+                                            playbackCompleted = true,
                                             playbackPositionMs = item.playbackPositionMs
                                                 ?: if (item.durationMs > 0L) (item.durationMs * item.progress / 100f).toLong() else null
                                         )
@@ -1784,7 +1790,7 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.MOVE -> SheetContent("移动到分类") {
-                        categories.filter { it != "全部分类" }.forEach { cat ->
+                        categories.filterNot { it == "全部分类" || it == "我的最爱" }.forEach { cat ->
                             SheetAction(cat, bottomPadding = if (cat == categories.lastOrNull()) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
                         }
                     }
