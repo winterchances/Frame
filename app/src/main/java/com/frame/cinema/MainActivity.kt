@@ -233,7 +233,7 @@ internal val Glass: Color
     @Composable get() = LocalFramePalette.current.glass
 
 
-private enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
+internal enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY, NEW_CATEGORY }
 internal data class SubtitleTrackOption(val uri: Uri, val name: String, val manual: Boolean = false)
 
@@ -2504,52 +2504,6 @@ private fun FrameNativeApp(
 
     }
 
-@Composable
-private fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheetBlur: androidx.compose.ui.unit.Dp, onBoundsChanged: ((Rect) -> Unit)? = null, onSelect: (MainPage) -> Unit) {
-    val entries = listOf(
-        MainPage.HOME to FrameHomeIcon,
-        MainPage.LIBRARY to FrameLibraryIcon,
-        MainPage.RECENT to FrameRecentIcon,
-        MainPage.RECORDS to FrameRecordsIcon
-    )
-    BoxWithConstraints(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 78.dp, bottom = 16.dp)
-            .onGloballyPositioned { onBoundsChanged?.invoke(it.boundsInRoot()) }
-            .height(56.dp)
-            .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
-    ) {
-        val navWidth = maxWidth
-        Box(
-            Modifier.fillMaxSize()
-                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                .clip(RoundedCornerShape(28.dp))
-                .background(Glass)
-                .border(0.3.dp, LocalFramePalette.current.divider, RoundedCornerShape(28.dp))
-                .padding(5.dp)
-        ) {
-            val slot = (navWidth - 10.dp) / 4
-            val target = slot * entries.indexOfFirst { it.first == current }
-            val offset by animateDpAsState(target, tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)), label = "nav-indicator")
-            Box(Modifier.offset(x = offset).width(slot).fillMaxHeight().clip(CircleShape).background(MainText.copy(alpha = .07f)))
-            Row(Modifier.fillMaxSize()) {
-                entries.forEach { (item, icon) ->
-                    Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { onSelect(item) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Icon(icon, item.label, Modifier.size(20.dp), tint = MainText)
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            item.label,
-                            fontSize = 10.sp,
-                            lineHeight = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MainText,
-                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 internal fun rememberSoftListFlingBehavior(): FlingBehavior {
