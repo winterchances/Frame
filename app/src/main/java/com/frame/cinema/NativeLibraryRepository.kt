@@ -12,6 +12,7 @@ import androidx.documentfile.provider.DocumentFile
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.io.File
 import android.util.Base64
 import java.util.concurrent.Executors
@@ -158,7 +159,8 @@ class NativeLibraryRepository(context: Context) {
         folderSources: Map<String, VideoFolderSource> = emptyMap()
     ): Int {
         var added = 0
-        uris.forEachIndexed { index, uri ->
+        val usedIds = store.allVideos().mapTo(mutableSetOf()) { it.id }
+        uris.forEach { uri ->
             runCatching {
                 app.contentResolver.takePersistableUriPermission(
                     uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -175,7 +177,10 @@ class NativeLibraryRepository(context: Context) {
             }
             val originalFileName = queryName(uri)
             val parsedFilename = VideoFilenameParser.parse(originalFileName)
-            val id = System.currentTimeMillis() * 100 + index
+            var id: Long
+            do {
+                id = UUID.randomUUID().leastSignificantBits and Long.MAX_VALUE
+            } while (id == 0L || !usedIds.add(id))
             val now = System.currentTimeMillis()
             val item = VideoItem(
                 id = id,
