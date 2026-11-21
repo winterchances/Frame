@@ -359,7 +359,9 @@ class NativeLibraryRepository(context: Context) {
         }
         val restoredCategories = (categories?.takeIf { it.isNotEmpty() }
             ?: (listOf("我的最爱") + restored.map { it.category } + "全部分类")).let { names ->
-            (names + listOf("我的最爱", "全部分类")).distinct()
+            listOf("我的最爱") +
+                names.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct() +
+                "全部分类"
         }
         store.replaceAll(
             restored, restoredCategories, restoredReviews,
