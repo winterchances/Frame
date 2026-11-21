@@ -642,7 +642,7 @@ private fun FrameNativeApp(
     val libraryFloatingCategoryScrollState = rememberScrollState()
     val recentListState = rememberLazyListState()
     val recordsListState = rememberLazyListState()
-    var page by remember { mutableStateOf(MainPage.HOME) }
+    var page by rememberSaveable { mutableStateOf(MainPage.HOME) }
     var libraryMultiSelectMode by remember { mutableStateOf(false) }
     var showCategoryDrawer by remember { mutableStateOf(false) }
     var categoryEditMode by remember { mutableStateOf(false) }
@@ -671,17 +671,17 @@ private fun FrameNativeApp(
         if (ordered != saved) repository.saveCategories(ordered)
         ordered
     }) }
-    var status by remember { mutableStateOf("全部") }
-    var category by remember { mutableStateOf("全部") }
-    var compact by remember { mutableStateOf(true) }
+    var status by rememberSaveable { mutableStateOf("全部") }
+    var category by rememberSaveable { mutableStateOf("全部") }
+    var compact by rememberSaveable { mutableStateOf(true) }
     var showFab by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var recordSearch by remember { mutableStateOf("") }
     var reviewVideoSearch by remember { mutableStateOf("") }
     var targetReviewId by remember { mutableStateOf<Long?>(null) }
     var targetRecordVideoId by remember { mutableStateOf<Long?>(null) }
-    var recordSortMode by remember { mutableStateOf(RecordSortMode.WATCHED) }
-    var recordSortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
+    var recordSortMode by rememberSaveable { mutableStateOf(RecordSortMode.WATCHED) }
+    var recordSortDirection by rememberSaveable { mutableStateOf(SortDirection.DESCENDING) }
     var editName by remember { mutableStateOf("") }
     var editReview by remember { mutableStateOf("") }
     var editRating by remember { mutableFloatStateOf(0f) }
@@ -693,8 +693,8 @@ private fun FrameNativeApp(
     var editStandaloneGroupId by remember { mutableStateOf<Long?>(null) }
     var showReviewVideoActions by remember { mutableStateOf(true) }
     var newCategoryName by remember { mutableStateOf("") }
-    var sort by remember { mutableStateOf(SortMode.ADDED) }
-    var sortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
+    var sort by rememberSaveable { mutableStateOf(SortMode.ADDED) }
+    var sortDirection by rememberSaveable { mutableStateOf(SortDirection.DESCENDING) }
     val videoById = remember(videos) { videos.associateBy { it.id } }
     val sortedLibraryVideos = remember(videos, sort, sortDirection) {
         videos.sortedWith { a, b ->
