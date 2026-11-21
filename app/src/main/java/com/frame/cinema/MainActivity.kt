@@ -1025,11 +1025,19 @@ private fun FrameNativeApp(
                             MainPage.RECORDS -> androidx.compose.animation.AnimatedContent(
                                 targetState = movieReviewScreen,
                                 transitionSpec = {
-                                    val forward = when (targetState) {
-                                        null -> false
-                                        MovieReviewScreen.LIST -> initialState == null
-                                        MovieReviewScreen.DETAIL, MovieReviewScreen.EDITOR -> initialState == null || initialState == MovieReviewScreen.LIST
+                                    val initialDepth = when (initialState) {
+                                        null -> 0
+                                        MovieReviewScreen.LIST -> 1
+                                        MovieReviewScreen.DETAIL -> 2
+                                        MovieReviewScreen.EDITOR -> 3
                                     }
+                                    val targetDepth = when (targetState) {
+                                        null -> 0
+                                        MovieReviewScreen.LIST -> 1
+                                        MovieReviewScreen.DETAIL -> 2
+                                        MovieReviewScreen.EDITOR -> 3
+                                    }
+                                    val forward = targetDepth > initialDepth
                                     if (forward) {
                                         (slideInHorizontally(tween(300)) { it / 12 } + fadeIn(tween(300))) togetherWith
                                             (slideOutHorizontally(tween(260)) { -it / 12 } + fadeOut(tween(260)))
