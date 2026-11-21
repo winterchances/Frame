@@ -596,7 +596,7 @@ internal fun RecordsPage(
                                 }
                             }
                             val entryTextColor by androidx.compose.animation.animateColorAsState(
-                                if (entryHighlight) ActiveAccent else MutedText,
+                                if (entryHighlight) ActiveAccent else MainText.copy(alpha = 0.78f),
                                 animationSpec = tween(420),
                                 label = "record-review-highlight-${entry.id}"
                             )
@@ -713,7 +713,7 @@ internal fun RecordsPage(
                         entry.coverPath?.let { runCatching { BitmapFactory.decodeFile(it) }.getOrNull() }
                     }
                     val entryTextColor by androidx.compose.animation.animateColorAsState(
-                        if (entryHighlight) ActiveAccent else MutedText,
+                        if (entryHighlight) ActiveAccent else MainText.copy(alpha = 0.78f),
                         animationSpec = tween(420),
                         label = "standalone-review-text-highlight-${entry.id}"
                     )
