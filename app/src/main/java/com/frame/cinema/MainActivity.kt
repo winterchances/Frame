@@ -2934,6 +2934,7 @@ private fun HomePage(
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
+                .noRippleClickable { }
                 .background(
                     if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
                     else Color.Transparent
@@ -3333,6 +3334,7 @@ private fun LibraryFilterHeader(
 ) {
     Column(
         modifier.fillMaxWidth()
+            .noRippleClickable { }
             .graphicsLayer { this.alpha = alpha }
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .background(PageBg)
@@ -3525,7 +3527,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
 @Composable
 private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int) -> Unit) {
     Box(
-        Modifier.fillMaxWidth().graphicsLayer { this.alpha = alpha }
+        Modifier.fillMaxWidth().noRippleClickable { }.graphicsLayer { this.alpha = alpha }
             .onGloballyPositioned { onHeightChanged(it.size.height) }
             .background(PageBg)
             .statusBarsPadding()
@@ -3535,7 +3537,7 @@ private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int)
             label,
             fontSize = 17.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black,
+            color = MainText,
             modifier = Modifier.fillMaxWidth()
                 .padding(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 5.dp)
         )
@@ -4458,6 +4460,7 @@ private fun RecordsPage(
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
+                .noRippleClickable { }
                 .background(
                     if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
                     else Color.Transparent
