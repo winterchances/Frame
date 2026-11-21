@@ -6,6 +6,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
@@ -232,27 +236,29 @@ internal fun MovieReviewEditorPage(
             BasicTextField(
                 value = title,
                 onValueChange = { title = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp)
+                    .shadow(4.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                    .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface).padding(11.dp),
                 singleLine = true,
-                textStyle = TextStyle(fontSize = 18.sp, lineHeight = 26.sp, fontWeight = FontWeight.Medium, color = MainText),
+                textStyle = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = MainText),
                 decorationBox = { inner ->
                     Box {
-                        if (title.isEmpty()) Text("标题（选填）", fontSize = 18.sp, color = MutedText)
+                        if (title.isEmpty()) Text("输入标题（选填）", fontSize = 14.sp, color = MutedText)
                         inner()
                     }
                 }
             )
-            Spacer(Modifier.height(18.dp))
-            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             BasicTextField(
                 value = content,
                 onValueChange = { content = it },
-                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
-                textStyle = TextStyle(fontSize = 15.sp, lineHeight = 26.sp, color = MainText),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 260.dp)
+                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                    .clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(15.dp),
+                textStyle = TextStyle(fontSize = 16.sp, lineHeight = 24.sp, color = MainText),
                 decorationBox = { inner ->
                     Box {
-                        if (content.isEmpty()) Text("写下你对这部作品的整体感受……", fontSize = 15.sp, lineHeight = 26.sp, color = MutedText)
+                        if (content.isEmpty()) Text("写下你对这部作品的整体感受……", fontSize = 16.sp, lineHeight = 24.sp, color = MutedText)
                         inner()
                     }
                 }
