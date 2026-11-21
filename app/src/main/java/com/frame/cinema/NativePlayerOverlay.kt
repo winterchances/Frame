@@ -3,6 +3,8 @@ package com.frame.cinema
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.ContextWrapper
+import android.provider.Settings
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaScannerConnection
@@ -188,6 +190,13 @@ internal fun NativePlayerOverlay(
     onSaveTimestampRecord: (Long, String) -> Unit
 ) {
     val context = LocalContext.current
+    val playerActivity = remember(context) {
+        var currentContext: Context? = context
+        while (currentContext != null && currentContext !is Activity) {
+            currentContext = (currentContext as? ContextWrapper)?.baseContext
+        }
+        currentContext as? Activity
+    }
     val screenshotScope = rememberCoroutineScope()
     var videoTextureView by remember(item.id) { mutableStateOf<TextureView?>(null) }
     var pendingScreenshot by remember(item.id) { mutableStateOf<Bitmap?>(null) }
@@ -240,7 +249,15 @@ internal fun NativePlayerOverlay(
     var current by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(item.durationMs) }
     var isSeeking by remember { mutableStateOf(false) }
-    var brightnessMask by remember { mutableFloatStateOf(0f) }
+    val initialBrightness = remember(playerActivity) {
+        val windowBrightness = playerActivity?.window?.attributes?.screenBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        if (windowBrightness >= 0f) {
+            windowBrightness.coerceIn(0f, 1f)
+        } else {
+            (Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128) / 255f).coerceIn(0f, 1f)
+        }
+    }
+    var brightnessLevel by remember(playerActivity) { mutableFloatStateOf(initialBrightness) }
     var volume by remember { mutableFloatStateOf(player.volume) }
     var unlockVisible by remember { mutableStateOf(false) }
     var centerMessage by remember { mutableStateOf("") }
@@ -372,6 +389,18 @@ internal fun NativePlayerOverlay(
         }
     }
 
+    DisposableEffect(playerActivity) {
+        val window = playerActivity?.window
+        val originalBrightness = window?.attributes?.screenBrightness
+        onDispose {
+            if (window != null && originalBrightness != null) {
+                window.attributes = window.attributes.apply {
+                    screenBrightness = originalBrightness
+                }
+            }
+        }
+    }
+
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(value: Boolean) {
@@ -490,7 +519,7 @@ internal fun NativePlayerOverlay(
                             dragStartY = start.y
                             dragStartPosition = player.currentPosition.coerceAtLeast(0L)
                             dragStartVolume = player.volume
-                            dragStartBrightness = brightnessMask
+                            dragStartBrightness = brightnessLevel
                             dragMode = when {
                                 start.y > size.height * .78f -> "none"
                                 start.x < size.width / 3f -> "brightness"
@@ -521,8 +550,13 @@ internal fun NativePlayerOverlay(
                             val dy = change.position.y - dragStartY
                             when {
                                 dragMode == "brightness" && abs(dy) > abs(dx) -> {
-                                    brightnessMask = (dragStartBrightness + dy / 200f).coerceIn(0f, .8f)
-                                    centerMessage = "亮度 ${((1f - brightnessMask) * 100).toInt()}%"
+                                    brightnessLevel = (dragStartBrightness - dy / 200f).coerceIn(0f, 1f)
+                                    playerActivity?.window?.let { window ->
+                                        window.attributes = window.attributes.apply {
+                                            screenBrightness = brightnessLevel
+                                        }
+                                    }
+                                    centerMessage = "亮度 ${(brightnessLevel * 100).toInt()}%"
                                 }
                                 dragMode == "volume" && abs(dy) > abs(dx) -> {
                                     volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
@@ -561,9 +595,6 @@ internal fun NativePlayerOverlay(
                 videoTextureView = findVideoTextureView(it)
             }
         )
-        if (brightnessMask > 0f) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = brightnessMask)))
-        }
         AnimatedVisibility(
             visible = controlsVisible && !locked,
             enter = fadeIn(tween(300)),
