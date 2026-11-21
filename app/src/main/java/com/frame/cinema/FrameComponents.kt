@@ -324,7 +324,7 @@ internal fun PosterCard(
 }
 
 @Composable
-private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Boolean = false) {
+internal fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Boolean = false) {
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f / 1.4f).shadow(if (highlighted) 6.dp else 4.dp, RoundedCornerShape(if (compact) 12.dp else 16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(if (compact) 12.dp else 16.dp)).background(PosterBrush(video.bgIndex))) {
             Thumbnail(video, Modifier.fillMaxSize())
