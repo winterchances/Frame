@@ -429,8 +429,11 @@ class MainActivity : ComponentActivity() {
             openPlayerRequest.intValue++
             intent.action = null
         }
-        appearanceMode = getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
-            .getString("appearance_mode", "system") ?: "system"
+        appearanceMode = when (getSharedPreferences("frame_preferences", Context.MODE_PRIVATE)
+            .getString("appearance_mode", "system")) {
+            "dark" -> "dark"
+            else -> "system"
+        }
         repository = NativeLibraryRepository(this)
         val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
         val future = MediaController.Builder(this, token).buildAsync()
@@ -1383,7 +1386,8 @@ private fun FrameNativeApp(
                         }
                         Text("外观", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 8.dp))
                         Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)) {
-                            listOf("system" to "跟随系统", "light" to "浅色模式", "dark" to "深色模式").forEachIndexed { index, option ->
+                            listOf("system" to "跟随系统", "dark" to "深色模式").forEachIndexed { index, option ->
+                                val selected = appearanceMode == option.first
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp).noRippleClickable {
                                         onAppearanceModeChange(option.first)
@@ -1391,22 +1395,22 @@ private fun FrameNativeApp(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(option.second, Modifier.weight(1f), color = MainText, fontSize = 16.sp)
-                                    val radioSelected = appearanceMode == option.first
-                                    val radioColor = if (radioSelected) ActiveAccent else LocalFramePalette.current.tertiaryText
-                                    Canvas(Modifier.size(20.dp)) {
-                                        drawCircle(
-                                            color = radioColor,
-                                            style = Stroke(width = 1.25.dp.toPx())
+                                    Box(
+                                        Modifier.size(44.dp, 24.dp)
+                                            .clip(CircleShape)
+                                            .background(if (selected) ActiveAccent else LocalFramePalette.current.secondarySurface)
+                                    ) {
+                                        val knobOffset by animateDpAsState(if (selected) 22.dp else 2.dp, tween(300), label = "setting-switch")
+                                        Box(
+                                            Modifier.align(Alignment.CenterStart)
+                                                .offset(x = knobOffset)
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.White)
                                         )
-                                        if (radioSelected) {
-                                            drawCircle(
-                                                color = radioColor,
-                                                radius = 4.5.dp.toPx()
-                                            )
-                                        }
                                     }
                                 }
-                                if (index < 2) {
+                                if (index < 1) {
                                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
                                 }
                             }
