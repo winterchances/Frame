@@ -396,14 +396,14 @@ class NativeLibraryRepository(context: Context) {
 
     fun clearRecent() {
         store.updateAll(store.libraryVideos().map {
-            it.copy(progress = 0f, status = "all", lastPlayedAt = 0L)
+            it.copy(progress = 0f, status = "all", playbackPositionMs = 0L, playbackCompleted = false, lastPlayedAt = 0L)
         })
         store.clearWatchTime()
     }
 
     fun deleteRecent(id: Long) {
         store.allVideos().firstOrNull { it.id == id }?.let {
-            store.upsert(it.copy(progress = 0f, status = "all", lastPlayedAt = 0L))
+            store.upsert(it.copy(progress = 0f, status = "all", playbackPositionMs = 0L, playbackCompleted = false, lastPlayedAt = 0L))
         }
         store.clearWatchTimeForVideo(id)
     }
@@ -441,12 +441,15 @@ class NativeLibraryRepository(context: Context) {
 
     fun updatePlayback(id: Long, positionMs: Long, durationMs: Long, ended: Boolean = false) {
         val item = store.allVideos().firstOrNull { it.id == id } ?: return
-        val percent = if (durationMs > 0) positionMs.toFloat() / durationMs * 100f else 0f
+        val savedDurationMs = durationMs.takeIf { it > 0L } ?: item.durationMs
+        val percent = if (savedDurationMs > 0L) positionMs.coerceAtLeast(0L).toFloat() / savedDurationMs * 100f else item.progress
         store.upsert(
             item.copy(
                 progress = if (ended) 100f else percent.coerceIn(0f, 99.9f),
-                status = if (ended) "watched" else if (percent > 0) "playing" else item.status,
-                durationMs = durationMs,
+                status = if (ended) "watched" else if (positionMs > 0L || percent > 0f) "playing" else item.status,
+                durationMs = savedDurationMs,
+                playbackPositionMs = if (ended) 0L else positionMs.coerceAtLeast(0L),
+                playbackCompleted = ended,
                 lastPlayedAt = System.currentTimeMillis()
             )
         )
