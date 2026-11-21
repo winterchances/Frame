@@ -246,6 +246,40 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         )
     }
 
+    @Synchronized fun updatePlayback(id: Long, positionMs: Long, durationMs: Long, ended: Boolean, lastPlayedAt: Long) {
+        val position = positionMs.coerceAtLeast(0L)
+        val completed = if (ended) 1 else 0
+        writableDatabase.execSQL(
+            """
+            UPDATE videos SET
+                duration_ms = CASE WHEN ? > 0 THEN ? ELSE duration_ms END,
+                progress = CASE
+                    WHEN ? = 1 THEN 100.0
+                    WHEN (CASE WHEN ? > 0 THEN ? ELSE duration_ms END) > 0
+                        THEN MIN(MAX(?, 0) * 100.0 / (CASE WHEN ? > 0 THEN ? ELSE duration_ms END), 99.9)
+                    ELSE progress
+                END,
+                status = CASE
+                    WHEN ? = 1 THEN 'watched'
+                    WHEN MAX(?, 0) > 0 OR ((CASE WHEN ? > 0 THEN ? ELSE duration_ms END) <= 0 AND progress > 0)
+                        THEN 'playing'
+                    ELSE status
+                END,
+                playback_position_ms = CASE WHEN ? = 1 THEN 0 ELSE MAX(?, 0) END,
+                playback_completed = ?,
+                last_played_at = ?
+            WHERE id = ?
+            """.trimIndent(),
+            arrayOf(
+                durationMs, durationMs,
+                completed,
+                durationMs, durationMs, position, durationMs, durationMs,
+                completed, position, durationMs, durationMs,
+                completed, position, completed, lastPlayedAt, id
+            )
+        )
+    }
+
     @Synchronized fun upsert(video: VideoItem) {
         val v = ContentValues().apply {
             put("id", video.id); put("uri", video.uri); put("name", video.name)
