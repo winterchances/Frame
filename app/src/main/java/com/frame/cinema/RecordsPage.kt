@@ -668,7 +668,7 @@ internal fun RecordsPage(
                                             Text(
                                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
                                                 color = MutedText.copy(alpha = 0.8f),
-                                                fontSize = 11.sp,
+                                                fontSize = 10.sp,
                                                 lineHeight = 14.sp,
                                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                             )
@@ -676,7 +676,7 @@ internal fun RecordsPage(
                                                 Text(
                                                     "|",
                                                     color = MutedText,
-                                                    fontSize = 11.sp,
+                                                    fontSize = 10.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                                 )
@@ -684,13 +684,13 @@ internal fun RecordsPage(
                                                     formatTime(positionMs),
                                                     modifier = Modifier.noRippleClickable { onSeekToTimestamp(video, positionMs) },
                                                     color = ActiveAccent,
-                                                    fontSize = 11.sp,
+                                                    fontSize = 10.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                                 )
                                             }
                                         }
-                                        Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 5.dp))
+                                        Text(entry.content, color = entryTextColor, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 7.dp))
                                     }
                                 }
                             }
@@ -905,7 +905,7 @@ internal fun RecordsPage(
                                                 Text(
                                                     SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(timelineEntry.createdAt)),
                                                     color = MutedText.copy(alpha = 0.8f),
-                                                    fontSize = 11.sp,
+                                                    fontSize = 10.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                                 )
@@ -914,7 +914,7 @@ internal fun RecordsPage(
                                                     color = entryTextColor,
                                                     fontSize = 14.sp,
                                                     lineHeight = 21.sp,
-                                                    modifier = Modifier.padding(top = 5.dp)
+                                                    modifier = Modifier.padding(top = 7.dp)
                                                 )
                                             }
                                         }
