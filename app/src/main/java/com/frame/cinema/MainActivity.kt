@@ -878,6 +878,15 @@ private fun FrameNativeApp(
     }
     BackHandler(enabled = movieReviewScreen != null || showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
+            showNestedCategorySheet -> sheet = SheetType.NONE
+            showCategoryDrawer -> { showCategoryDrawer = false; categoryEditMode = false }
+            contextMenuOpen -> { contextMenuOpen = false }
+            showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
+            showImportDataDialog -> { showImportDataDialog = false; pendingImportUri = null }
+            sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
+            sheet != SheetType.NONE -> sheet = SheetType.NONE
+            sheetVisibility.currentState || sheetVisibility.targetState -> Unit
+            playing != null -> closePlayer()
             movieReviewScreen == MovieReviewScreen.EDITOR -> {
                 when {
                     editingMovieReviewId != null -> movieReviewScreen = MovieReviewScreen.DETAIL
@@ -888,15 +897,6 @@ private fun FrameNativeApp(
             }
             movieReviewScreen == MovieReviewScreen.DETAIL -> movieReviewScreen = MovieReviewScreen.LIST
             movieReviewScreen == MovieReviewScreen.LIST -> closeMovieReviewPages()
-            showNestedCategorySheet -> sheet = SheetType.NONE
-            showCategoryDrawer -> { showCategoryDrawer = false; categoryEditMode = false }
-            contextMenuOpen -> { contextMenuOpen = false }
-            showClearDataDialog || clearDialogProgress > 0f -> showClearDataDialog = false
-            showImportDataDialog -> { showImportDataDialog = false; pendingImportUri = null }
-            sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
-            sheet != SheetType.NONE -> sheet = SheetType.NONE
-            sheetVisibility.currentState || sheetVisibility.targetState -> Unit
-            playing != null -> closePlayer()
             showFab -> showFab = false
         }
     }
