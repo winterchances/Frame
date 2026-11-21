@@ -66,7 +66,7 @@ class NativeLibraryRepository(context: Context) {
     fun addMovieReview(videoId: Long, title: String, content: String): Long? {
         val cleanContent = content.trim()
         if (cleanContent.isEmpty() || store.allVideos().none { it.id == videoId }) return null
-        return store.addMovieReview(videoId, title.trim(), cleanContent, System.currentTimeMillis())
+        return store.addMovieReview(videoId, title.trim(), cleanContent, System.currentTimeMillis()).takeIf { it > 0L }
     }
 
     fun updateMovieReview(id: Long, title: String, content: String): Boolean {
