@@ -520,7 +520,7 @@ internal fun RecordsPage(
                                             lineHeight = 16.sp,
                                             maxLines = 1,
                                             style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
-                                            modifier = Modifier.clickable { onOpenMovieReviews(video) }
+                                            modifier = Modifier.noRippleClickable { onOpenMovieReviews(video) }
                                         )
                                     }
                                 }
