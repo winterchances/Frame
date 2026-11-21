@@ -65,7 +65,7 @@ internal fun MovieReviewListPage(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 104.dp)
+            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
             item(key = "movie-reviews-title") {
                 Row(
