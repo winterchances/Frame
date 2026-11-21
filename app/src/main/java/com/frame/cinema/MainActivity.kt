@@ -162,6 +162,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.media3.ui.PlayerView
@@ -401,6 +402,7 @@ class MainActivity : ComponentActivity() {
 
     private var player: Player? = null
     private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
+    private var fallbackPlayer: ExoPlayer? = null
     private lateinit var repository: NativeLibraryRepository
     private var backgroundPlaybackAllowed = true
     private var appearanceMode by mutableStateOf("system")
@@ -441,9 +443,29 @@ class MainActivity : ComponentActivity() {
         controllerFuture = future
         future.addListener({
             runOnUiThread {
-                runCatching { future.get() }.onSuccess { controller ->
-                    player = controller
-                    setContent {
+                if (isFinishing || isDestroyed || controllerFuture !== future) return@runOnUiThread
+
+                try {
+                    val controller = future.get()
+                    if (isFinishing || isDestroyed || controllerFuture !== future) return@runOnUiThread
+                    installContent(controller)
+                } catch (error: Exception) {
+                    Log.e("Frame", "MediaController connection failed", error)
+                    if (isFinishing || isDestroyed || controllerFuture !== future) return@runOnUiThread
+
+                    val fallback = runCatching { ExoPlayer.Builder(this).build() }
+                        .onFailure { Log.e("Frame", "Fallback player creation failed", it) }
+                        .getOrNull() ?: return@runOnUiThread
+                    fallbackPlayer = fallback
+                    installContent(fallback)
+                }
+            }
+        }, java.util.concurrent.Executor { command -> command.run() })
+    }
+
+    private fun installContent(controller: Player) {
+        player = controller
+        setContent {
                         val systemDark = isSystemInDarkTheme()
                         val useDarkTheme = when (appearanceMode) {
                             "dark" -> true
@@ -515,10 +537,8 @@ class MainActivity : ComponentActivity() {
                             )
                             }
                         }
-                    }
-                }
-            }
-        }, java.util.concurrent.Executor { command -> command.run() })
+                    
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -585,6 +605,8 @@ class MainActivity : ComponentActivity() {
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controllerFuture = null
         player = null
+        fallbackPlayer?.release()
+        fallbackPlayer = null
         if (::repository.isInitialized) repository.close()
         super.onDestroy()
     }
