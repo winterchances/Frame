@@ -256,7 +256,7 @@ private val FrameSearchIcon: ImageVector = ImageVector.Builder("FrameSearch", 24
         moveTo(21f, 21f); lineTo(16.65f, 16.65f)
     }
 }.build()
-private val FrameTrashIcon: ImageVector = ImageVector.Builder("FrameTrash", 24.dp, 24.dp, 24f, 24f).apply {
+internal val FrameTrashIcon: ImageVector = ImageVector.Builder("FrameTrash", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 2.2f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(3f, 6f); lineTo(21f, 6f); moveTo(19f, 6f); lineTo(19f, 20f); quadTo(19f, 22f, 17f, 22f); lineTo(7f, 22f); quadTo(5f, 22f, 5f, 20f); lineTo(5f, 6f)
         moveTo(8f, 6f); lineTo(8f, 4f); quadTo(8f, 2f, 10f, 2f); lineTo(14f, 2f); quadTo(16f, 2f, 16f, 4f); lineTo(16f, 6f)
@@ -312,14 +312,14 @@ private object FrameThemeColors {
 
 private val LocalFramePalette = staticCompositionLocalOf { FrameThemeColors.Light }
 
-private val PageBg: Color
+internal val PageBg: Color
     @Composable get() = LocalFramePalette.current.pageBackground
-private val MainText: Color
+internal val MainText: Color
     @Composable get() = LocalFramePalette.current.primaryText
 private val ThemeTeal = FrameThemeColors.Light.accent
 private val ActiveAccent: Color
     @Composable get() = LocalFramePalette.current.accent
-private val MutedText: Color
+internal val MutedText: Color
     @Composable get() = LocalFramePalette.current.secondaryText
 private val Glass: Color
     @Composable get() = LocalFramePalette.current.glass
@@ -2996,7 +2996,7 @@ private fun HomePage(
 }
 
 @Composable
-private fun rememberSoftListFlingBehavior(): FlingBehavior {
+internal fun rememberSoftListFlingBehavior(): FlingBehavior {
     val decay = remember { exponentialDecay<Float>(frictionMultiplier = 0.8f) }
     return remember(decay) {
         object : FlingBehavior {
@@ -3420,208 +3420,6 @@ private fun LibraryFilterHeader(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    val softListFlingBehavior = rememberSoftListFlingBehavior()
-    val density = LocalDensity.current
-    val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
-    val titleSafetyGapPx = with(density) { 4.dp.toPx() }
-    val recentTitleTopPx = remember { mutableFloatStateOf(0f) }
-    val titleAlphaState = remember {
-        derivedStateOf {
-            if (listState.firstVisibleItemIndex > 0) 0f
-            else titleFadeAlpha(
-                listState.firstVisibleItemScrollOffset.toFloat(),
-                recentTitleTopPx.floatValue,
-                statusBarBottomPx,
-                titleSafetyGapPx
-            )
-        }
-    }
-    val recentTitleHeightPx = remember { mutableIntStateOf(0) }
-    val recentOffscreenPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val recentTitleScrollDistancePx = remember {
-        derivedStateOf {
-            when (listState.firstVisibleItemIndex) {
-                0 -> listState.firstVisibleItemScrollOffset.toFloat()
-                1 -> (recentTitleHeightPx.intValue + listState.firstVisibleItemScrollOffset).toFloat()
-                else -> recentTitleHeightPx.intValue + recentOffscreenPx
-            }
-        }
-    }
-    val recentItems = remember(videos) { videos.filter { it.lastPlayedAt > 0L }.sortedByDescending { it.lastPlayedAt } }
-    val dateFormat = remember { SimpleDateFormat("M/d/yyyy", Locale.getDefault()) }
-    val today = dateFormat.format(Date())
-    val yesterday = dateFormat.format(Date(System.currentTimeMillis() - 86400000L))
-    val groups = remember(recentItems, today, yesterday) {
-        listOf(
-            "今天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == today },
-            "昨天" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) == yesterday },
-            "更早" to recentItems.filter { dateFormat.format(Date(it.lastPlayedAt)) != today && dateFormat.format(Date(it.lastPlayedAt)) != yesterday }
-        ).filter { it.second.isNotEmpty() }
-    }
-    val groupHeaderIndices = remember(groups) {
-        buildList {
-            var index = 1
-            groups.forEach { (_, items) ->
-                add(index)
-                index += items.size + 3
-            }
-        }
-    }
-    val activeGroupIndex by remember(groupHeaderIndices) {
-        derivedStateOf {
-            groupHeaderIndices.indexOfLast { listState.firstVisibleItemIndex >= it }
-        }
-    }
-    var headerHeightPx by remember { mutableIntStateOf(0) }
-    val recentBottomFadeEndPx = with(density) { (LocalConfiguration.current.screenHeightDp.dp - 72.dp).toPx() }
-    val recentFadeLengthPx = with(density) { 48.dp.toPx() }
-    val recentTopFadeStartPx = if (activeGroupIndex >= 0) headerHeightPx.toFloat() else statusBarBottomPx + with(density) { 48.dp.toPx() }
-    val nextHeaderOffsetState = remember(activeGroupIndex, groupHeaderIndices) {
-        derivedStateOf {
-            val nextIndex = groupHeaderIndices.getOrNull(activeGroupIndex + 1)
-            if (nextIndex == null) Int.MAX_VALUE
-            else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
-        }
-    }
-    Box(Modifier.fillMaxSize().clipToBounds()) {
-        LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
-            item(key = "recent-large-title") {
-                Row(
-                    Modifier.fillMaxWidth()
-                        .onGloballyPositioned {
-                            recentTitleHeightPx.intValue = it.size.height
-                            if (listState.firstVisibleItemIndex == 0) {
-                                recentTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
-                            }
-                        }
-                        .graphicsLayer { alpha = 0f }
-                        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                    ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
-                }
-            }
-            if (recentItems.isEmpty()) {
-                item { EmptyHint("暂无播放记录") }
-            } else {
-                groups.forEachIndexed { groupIndex, (label, list) ->
-                    if (groupIndex > 0) item { Spacer(Modifier.height(7.dp)) }
-                    stickyHeader {
-                        RecentDateHeader(
-                            label,
-                            alpha = if (activeGroupIndex == groupIndex) 0f else 1f,
-                            onHeightChanged = { headerHeightPx = it }
-                        )
-                    }
-                    item { Spacer(Modifier.height(1.dp)) }
-                    itemsIndexed(list, key = { _, video -> video.id }) { itemIndex, video ->
-                        RecentHistoryCard(
-                            video,
-                            onClick = { onVideo(video) },
-                            onMore = { onMore(video) },
-                            isLastInGroup = itemIndex == list.lastIndex,
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        )
-                    }
-                    item { Spacer(Modifier.height(0.dp)) }
-                }
-                item { Spacer(Modifier.height(12.dp)) }
-            }
-        }
-        Row(
-            Modifier.fillMaxWidth()
-                .graphicsLayer {
-                    translationY = -recentTitleScrollDistancePx.value
-                    alpha = titleAlphaState.value
-                }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-            ActionIcon(FrameTrashIcon, "清空播放记录", onClear)
-        }
-        if (activeGroupIndex >= 0) {
-            Box(
-                Modifier.fillMaxWidth()
-                    .offset {
-                    val nextOffset = nextHeaderOffsetState.value
-                    val pushOffset = if (activeGroupIndex >= 0 && nextOffset != Int.MAX_VALUE) {
-                        minOf(0, nextOffset - headerHeightPx)
-                    } else 0
-                    androidx.compose.ui.unit.IntOffset(0, pushOffset)
-                }.zIndex(3f)
-            ) {
-                RecentDateHeader(
-                    groups[activeGroupIndex].first,
-                    alpha = 1f,
-                    onHeightChanged = { headerHeightPx = it }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecentDateHeader(label: String, alpha: Float, onHeightChanged: (Int) -> Unit) {
-    Box(
-        Modifier.fillMaxWidth().noRippleClickable { }.graphicsLayer { this.alpha = alpha }
-            .onGloballyPositioned { onHeightChanged(it.size.height) }
-            .background(PageBg)
-            .statusBarsPadding()
-            .padding(top = 9.dp, bottom = 10.dp)
-    ) {
-        Text(
-            label,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Medium,
-            color = MainText,
-            modifier = Modifier.fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 5.dp)
-        )
-    }
-}
-
-@Composable
-private fun RecentHistoryCard(video: VideoItem, onClick: () -> Unit, onMore: () -> Unit, isLastInGroup: Boolean = false, modifier: Modifier = Modifier) {
-    val playedMs = (video.durationMs * video.progress.coerceIn(0f, 100f) / 100f).toLong()
-    val watchedDate = SimpleDateFormat("M/d/yyyy", Locale.getDefault()).format(Date(video.lastPlayedAt))
-    Row(
-        modifier.fillMaxWidth().padding(bottom = if (isLastInGroup) 0.dp else 16.dp)
-            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface).noRippleClickable(onClick).padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.Top
-    ) {
-        Box(Modifier.size(120.dp, 84.dp).clip(RoundedCornerShape(10.dp)).background(PosterBrush(video.bgIndex))) {
-            Thumbnail(video, Modifier.fillMaxSize())
-        }
-        Box(Modifier.weight(1f).height(84.dp)) {
-            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {                VideoCardTitle(
-                    video.name,
-                    fontSize = 15.sp,
-                    color = MainText,
-                    englishFontSize = 13.sp,
-                    englishColor = MutedText,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    showEnglish = true,
-                    lineHeight = 21.sp,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("总时长${formatClock(video.durationMs)}", fontSize = 11.sp, lineHeight = 13.sp, color = MutedText, maxLines = 1, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
-                    Text("播放至${formatClock(playedMs)} · ${watchedDate}", fontSize = 11.sp, lineHeight = 13.sp, color = MutedText, maxLines = 1, overflow = TextOverflow.Clip, softWrap = false, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
-                }
-            }
-            Box(Modifier.align(Alignment.BottomEnd).offset(x = 4.dp).size(24.dp).noRippleClickable(onClick = onMore), contentAlignment = Alignment.BottomEnd) {
-                Icon(Icons.Outlined.MoreVert, "更多", tint = Color(0xFFDDDDDD), modifier = Modifier.size(14.dp).offset(x = 4.dp))
-            }
-        }
-    }
-}
 private enum class RecordActionGlyphType { Download, Add, Expand }
 
 @Composable
@@ -5584,7 +5382,7 @@ private fun formatTime(ms: Long): String {
 
 
 @Composable
-private fun VideoCardTitle(
+internal fun VideoCardTitle(
     name: String,
     fontSize: androidx.compose.ui.unit.TextUnit,
     color: Color,
@@ -5658,7 +5456,7 @@ private fun Modifier.noRippleCombinedClickable(onClick: () -> Unit, onLongClick:
     return this.combinedClickable(interactionSource = interactionSource, indication = null, onClick = onClick, onLongClick = onLongClick)
 }
 
-private fun formatClock(ms: Long): String {
+internal fun formatClock(ms: Long): String {
     if (ms <= 0L) return "--:--:--"
     val seconds = ms / 1000
     return String.format(
@@ -5669,7 +5467,7 @@ private fun formatClock(ms: Long): String {
 
 
 @Composable
-private fun ActionIcon(
+internal fun ActionIcon(
     icon: ImageVector,
     description: String,
     onClick: () -> Unit,
@@ -5689,7 +5487,7 @@ private fun ActionIcon(
 }
 
 
-private fun titleFadeAlpha(
+internal fun titleFadeAlpha(
     scrollOffsetPx: Float,
     titleTopAtRestPx: Float,
     statusBarBottomPx: Float,
@@ -5825,7 +5623,7 @@ private fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: Bo
 }
 
 @Composable
-private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
+internal fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
     val bitmap = produceState<ImageBitmap?>(
         initialValue = video.thumbPath?.let { thumbnailBitmapCache.get(it)?.asImageBitmap() },
         key1 = video.thumbPath
@@ -5861,7 +5659,7 @@ private fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
     }
 }
 
-private fun PosterBrush(index: Int): Brush {
+internal fun PosterBrush(index: Int): Brush {
     val colors = when (((index - 1).coerceAtLeast(0)) % 4) {
         0 -> listOf(Color(0xFF667EEA), Color(0xFF764BA2))
         1 -> listOf(Color(0xFFF093FB), Color(0xFFF5576C))
@@ -5872,7 +5670,7 @@ private fun PosterBrush(index: Int): Brush {
 }
 
 @Composable
-private fun EmptyHint(
+internal fun EmptyHint(
     text: String,
     horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp,
     topPadding: androidx.compose.ui.unit.Dp = 16.dp
