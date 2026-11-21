@@ -567,8 +567,12 @@ class MainActivity : ComponentActivity() {
         controller.setMediaItem(mediaItem)
         controller.prepare()
         if (positionMs != null) controller.seekTo(positionMs.coerceAtLeast(0L))
-        else if (item.progress >= 99f) controller.seekTo(0L)
-        else if (item.durationMs > 0 && item.progress > 0f) controller.seekTo((item.durationMs * item.progress / 100f).toLong())
+        else if (item.playbackCompleted) controller.seekTo(0L)
+        else if (item.playbackPositionMs > 0L) controller.seekTo(item.playbackPositionMs)
+        else if (item.durationMs > 0L && item.progress > 0f) {
+            // Legacy rows created before exact playback positions were stored.
+            controller.seekTo((item.durationMs * item.progress / 100f).toLong())
+        }
         controller.play()
     }
 
