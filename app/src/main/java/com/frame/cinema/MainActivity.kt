@@ -2486,25 +2486,6 @@ private fun FrameNativeApp(
     }
 
 
-@Composable
-internal fun rememberSoftListFlingBehavior(): FlingBehavior {
-    val decay = remember { exponentialDecay<Float>(frictionMultiplier = 0.8f) }
-    return remember(decay) {
-        object : FlingBehavior {
-            override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-                var lastValue = 0f
-                val animation = AnimationState(initialValue = 0f, initialVelocity = initialVelocity)
-                animation.animateDecay(decay) {
-                    val delta = value - lastValue
-                    val consumed = scrollBy(delta)
-                    lastValue = value
-                    if (abs(delta - consumed) > 0.5f) cancelAnimation()
-                }
-                return animation.velocity
-            }
-        }
-    }
-}
 
 
 internal fun findVideoTextureView(view: android.view.View): TextureView? {
@@ -2577,13 +2558,6 @@ internal fun PlayerProgressBar(
     }
 }
 
-internal fun formatTime(ms: Long): String {
-    val seconds = (ms / 1000).coerceAtLeast(0)
-    return String.format(
-        Locale.getDefault(), "%02d:%02d:%02d",
-        seconds / 3600, (seconds % 3600) / 60, seconds % 60
-    )
-}
 
 
 
