@@ -256,12 +256,14 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 duration_ms = CASE WHEN ? > 0 THEN ? ELSE duration_ms END,
                 progress = CASE
                     WHEN ? = 1 THEN 100.0
+                    WHEN status = 'watched' OR progress >= 100.0 THEN 100.0
                     WHEN (CASE WHEN ? > 0 THEN ? ELSE duration_ms END) > 0
                         THEN MIN(MAX(?, 0) * 100.0 / (CASE WHEN ? > 0 THEN ? ELSE duration_ms END), 99.9)
                     ELSE progress
                 END,
                 status = CASE
                     WHEN ? = 1 THEN 'watched'
+                    WHEN status = 'watched' OR progress >= 100.0 THEN 'watched'
                     WHEN MAX(?, 0) > 0 OR ((CASE WHEN ? > 0 THEN ? ELSE duration_ms END) <= 0 AND progress > 0)
                         THEN 'playing'
                     ELSE status
