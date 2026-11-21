@@ -623,8 +623,9 @@ internal fun RecordsPage(
                                     Modifier.fillMaxWidth().drawBehind {
                                         val axisX = 7.dp.toPx()
                                         val dotCenterY = 8.dp.toPx()
-                                        val lineWidth = 1.dp.toPx()
-                                        val lineColor = timelineAccent
+                                        val lineWidth = 0.8.dp.toPx()
+                                        val lineColor = timelineAccent.copy(alpha = 0.32f)
+                                        val dotColor = timelineAccent.copy(alpha = 0.48f)
                                         if (entries.size > 1) {
                                             when (index) {
                                                 0 -> drawLine(
@@ -648,8 +649,8 @@ internal fun RecordsPage(
                                             }
                                         }
                                         drawCircle(
-                                            color = timelineAccent,
-                                            radius = 4.dp.toPx(),
+                                            color = dotColor,
+                                            radius = 3.dp.toPx(),
                                             center = Offset(axisX, dotCenterY)
                                         )
                                     }
@@ -666,7 +667,7 @@ internal fun RecordsPage(
                                         ) {
                                             Text(
                                                 SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                color = MutedText,
+                                                color = MutedText.copy(alpha = 0.8f),
                                                 fontSize = 11.sp,
                                                 lineHeight = 14.sp,
                                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
@@ -888,8 +889,8 @@ internal fun RecordsPage(
                                                     val axisX = 7.dp.toPx()
                                                     val dotCenterY = 8.dp.toPx()
                                                     drawCircle(
-                                                        color = timelineAccent,
-                                                        radius = 4.dp.toPx(),
+                                                        color = timelineAccent.copy(alpha = 0.48f),
+                                                        radius = 3.dp.toPx(),
                                                         center = Offset(axisX, dotCenterY)
                                                     )
                                                 }
