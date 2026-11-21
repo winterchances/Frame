@@ -4814,7 +4814,10 @@ private fun NativePlayerOverlay(
                         }
                     },
                     onDragEnd = {
-                        if (dragMode == "progress") player.seekTo(current)
+                        if (dragMode == "progress") {
+                            player.seekTo(current)
+                            isSeeking = false
+                        }
                         dragMode = "none"
                     },
                     onDragCancel = {
@@ -4909,6 +4912,7 @@ private fun NativePlayerOverlay(
                             onSeekEnd = { fraction ->
                                 current = (duration * fraction).toLong().coerceIn(0L, duration.coerceAtLeast(0L))
                                 player.seekTo(current)
+                                isSeeking = false
                             }
                         )
                         Text(formatClock(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
