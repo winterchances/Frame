@@ -173,7 +173,7 @@ class NativeLibraryRepository(context: Context) {
                     store.setInLibrary(existing.id, true)
                     added++
                 }
-                return@forEachIndexed
+                return@forEach
             }
             val originalFileName = queryName(uri)
             val parsedFilename = VideoFilenameParser.parse(originalFileName)
