@@ -30,7 +30,8 @@ data class BackupAsset(val kind: String, val ownerId: Long, val dataBase64: Stri
 data class BackupAppPreferences(
     val allowBackground: Boolean = true,
     val keepAwake: Boolean = true,
-    val subtitleTextSizePercent: Int = 100
+    val subtitleTextSizePercent: Int = 100,
+    val appearanceMode: String? = null
 )
 
 data class LibraryBackup(
