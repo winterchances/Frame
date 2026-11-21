@@ -235,25 +235,6 @@ internal val Glass: Color
 
 internal enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY, NEW_CATEGORY }
-internal data class SubtitleTrackOption(val uri: Uri, val name: String, val manual: Boolean = false)
-
-private fun subtitleMimeType(uri: Uri, name: String? = null): String {
-    val extension = (name ?: uri.lastPathSegment.orEmpty()).substringAfterLast('.', "").lowercase()
-    return when (extension) {
-        "srt" -> MimeTypes.APPLICATION_SUBRIP
-        "ass", "ssa" -> MimeTypes.TEXT_SSA
-        "vtt" -> MimeTypes.TEXT_VTT
-        else -> MimeTypes.APPLICATION_SUBRIP
-    }
-}
-
-internal fun subtitleConfiguration(uri: Uri, name: String? = null): MediaItem.SubtitleConfiguration =
-    MediaItem.SubtitleConfiguration.Builder(uri)
-        .setMimeType(subtitleMimeType(uri, name))
-        .setLanguage("und")
-        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-        .build()
-
 internal enum class SortMode { ADDED, NAME }
 internal enum class SortDirection { ASCENDING, DESCENDING }
 internal enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
