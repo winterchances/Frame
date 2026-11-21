@@ -28,12 +28,17 @@ class NativeLibraryRepository(context: Context) {
     private val app = context.applicationContext
     private val store = VideoStore(app)
     private val thumbnailExecutor = Executors.newSingleThreadExecutor()
+    private val pendingWatchTimes = linkedMapOf<Pair<Long, String>, Long>()
+    private var pendingWatchTimeTotalMs = 0L
 
     fun videos(): List<VideoItem> = store.libraryVideos()
     fun backupVideos(): List<VideoItem> = store.allVideos()
     fun reviews(): List<ReviewEntry> = store.allReviews()
     fun categories(): List<String> = store.categories()
-    fun backupWatchTimes(): List<BackupWatchTime> = store.allWatchTimes()
+    fun backupWatchTimes(): List<BackupWatchTime> {
+        flushWatchTime()
+        return store.allWatchTimes()
+    }
     fun backupFolderSources(): List<BackupFolderSource> = store.allFolderSources()
     fun backupSubtitlePreferences(): List<BackupSubtitlePreference> = store.allSubtitlePreferences()
     fun backupSubtitleTracks(): List<BackupSubtitleTrack> = store.allSubtitleTracks()
@@ -402,6 +407,7 @@ class NativeLibraryRepository(context: Context) {
     }
 
     fun deleteRecent(id: Long) {
+        flushWatchTime()
         store.allVideos().firstOrNull { it.id == id }?.let {
             store.upsert(it.copy(progress = 0f, status = "all", playbackPositionMs = 0L, playbackCompleted = false, lastPlayedAt = 0L))
         }
@@ -409,6 +415,7 @@ class NativeLibraryRepository(context: Context) {
     }
 
     fun clearAll() {
+        flushWatchTime()
         store.allVideos().forEach { ThumbnailStore.delete(app, it.thumbPath) }
         File(app.filesDir, "review_covers").deleteRecursively()
         store.clear()
@@ -419,13 +426,28 @@ class NativeLibraryRepository(context: Context) {
 
     fun saveCategories(names: List<String>) = store.saveCategories(names)
 
-    fun recordWatchTime(videoId: Long, durationMs: Long, timestamp: Long = System.currentTimeMillis()) {
+    @Synchronized fun recordWatchTime(videoId: Long, durationMs: Long, timestamp: Long = System.currentTimeMillis()) {
         if (durationMs <= 0L) return
         val dayKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(timestamp))
-        store.addWatchTime(videoId, dayKey, durationMs)
+        val key = videoId to dayKey
+        pendingWatchTimes[key] = (pendingWatchTimes[key] ?: 0L) + durationMs
+        pendingWatchTimeTotalMs += durationMs
+        if (pendingWatchTimeTotalMs >= 10_000L) flushWatchTime()
+    }
+
+    @Synchronized fun flushWatchTime() {
+        val pending = pendingWatchTimes.toList()
+        for ((key, durationMs) in pending) {
+            val saved = runCatching { store.addWatchTime(key.first, key.second, durationMs) }.isSuccess
+            if (saved) {
+                pendingWatchTimes.remove(key)
+                pendingWatchTimeTotalMs = (pendingWatchTimeTotalMs - durationMs).coerceAtLeast(0L)
+            }
+        }
     }
 
     fun weeklyWatchTimeMs(now: Long = System.currentTimeMillis()): Long {
+        flushWatchTime()
         val calendar = java.util.Calendar.getInstance().apply {
             timeInMillis = now
             firstDayOfWeek = java.util.Calendar.MONDAY
