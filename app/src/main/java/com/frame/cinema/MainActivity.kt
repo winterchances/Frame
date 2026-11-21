@@ -3807,7 +3807,7 @@ private fun RecordsPage(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
+            modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
                 Modifier.fillMaxWidth()
