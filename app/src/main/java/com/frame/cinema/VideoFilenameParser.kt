@@ -175,8 +175,8 @@ object VideoFilenameParser {
             val leftLatin = left.any { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN }
             val rightHan = right.any { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.HAN }
             val rightLatin = right.any { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN }
-            if (leftHan && !leftLatin && rightLatin && !rightHan) return left to right
-            if (leftLatin && !leftHan && rightHan && !rightLatin) return right to left
+            if (leftHan && rightLatin && !rightHan) return left to right
+            if (leftLatin && !leftHan && rightHan) return right to left
         }
         return null
     }
