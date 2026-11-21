@@ -2526,11 +2526,6 @@ internal fun rememberSoftListFlingBehavior(): FlingBehavior {
 }
 
 
-private enum class RecordActionGlyphType { Download, Add, Expand }
-
-@Composable
-private fun RecordActionGlyph(
-    type: RecordActionGlyphType,
     description: String,
     tint: Color,
     modifier: Modifier = Modifier
