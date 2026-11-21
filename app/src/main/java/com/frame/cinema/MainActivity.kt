@@ -1116,7 +1116,7 @@ private fun FrameNativeApp(
                                             onCreate = { openMovieReviewEditor() },
                                             onOpen = { selectedMovieReviewId = it.id; movieReviewScreen = MovieReviewScreen.DETAIL }
                                         )
-                                    } else closeMovieReviewPages()
+                                    } else Box(Modifier.fillMaxSize())
                                     MovieReviewScreen.DETAIL -> if (selectedMovieReview != null) {
                                         MovieReviewDetailPage(
                                             entry = selectedMovieReview,
@@ -1129,7 +1129,7 @@ private fun FrameNativeApp(
                                                 selectedMovieReviewId = null
                                             }
                                         )
-                                    } else movieReviewScreen = MovieReviewScreen.LIST
+                                    } else Box(Modifier.fillMaxSize())
                                     MovieReviewScreen.EDITOR -> if (reviewVideo != null) {
                                         MovieReviewEditorPage(
                                             video = reviewVideo,
@@ -1147,7 +1147,7 @@ private fun FrameNativeApp(
                                             },
                                             onSave = { title, content -> saveMovieReview(title, content) }
                                         )
-                                    } else closeMovieReviewPages()
+                                    } else Box(Modifier.fillMaxSize())
                                 }
                             }
                         }
