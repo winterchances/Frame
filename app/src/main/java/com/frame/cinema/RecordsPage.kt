@@ -282,23 +282,35 @@ internal fun RecordsPage(
     val reviewsByVideo = remember(reviews) {
         reviews.filter { it.videoId != null }.groupBy { it.videoId!! }
     }
-    val movieReviewCounts = remember(movieReviews) {
-        movieReviews.groupingBy { it.videoId }.eachCount()
+    val movieReviewsByVideo = remember(movieReviews) {
+        movieReviews.groupBy { it.videoId }
+    }
+    val movieReviewCounts = remember(movieReviewsByVideo) {
+        movieReviewsByVideo.mapValues { (_, entries) -> entries.size }
     }
     val sortedReviewsByVideo = remember(reviewsByVideo) {
         reviewsByVideo.mapValues { (_, entries) -> entries.sortedByDescending { it.createdAt } }
     }
-    val displayVideos = remember(videos, reviewsByVideo, sortMode, sortDirection) {
+    val displayVideos = remember(videos, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection) {
         videos.filter { video ->
             val completed = video.status == "watched" || video.progress >= 100f
             val hasReviews = reviewsByVideo[video.id].orEmpty().isNotEmpty()
-            completed || hasReviews
+            val hasMovieReviews = movieReviewsByVideo[video.id].orEmpty().isNotEmpty()
+            completed || hasReviews || hasMovieReviews
         }.sortedWith { a, b ->
             val primary = when (sortMode) {
                 RecordSortMode.ADDED -> a.addedAt.compareTo(b.addedAt)
                 RecordSortMode.RECORD_TIME -> {
-                    val aRecordTime = reviewsByVideo[a.id].orEmpty().maxOfOrNull { it.createdAt } ?: a.lastPlayedAt
-                    val bRecordTime = reviewsByVideo[b.id].orEmpty().maxOfOrNull { it.createdAt } ?: b.lastPlayedAt
+                    val aRecordTime = maxOf(
+                        reviewsByVideo[a.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                        movieReviewsByVideo[a.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                        a.lastPlayedAt
+                    )
+                    val bRecordTime = maxOf(
+                        reviewsByVideo[b.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                        movieReviewsByVideo[b.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                        b.lastPlayedAt
+                    )
                     aRecordTime.compareTo(bRecordTime)
                 }
                 RecordSortMode.NAME -> compareNaturalVideoNames(a.name, b.name)
@@ -499,10 +511,10 @@ internal fun RecordsPage(
                                         overflow = TextOverflow.Ellipsis,
                                         style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                     )
-                                    if (completed) {
-                                        val count = movieReviewCounts[video.id] ?: 0
+                                    val movieReviewCount = movieReviewCounts[video.id] ?: 0
+                                    if (completed || movieReviewCount > 0) {
                                         Text(
-                                            if (count > 0) " · 影评 ${count} 条" else " · 写影评",
+                                            if (movieReviewCount > 0) " · 影评 ${movieReviewCount} 条" else " · 写影评",
                                             color = ActiveAccent,
                                             fontSize = 12.sp,
                                             lineHeight = 16.sp,
