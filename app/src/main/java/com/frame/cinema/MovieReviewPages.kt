@@ -171,7 +171,7 @@ internal fun MovieReviewDetailPage(
         ) {
             MovieReviewLargeHeader(
                 "影评详情", onBack, action = "编辑", onAction = onEdit,
-                modifier = Modifier.onGloballyPositioned { titleTopPx.floatValue = it.positionInWindow().y + scrollState.value }
+                modifier = Modifier.onGloballyPositioned { titleTopPx.floatValue = it.positionInWindow().y + scrollState.value + with(density) { 40.dp.toPx() } }
                     .graphicsLayer { alpha = titleAlpha }
             )
             Text(entry.title.ifBlank { "未命名影评" }, fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold, color = if (entry.title.isBlank()) MutedText else MainText)
@@ -228,7 +228,7 @@ internal fun MovieReviewEditorPage(
             MovieReviewLargeHeader(
                 if (isEditing) "编辑影评" else "写影评", onBack, action = "保存",
                 onAction = { if (canSave) onSave(title, content) }, actionEnabled = canSave,
-                modifier = Modifier.onGloballyPositioned { titleTopPx.floatValue = it.positionInWindow().y + scrollState.value }
+                modifier = Modifier.onGloballyPositioned { titleTopPx.floatValue = it.positionInWindow().y + scrollState.value + with(density) { 40.dp.toPx() } }
                     .graphicsLayer { alpha = titleAlpha }
             )
             Text(video.name, fontSize = 13.sp, color = MutedText, maxLines = 2, overflow = TextOverflow.Ellipsis)
