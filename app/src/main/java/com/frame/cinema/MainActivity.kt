@@ -1031,9 +1031,6 @@ private fun FrameNativeApp(
                     playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
                     refresh()
                 },
-                onProgress = { pos, duration ->
-                    playing?.let { repository.updatePlayback(it.id, pos, duration) }
-                },
                 onWatchTime = { deltaMs ->
                     playing?.let { repository.recordWatchTime(it.id, deltaMs) }
                 },
