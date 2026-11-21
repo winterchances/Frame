@@ -3794,7 +3794,7 @@ internal fun PlayerIconButton(icon: ImageVector, description: String, onClick: (
 }
 
 @Composable
-private fun PlayerIconButton(icon: ImageVector, description: String, iconSize: Int, onClick: () -> Unit) {
+internal fun PlayerIconButton(icon: ImageVector, description: String, iconSize: Int, onClick: () -> Unit) {
     Box(
         Modifier.size(40.dp).clip(CircleShape)
             .background(Color.White.copy(alpha = .2f))
