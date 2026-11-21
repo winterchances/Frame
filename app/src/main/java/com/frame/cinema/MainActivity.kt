@@ -179,6 +179,7 @@ import kotlin.math.roundToInt
 
 internal enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY, NEW_CATEGORY }
+private enum class MovieReviewScreen { LIST, DETAIL, EDITOR }
 internal enum class SortMode { ADDED, NAME }
 internal enum class SortDirection { ASCENDING, DESCENDING }
 internal enum class RecordSortMode { ADDED, RECORD_TIME, NAME, WATCHED, RATING }
@@ -474,6 +475,13 @@ private fun FrameNativeApp(
     var contextMenuOpen by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf(repository.videos()) }
     var reviewEntries by remember { mutableStateOf(repository.reviews()) }
+    var movieReviewEntries by remember { mutableStateOf(repository.movieReviews()) }
+    var movieReviewScreen by rememberSaveable { mutableStateOf<MovieReviewScreen?>(null) }
+    var movieReviewVideoId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editingMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var movieReviewDraftTitle by rememberSaveable { mutableStateOf("") }
+    var movieReviewDraftContent by rememberSaveable { mutableStateOf("") }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
     var categories by remember { mutableStateOf(repository.categories().let { saved ->
         val ordered = listOf("我的最爱") + saved.filterNot { it == "全部" || it == "全部分类" || it == "我的最爱" }.distinct() + "全部分类"
@@ -594,8 +602,42 @@ private fun FrameNativeApp(
     fun refresh() {
         videos = repository.videos()
         reviewEntries = repository.reviews()
+        movieReviewEntries = repository.movieReviews()
         categories = repository.categories()
         weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
+    }
+    fun openMovieReviewList(video: VideoItem) {
+        movieReviewVideoId = video.id
+        selectedMovieReviewId = null
+        editingMovieReviewId = null
+        movieReviewScreen = MovieReviewScreen.LIST
+    }
+    fun openMovieReviewEditor(entry: MovieReviewEntry? = null) {
+        editingMovieReviewId = entry?.id
+        selectedMovieReviewId = entry?.id ?: selectedMovieReviewId
+        movieReviewDraftTitle = entry?.title.orEmpty()
+        movieReviewDraftContent = entry?.content.orEmpty()
+        movieReviewScreen = MovieReviewScreen.EDITOR
+    }
+    fun saveMovieReview(title: String, content: String) {
+        val videoId = movieReviewVideoId ?: return
+        val editingId = editingMovieReviewId
+        if (editingId == null) {
+            val newId = repository.addMovieReview(videoId, title, content)
+            if (newId == null) return
+            selectedMovieReviewId = newId
+        } else {
+            if (!repository.updateMovieReview(editingId, title, content)) return
+        }
+        refresh()
+        movieReviewScreen = if (editingId == null) MovieReviewScreen.LIST else MovieReviewScreen.DETAIL
+        editingMovieReviewId = null
+    }
+    fun closeMovieReviewPages() {
+        movieReviewScreen = null
+        movieReviewVideoId = null
+        selectedMovieReviewId = null
+        editingMovieReviewId = null
     }
     fun startNewReview(video: VideoItem? = null, showVideoActions: Boolean = true) {
         showReviewVideoActions = showVideoActions
@@ -826,8 +868,14 @@ private fun FrameNativeApp(
         sheetVisibility.targetState = sheet != SheetType.NONE && !showNestedCategorySheet
         if (sheet == SheetType.NONE) { sheetKeyboardUp = false; parentSheet = SheetType.NONE } else displayedSheet = sheet
     }
-    BackHandler(enabled = showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
+    BackHandler(enabled = movieReviewScreen != null || showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
+            movieReviewScreen == MovieReviewScreen.EDITOR -> {
+                movieReviewScreen = if (editingMovieReviewId != null) MovieReviewScreen.DETAIL else MovieReviewScreen.LIST
+                editingMovieReviewId = null
+            }
+            movieReviewScreen == MovieReviewScreen.DETAIL -> movieReviewScreen = MovieReviewScreen.LIST
+            movieReviewScreen == MovieReviewScreen.LIST -> closeMovieReviewPages()
             showNestedCategorySheet -> sheet = SheetType.NONE
             showCategoryDrawer -> { showCategoryDrawer = false; categoryEditMode = false }
             contextMenuOpen -> { contextMenuOpen = false }
@@ -843,16 +891,16 @@ private fun FrameNativeApp(
 
     Box(
         Modifier.fillMaxSize().background(PageBg)
-            .pointerInput(page, sheet, playing, contextMenuVideo) {
+            .pointerInput(page, sheet, playing, contextMenuVideo, movieReviewScreen) {
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
-                        if (sheet == SheetType.NONE && playing == null && contextMenuVideo == null) {
+                        if (sheet == SheetType.NONE && playing == null && contextMenuVideo == null && movieReviewScreen == null) {
                             horizontalDistance += dragAmount
                         }
                     },
                     onDragEnd = {
-                        if (sheet == SheetType.NONE && playing == null && contextMenuVideo == null && kotlin.math.abs(horizontalDistance) > 50f) {
+                        if (sheet == SheetType.NONE && playing == null && contextMenuVideo == null && movieReviewScreen == null && kotlin.math.abs(horizontalDistance) > 50f) {
                             val next = when {
                                 horizontalDistance < 0f -> MainPage.values().getOrNull(MainPage.values().indexOf(page) + 1)
                                 else -> MainPage.values().getOrNull(MainPage.values().indexOf(page) - 1)
@@ -973,38 +1021,88 @@ private fun FrameNativeApp(
                                 onClear = { sheet = SheetType.CLEAR_RECENT },
                                 onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
                             )
-                            MainPage.RECORDS -> RecordsPage(
-                                hazeState = hazeState,
-                                listState = recordsListState,
-                                videos = videos,
-                                reviews = reviewEntries,
-                                targetReviewId = targetReviewId,
-                                targetVideoId = targetRecordVideoId,
-                                sortMode = recordSortMode,
-                                sortDirection = recordSortDirection,
-                                onRecordSortModeChange = { recordSortMode = it },
-                                onRecordSortDirectionChange = { recordSortDirection = it },
-                                onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
-                                onCreate = { video ->
-                                    if (video == null) {
-                                        selected = null
-                                        editReviewId = null
-                                        editReviewVideoId = null
-                                        editReview = ""
-                                        editRating = 0f
-                                        parentSheet = SheetType.NONE
-                                        sheet = SheetType.REVIEW_CREATE_OPTIONS
-                                    } else {
-                                        startNewReview(video, showVideoActions = false)
-                                    }
+                            MainPage.RECORDS -> androidx.compose.animation.AnimatedContent(
+                                targetState = movieReviewScreen,
+                                transitionSpec = {
+                                    (slideInHorizontally(tween(300)) { it / 12 } + fadeIn(tween(300))) togetherWith
+                                        (slideOutHorizontally(tween(260)) { -it / 12 } + fadeOut(tween(260)))
                                 },
-                                onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
-                                onEdit = { openReviewEditor(it) },
-                                onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
-                                onPlayVideo = { video -> playVideo(video) },
-                                onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
-                                onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
-                            )
+                                label = "movie-review-page"
+                            ) { reviewScreen ->
+                                val reviewVideo = videos.firstOrNull { it.id == movieReviewVideoId }
+                                val selectedMovieReview = movieReviewEntries.firstOrNull { it.id == selectedMovieReviewId }
+                                when (reviewScreen) {
+                                    null -> RecordsPage(
+                                        hazeState = hazeState,
+                                        listState = recordsListState,
+                                        videos = videos,
+                                        reviews = reviewEntries,
+                                        movieReviews = movieReviewEntries,
+                                        targetReviewId = targetReviewId,
+                                        targetVideoId = targetRecordVideoId,
+                                        sortMode = recordSortMode,
+                                        sortDirection = recordSortDirection,
+                                        onRecordSortModeChange = { recordSortMode = it },
+                                        onRecordSortDirectionChange = { recordSortDirection = it },
+                                        onSearch = { recordSearch = ""; sheet = SheetType.RECORD_SEARCH },
+                                        onCreate = { video ->
+                                            if (video == null) {
+                                                selected = null
+                                                editReviewId = null
+                                                editReviewVideoId = null
+                                                editReview = ""
+                                                editRating = 0f
+                                                parentSheet = SheetType.NONE
+                                                sheet = SheetType.REVIEW_CREATE_OPTIONS
+                                            } else {
+                                                startNewReview(video, showVideoActions = false)
+                                            }
+                                        },
+                                        onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
+                                        onEdit = { openReviewEditor(it) },
+                                        onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
+                                        onOpenMovieReviews = { openMovieReviewList(it) },
+                                        onPlayVideo = { video -> playVideo(video) },
+                                        onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
+                                        onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
+                                    )
+                                    MovieReviewScreen.LIST -> if (reviewVideo != null) {
+                                        MovieReviewListPage(
+                                            video = reviewVideo,
+                                            reviews = movieReviewEntries.filter { it.videoId == reviewVideo.id }.sortedWith(compareByDescending<MovieReviewEntry> { it.createdAt }.thenByDescending { it.id }),
+                                            onBack = { closeMovieReviewPages() },
+                                            onCreate = { openMovieReviewEditor() },
+                                            onOpen = { selectedMovieReviewId = it.id; movieReviewScreen = MovieReviewScreen.DETAIL }
+                                        )
+                                    } else closeMovieReviewPages()
+                                    MovieReviewScreen.DETAIL -> if (selectedMovieReview != null) {
+                                        MovieReviewDetailPage(
+                                            entry = selectedMovieReview,
+                                            onBack = { movieReviewScreen = MovieReviewScreen.LIST },
+                                            onEdit = { openMovieReviewEditor(selectedMovieReview) },
+                                            onDelete = {
+                                                repository.deleteMovieReview(selectedMovieReview.id)
+                                                refresh()
+                                                movieReviewScreen = MovieReviewScreen.LIST
+                                                selectedMovieReviewId = null
+                                            }
+                                        )
+                                    } else movieReviewScreen = MovieReviewScreen.LIST
+                                    MovieReviewScreen.EDITOR -> if (reviewVideo != null) {
+                                        MovieReviewEditorPage(
+                                            video = reviewVideo,
+                                            initialTitle = movieReviewDraftTitle,
+                                            initialContent = movieReviewDraftContent,
+                                            isEditing = editingMovieReviewId != null,
+                                            onBack = {
+                                                movieReviewScreen = if (editingMovieReviewId != null) MovieReviewScreen.DETAIL else MovieReviewScreen.LIST
+                                                editingMovieReviewId = null
+                                            },
+                                            onSave = { title, content -> saveMovieReview(title, content) }
+                                        )
+                                    } else closeMovieReviewPages()
+                                }
+                            }
                         }
                     }
             }
@@ -1054,7 +1152,7 @@ private fun FrameNativeApp(
         if (playing == null) {
             val bottomFadePageBg = PageBg
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
-                if (!(page == MainPage.LIBRARY && libraryMultiSelectMode)) {
+                if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) {
                     Box(
                         Modifier.align(Alignment.BottomCenter)
                             .fillMaxWidth()
@@ -1077,14 +1175,14 @@ private fun FrameNativeApp(
                     )
                 }
                 AnimatedVisibility(
-                    visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode),
+                    visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null,
                     enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
                     exit = fadeOut(tween(140)) + slideOutVertically(tween(140)) { it / 3 },
                     modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)
                 ) {
                     BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
                 }
-                if (!(page == MainPage.LIBRARY && libraryMultiSelectMode)) Column(
+                if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) Column(
                     Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
