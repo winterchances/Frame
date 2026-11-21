@@ -60,7 +60,7 @@ data class VideoItem(
     val review: String = "",
     val rating: Float = 0f,
     val durationMs: Long = 0L,
-    val playbackPositionMs: Long = 0L,
+    val playbackPositionMs: Long? = null,
     val playbackCompleted: Boolean = false,
     val lastPlayedAt: Long = 0L,
     val thumbPath: String? = null,
@@ -95,7 +95,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 review TEXT NOT NULL DEFAULT '',
                 rating INTEGER NOT NULL DEFAULT 0,
                 duration_ms INTEGER NOT NULL DEFAULT 0,
-                playback_position_ms INTEGER NOT NULL DEFAULT 0,
+                playback_position_ms INTEGER,
                 playback_completed INTEGER NOT NULL DEFAULT 0,
                 last_played_at INTEGER NOT NULL DEFAULT 0,
                 thumb_path TEXT,
@@ -181,7 +181,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             db.execSQL("ALTER TABLE videos ADD COLUMN name_manually_edited INTEGER NOT NULL DEFAULT 1")
         }
         if (oldVersion < 13) {
-            db.execSQL("ALTER TABLE videos ADD COLUMN playback_position_ms INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE videos ADD COLUMN playback_position_ms INTEGER")
             db.execSQL("ALTER TABLE videos ADD COLUMN playback_completed INTEGER NOT NULL DEFAULT 0")
         }
         if (oldVersion < 5) {
@@ -222,7 +222,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     review = cursor.getString(cursor.getColumnIndexOrThrow("review")),
                     rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating")),
                     durationMs = cursor.getLong(cursor.getColumnIndexOrThrow("duration_ms")),
-                    playbackPositionMs = cursor.getLong(cursor.getColumnIndexOrThrow("playback_position_ms")),
+                    playbackPositionMs = cursor.getColumnIndexOrThrow("playback_position_ms").let { if (cursor.isNull(it)) null else cursor.getLong(it) },
                     playbackCompleted = cursor.getInt(cursor.getColumnIndexOrThrow("playback_completed")) != 0,
                     lastPlayedAt = cursor.getLong(cursor.getColumnIndexOrThrow("last_played_at")),
                     thumbPath = cursor.getString(cursor.getColumnIndexOrThrow("thumb_path")),
@@ -253,7 +253,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             put("progress", video.progress); put("status", video.status); put("is_fav", if (video.isFav) 1 else 0)
             put("category", video.category); put("bg_index", video.bgIndex); put("review", video.review)
             put("rating", video.rating); put("duration_ms", video.durationMs)
-            put("playback_position_ms", video.playbackPositionMs)
+            if (video.playbackPositionMs == null) putNull("playback_position_ms") else put("playback_position_ms", video.playbackPositionMs)
             put("playback_completed", if (video.playbackCompleted) 1 else 0)
             put("last_played_at", video.lastPlayedAt); put("thumb_path", video.thumbPath)
             put("is_in_library", if (video.isInLibrary == false) 0 else 1)
@@ -314,7 +314,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("bg_index", video.bgIndex); put("review", "")
                     put("rating", video.rating.coerceIn(0f, 5f))
                     put("duration_ms", video.durationMs)
-                    put("playback_position_ms", video.playbackPositionMs)
+                    if (video.playbackPositionMs == null) putNull("playback_position_ms") else put("playback_position_ms", video.playbackPositionMs)
                     put("playback_completed", if (video.playbackCompleted) 1 else 0)
                     put("last_played_at", video.lastPlayedAt)
                     put("thumb_path", video.thumbPath)
