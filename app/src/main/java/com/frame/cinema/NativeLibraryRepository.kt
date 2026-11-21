@@ -228,14 +228,17 @@ class NativeLibraryRepository(context: Context) {
         val files = mutableListOf<Uri>()
         val folderSources = mutableMapOf<String, VideoFolderSource>()
         fun collect(directory: DocumentFile, relativePath: String) {
-            directory.listFiles().forEach { child ->
-                if (child.isDirectory) {
-                    val childPath = if (relativePath.isBlank()) child.name.orEmpty()
-                        else "$relativePath/${child.name.orEmpty()}"
-                    collect(child, childPath)
-                } else if (child.type?.startsWith("video/") == true) {
-                    files += child.uri
-                    folderSources[child.uri.toString()] = VideoFolderSource(treeUri.toString(), relativePath)
+            val children = runCatching { directory.listFiles().toList() }.getOrNull() ?: return
+            children.forEach { child ->
+                runCatching {
+                    if (child.isDirectory) {
+                        val childPath = if (relativePath.isBlank()) child.name.orEmpty()
+                            else "$relativePath/${child.name.orEmpty()}"
+                        collect(child, childPath)
+                    } else if (child.type?.startsWith("video/") == true) {
+                        files += child.uri
+                        folderSources[child.uri.toString()] = VideoFolderSource(treeUri.toString(), relativePath)
+                    }
                 }
             }
         }
