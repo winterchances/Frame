@@ -402,18 +402,17 @@ class NativeLibraryRepository(context: Context) {
     }
 
     fun clearRecent() {
+        flushWatchTime()
         store.updateAll(store.libraryVideos().map {
-            it.copy(progress = 0f, status = "all", playbackPositionMs = 0L, playbackCompleted = false, lastPlayedAt = 0L)
+            it.copy(lastPlayedAt = 0L)
         })
-        store.clearWatchTime()
     }
 
     fun deleteRecent(id: Long) {
         flushWatchTime()
         store.allVideos().firstOrNull { it.id == id }?.let {
-            store.upsert(it.copy(progress = 0f, status = "all", playbackPositionMs = 0L, playbackCompleted = false, lastPlayedAt = 0L))
+            store.upsert(it.copy(lastPlayedAt = 0L))
         }
-        store.clearWatchTimeForVideo(id)
     }
 
     fun clearAll() {
