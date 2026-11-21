@@ -372,20 +372,38 @@ class MainActivity : ComponentActivity() {
             mediaItemBuilder.setSubtitleConfigurations(listOf(subtitleConfiguration(readableSubtitle.first, readableSubtitle.second)))
         }
         val mediaItem = mediaItemBuilder.build()
-        controller.setMediaItem(mediaItem)
-        controller.prepare()
-        if (positionMs != null) controller.seekTo(positionMs.coerceAtLeast(0L))
-        else if (item.playbackCompleted) controller.seekTo(0L)
-        else if (item.playbackPositionMs != null) controller.seekTo(item.playbackPositionMs.coerceAtLeast(0L))
-        else if (item.durationMs > 0L && item.progress > 0f) {
-            // Legacy rows created before exact playback positions were stored.
-            controller.seekTo((item.durationMs * item.progress / 100f).toLong())
+        val startPositionMs = when {
+            positionMs != null -> positionMs.coerceAtLeast(0L)
+            item.playbackCompleted -> 0L
+            item.playbackPositionMs != null -> item.playbackPositionMs.coerceAtLeast(0L)
+            item.durationMs > 0L && item.progress > 0f ->
+                (item.durationMs * item.progress / 100f).toLong().coerceAtLeast(0L)
+            else -> 0L
         }
+        // Set the media item and its start position together so the initial prepare
+        // cannot briefly expose position 0 and overwrite the saved position.
+        controller.setMediaItem(mediaItem, startPositionMs)
+        controller.prepare()
         controller.play()
     }
 
     override fun onStop() {
-        if (!backgroundPlaybackAllowed) player?.pause()
+        val activePlayer = player
+        val mediaId = activePlayer?.currentMediaItem?.mediaId
+        val videoId = mediaId?.toLongOrNull()
+        if (videoId != null &&
+            (activePlayer.playbackState == Player.STATE_READY ||
+                activePlayer.playbackState == Player.STATE_ENDED) &&
+            (activePlayer.currentPosition > 0L || activePlayer.playbackState == Player.STATE_ENDED)
+        ) {
+            repository.updatePlayback(
+                videoId,
+                activePlayer.currentPosition.coerceAtLeast(0L),
+                activePlayer.duration.coerceAtLeast(0L),
+                activePlayer.playbackState == Player.STATE_ENDED
+            )
+        }
+        if (!backgroundPlaybackAllowed) activePlayer?.pause()
         super.onStop()
     }
 
