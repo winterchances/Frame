@@ -1811,8 +1811,9 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.MOVE -> SheetContent("移动到分类") {
-                        categories.filterNot { it == "全部分类" || it == "我的最爱" }.forEach { cat ->
-                            SheetAction(cat, bottomPadding = if (cat == categories.lastOrNull()) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
+                        val moveCategories = categories.filterNot { it == "全部分类" || it == "我的最爱" }
+                        moveCategories.forEachIndexed { index, cat ->
+                            SheetAction(cat, bottomPadding = if (index == moveCategories.lastIndex) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
                         }
                     }
                     SheetType.REVIEW_CREATE_OPTIONS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
@@ -2217,7 +2218,7 @@ private fun FrameNativeApp(
                                     name.isEmpty() -> toast = "分类名称不能为空"
                                     name in categories -> toast = "分类名称已存在"
                                     else -> {
-                                        repository.saveCategories(categories + name)
+                                        repository.saveCategories(if (categories.lastOrNull() == "全部分类") categories.dropLast(1) + name + "全部分类" else categories + name)
                                         newCategoryName = ""
                                         refresh()
                                         sheet = SheetType.NONE
@@ -2620,7 +2621,7 @@ private fun FrameNativeApp(
                                         name.isEmpty() -> toast = "分类名称不能为空"
                                         name in categories -> toast = "分类名称已存在"
                                         else -> {
-                                            repository.saveCategories(categories + name)
+                                            repository.saveCategories(if (categories.lastOrNull() == "全部分类") categories.dropLast(1) + name + "全部分类" else categories + name)
                                             newCategoryName = ""
                                             refresh()
                                             sheet = SheetType.NONE
@@ -2769,7 +2770,7 @@ private fun HomePage(
                     Modifier.zIndex(1f)
                         .onGloballyPositioned {
                             homeTitleHeightPx.intValue = it.size.height
-                            if (homeTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                            if (listState.firstVisibleItemIndex == 0) {
                                 homeTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                             }
                         }
@@ -3110,7 +3111,7 @@ private fun LibraryPage(
                     Modifier.fillMaxWidth()
                         .onGloballyPositioned {
                             libraryTitleHeightPx.intValue = it.size.height
-                            if (libraryTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                            if (listState.firstVisibleItemIndex == 0) {
                                 libraryTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                             }
                         }
@@ -3494,7 +3495,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                     Modifier.fillMaxWidth()
                         .onGloballyPositioned {
                             recentTitleHeightPx.intValue = it.size.height
-                            if (recentTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                            if (listState.firstVisibleItemIndex == 0) {
                                 recentTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                             }
                         }
@@ -3807,13 +3808,20 @@ private fun RecordsPage(
     }
     val standaloneReviews = remember(reviews, sortMode, sortDirection) {
         val roots = reviews.filter { it.videoId == null && it.standaloneGroupId == null }
-        if (sortMode == RecordSortMode.RECORD_TIME) {
-            roots.sortedWith { a, b ->
-                val comparison = a.createdAt.compareTo(b.createdAt)
-                if (sortDirection == SortDirection.ASCENDING) comparison else -comparison
+        roots.sortedWith { a, b ->
+            val primary = when (sortMode) {
+                RecordSortMode.NAME -> compareNaturalVideoNames(a.title, b.title)
+                RecordSortMode.RATING -> a.rating.compareTo(b.rating)
+                RecordSortMode.RECORD_TIME, RecordSortMode.WATCHED -> a.createdAt.compareTo(b.createdAt)
             }
-        } else {
-            roots.sortedByDescending { it.createdAt }
+            val directed = if (sortMode == RecordSortMode.RATING && (a.rating == 0f || b.rating == 0f)) {
+                when {
+                    a.rating == 0f && b.rating > 0f -> 1
+                    a.rating > 0f && b.rating == 0f -> -1
+                    else -> 0
+                }
+            } else if (sortDirection == SortDirection.ASCENDING) primary else -primary
+            if (directed != 0) directed else a.createdAt.compareTo(b.createdAt)
         }
     }
     val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
@@ -3869,7 +3877,7 @@ private fun RecordsPage(
                     Modifier.fillMaxWidth().zIndex(1f)
                     .onGloballyPositioned {
                         recordsTitleHeightPx.intValue = it.size.height
-                        if (recordsTitleTopPx.floatValue == 0f && listState.firstVisibleItemIndex == 0) {
+                        if (listState.firstVisibleItemIndex == 0) {
                             recordsTitleTopPx.floatValue = it.positionInWindow().y + listState.firstVisibleItemScrollOffset + with(density) { 40.dp.toPx() }
                         }
                     }
@@ -4247,7 +4255,7 @@ private fun RecordsPage(
                                 RatingStars(
                                     entry.rating,
                                     14.dp,
-                                    onRate = {},
+                                    onRate = null,
                                     spacing = 1.dp,
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
@@ -5079,7 +5087,7 @@ private fun NativePlayerOverlay(
                         Text("还没有找到字幕，可以从文件中选择，或授权视频文件夹进行自动匹配。", color = MutedText, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(bottom = 16.dp))
                     }
                     SheetAction(if (subtitlePreference.enabled) "关闭字幕" else "字幕已关闭", bottomPadding = 12.dp) {
-                        selectSubtitle(null)
+                        if (subtitlePreference.enabled) selectSubtitle(null)
                         subtitleSheetVisible = false
                     }
                     subtitleTracks.forEach { option ->
