@@ -481,6 +481,7 @@ private fun FrameNativeApp(
     var selectedMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editingMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
     var movieReviewEditorSession by rememberSaveable { mutableIntStateOf(0) }
+    var movieReviewEditorReturnToList by rememberSaveable { mutableStateOf(true) }
     var movieReviewDraftTitle by rememberSaveable { mutableStateOf("") }
     var movieReviewDraftContent by rememberSaveable { mutableStateOf("") }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
@@ -609,12 +610,14 @@ private fun FrameNativeApp(
     }
     fun openMovieReviewList(video: VideoItem) {
         showFab = false
+        movieReviewEditorReturnToList = true
         movieReviewVideoId = video.id
         selectedMovieReviewId = null
         editingMovieReviewId = null
         movieReviewScreen = MovieReviewScreen.LIST
     }
     fun openMovieReviewEditor(entry: MovieReviewEntry? = null) {
+        movieReviewEditorReturnToList = true
         movieReviewEditorSession++
         editingMovieReviewId = entry?.id
         selectedMovieReviewId = entry?.id ?: selectedMovieReviewId
@@ -634,6 +637,7 @@ private fun FrameNativeApp(
         }
         refresh()
         movieReviewScreen = if (editingId == null) MovieReviewScreen.LIST else MovieReviewScreen.DETAIL
+        movieReviewEditorReturnToList = true
         editingMovieReviewId = null
     }
     fun closeMovieReviewPages() {
@@ -641,6 +645,7 @@ private fun FrameNativeApp(
         movieReviewVideoId = null
         selectedMovieReviewId = null
         editingMovieReviewId = null
+        movieReviewEditorReturnToList = true
     }
     fun startNewReview(video: VideoItem? = null, showVideoActions: Boolean = true) {
         showReviewVideoActions = showVideoActions
@@ -874,7 +879,11 @@ private fun FrameNativeApp(
     BackHandler(enabled = movieReviewScreen != null || showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
             movieReviewScreen == MovieReviewScreen.EDITOR -> {
-                movieReviewScreen = if (editingMovieReviewId != null) MovieReviewScreen.DETAIL else MovieReviewScreen.LIST
+                movieReviewScreen = when {
+                    editingMovieReviewId != null -> MovieReviewScreen.DETAIL
+                    movieReviewEditorReturnToList -> MovieReviewScreen.LIST
+                    else -> null.also { closeMovieReviewPages() }
+                }
                 editingMovieReviewId = null
             }
             movieReviewScreen == MovieReviewScreen.DETAIL -> movieReviewScreen = MovieReviewScreen.LIST
@@ -1083,9 +1092,16 @@ private fun FrameNativeApp(
                                         onEdit = { openReviewEditor(it) },
                                         onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
                                         onOpenMovieReviews = { video ->
-                                            openMovieReviewList(video)
                                             if (movieReviewEntries.none { it.videoId == video.id }) {
+                                                showFab = false
+                                                movieReviewVideoId = video.id
+                                                selectedMovieReviewId = null
+                                                editingMovieReviewId = null
+                                                movieReviewEditorReturnToList = false
                                                 openMovieReviewEditor()
+                                                movieReviewEditorReturnToList = false
+                                            } else {
+                                                openMovieReviewList(video)
                                             }
                                         },
                                         onPlayVideo = { video -> playVideo(video) },
@@ -1122,7 +1138,11 @@ private fun FrameNativeApp(
                                             isEditing = editingMovieReviewId != null,
                                             sessionKey = movieReviewEditorSession,
                                             onBack = {
-                                                movieReviewScreen = if (editingMovieReviewId != null) MovieReviewScreen.DETAIL else MovieReviewScreen.LIST
+                                                movieReviewScreen = when {
+                                                    editingMovieReviewId != null -> MovieReviewScreen.DETAIL
+                                                    movieReviewEditorReturnToList -> MovieReviewScreen.LIST
+                                                    else -> null.also { closeMovieReviewPages() }
+                                                }
                                                 editingMovieReviewId = null
                                             },
                                             onSave = { title, content -> saveMovieReview(title, content) }
