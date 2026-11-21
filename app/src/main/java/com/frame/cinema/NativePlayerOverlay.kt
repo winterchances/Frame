@@ -427,8 +427,15 @@ internal fun NativePlayerOverlay(
                 if (wasPlaying && !playingNow) onFlushWatchTime()
                 wasPlaying = playingNow
                 previousTick = elapsedNow
-                if (!isSeeking && now - lastPersistedAt >= 5000L && player.playbackState != Player.STATE_ENDED) {
-                    onProgress(current, duration)
+                val activeMediaMatches = player.currentMediaItem?.mediaId == item.id.toString()
+                if (!isSeeking &&
+                    activeMediaMatches &&
+                    player.playbackState == Player.STATE_READY &&
+                    now - lastPersistedAt >= 5000L
+                ) {
+                    val safePosition = player.currentPosition.coerceAtLeast(0L)
+                    val safeDuration = player.duration.takeIf { it > 0L } ?: duration
+                    onProgress(safePosition, safeDuration)
                     lastPersistedAt = now
                 }
                 delay(500)
