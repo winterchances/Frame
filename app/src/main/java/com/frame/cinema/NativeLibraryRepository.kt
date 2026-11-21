@@ -462,19 +462,7 @@ class NativeLibraryRepository(context: Context) {
     }
 
     fun updatePlayback(id: Long, positionMs: Long, durationMs: Long, ended: Boolean = false) {
-        val item = store.allVideos().firstOrNull { it.id == id } ?: return
-        val savedDurationMs = durationMs.takeIf { it > 0L } ?: item.durationMs
-        val percent = if (savedDurationMs > 0L) positionMs.coerceAtLeast(0L).toFloat() / savedDurationMs * 100f else item.progress
-        store.upsert(
-            item.copy(
-                progress = if (ended) 100f else percent.coerceIn(0f, 99.9f),
-                status = if (ended) "watched" else if (positionMs > 0L || percent > 0f) "playing" else item.status,
-                durationMs = savedDurationMs,
-                playbackPositionMs = if (ended) 0L else positionMs.coerceAtLeast(0L),
-                playbackCompleted = ended,
-                lastPlayedAt = System.currentTimeMillis()
-            )
-        )
+        store.updatePlayback(id, positionMs, durationMs, ended, System.currentTimeMillis())
     }
 
     private fun queryName(uri: Uri): String {
