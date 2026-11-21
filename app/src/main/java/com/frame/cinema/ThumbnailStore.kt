@@ -21,9 +21,17 @@ object ThumbnailStore {
                 ?: retriever.getFrameAtTime(0)
             val path = if (frame != null) {
                 val target = File(directory(context), "$videoId.jpg")
-                FileOutputStream(target).use { frame.compress(Bitmap.CompressFormat.JPEG, 78, it) }
-                frame.recycle()
-                target.absolutePath
+                try {
+                    val compressed = FileOutputStream(target).use {
+                        frame.compress(Bitmap.CompressFormat.JPEG, 78, it)
+                    }
+                    if (compressed) target.absolutePath else {
+                        target.delete()
+                        null
+                    }
+                } finally {
+                    frame.recycle()
+                }
             } else null
             VideoMediaDetails(path, duration)
         } catch (_: Exception) {
@@ -43,9 +51,17 @@ object ThumbnailStore {
                 ?: retriever.getFrameAtTime(0)
                 ?: return null
             val target = File(directory(context), "$videoId.jpg")
-            FileOutputStream(target).use { frame.compress(Bitmap.CompressFormat.JPEG, 78, it) }
-            frame.recycle()
-            target.absolutePath
+            try {
+                val compressed = FileOutputStream(target).use {
+                    frame.compress(Bitmap.CompressFormat.JPEG, 78, it)
+                }
+                if (compressed) target.absolutePath else {
+                    target.delete()
+                    null
+                }
+            } finally {
+                frame.recycle()
+            }
         } catch (_: Exception) {
             null
         } finally {
