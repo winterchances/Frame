@@ -480,6 +480,7 @@ private fun FrameNativeApp(
     var movieReviewVideoId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editingMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var movieReviewEditorSession by rememberSaveable { mutableIntStateOf(0) }
     var movieReviewDraftTitle by rememberSaveable { mutableStateOf("") }
     var movieReviewDraftContent by rememberSaveable { mutableStateOf("") }
     var weeklyWatchTimeMs by remember { mutableLongStateOf(repository.weeklyWatchTimeMs()) }
@@ -614,6 +615,7 @@ private fun FrameNativeApp(
         movieReviewScreen = MovieReviewScreen.LIST
     }
     fun openMovieReviewEditor(entry: MovieReviewEntry? = null) {
+        movieReviewEditorSession++
         editingMovieReviewId = entry?.id
         selectedMovieReviewId = entry?.id ?: selectedMovieReviewId
         movieReviewDraftTitle = entry?.title.orEmpty()
@@ -1113,6 +1115,7 @@ private fun FrameNativeApp(
                                             initialTitle = movieReviewDraftTitle,
                                             initialContent = movieReviewDraftContent,
                                             isEditing = editingMovieReviewId != null,
+                                            sessionKey = movieReviewEditorSession,
                                             onBack = {
                                                 movieReviewScreen = if (editingMovieReviewId != null) MovieReviewScreen.DETAIL else MovieReviewScreen.LIST
                                                 editingMovieReviewId = null
