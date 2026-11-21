@@ -904,7 +904,7 @@ internal fun RecordsPage(
                                             ) {
                                                 Text(
                                                     SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(timelineEntry.createdAt)),
-                                                    color = MutedText,
+                                                    color = MutedText.copy(alpha = 0.8f),
                                                     fontSize = 11.sp,
                                                     lineHeight = 14.sp,
                                                     style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
