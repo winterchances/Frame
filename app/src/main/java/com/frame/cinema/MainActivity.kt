@@ -879,10 +879,10 @@ private fun FrameNativeApp(
     BackHandler(enabled = movieReviewScreen != null || showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
             movieReviewScreen == MovieReviewScreen.EDITOR -> {
-                movieReviewScreen = when {
-                    editingMovieReviewId != null -> MovieReviewScreen.DETAIL
-                    movieReviewEditorReturnToList -> MovieReviewScreen.LIST
-                    else -> null.also { closeMovieReviewPages() }
+                when {
+                    editingMovieReviewId != null -> movieReviewScreen = MovieReviewScreen.DETAIL
+                    movieReviewEditorReturnToList -> movieReviewScreen = MovieReviewScreen.LIST
+                    else -> closeMovieReviewPages()
                 }
                 editingMovieReviewId = null
             }
@@ -1138,10 +1138,10 @@ private fun FrameNativeApp(
                                             isEditing = editingMovieReviewId != null,
                                             sessionKey = movieReviewEditorSession,
                                             onBack = {
-                                                movieReviewScreen = when {
-                                                    editingMovieReviewId != null -> MovieReviewScreen.DETAIL
-                                                    movieReviewEditorReturnToList -> MovieReviewScreen.LIST
-                                                    else -> null.also { closeMovieReviewPages() }
+                                                when {
+                                                    editingMovieReviewId != null -> movieReviewScreen = MovieReviewScreen.DETAIL
+                                                    movieReviewEditorReturnToList -> movieReviewScreen = MovieReviewScreen.LIST
+                                                    else -> closeMovieReviewPages()
                                                 }
                                                 editingMovieReviewId = null
                                             },
