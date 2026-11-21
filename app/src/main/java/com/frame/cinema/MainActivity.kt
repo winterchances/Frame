@@ -607,6 +607,7 @@ private fun FrameNativeApp(
         weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
     }
     fun openMovieReviewList(video: VideoItem) {
+        showFab = false
         movieReviewVideoId = video.id
         selectedMovieReviewId = null
         editingMovieReviewId = null
@@ -1024,8 +1025,18 @@ private fun FrameNativeApp(
                             MainPage.RECORDS -> androidx.compose.animation.AnimatedContent(
                                 targetState = movieReviewScreen,
                                 transitionSpec = {
-                                    (slideInHorizontally(tween(300)) { it / 12 } + fadeIn(tween(300))) togetherWith
-                                        (slideOutHorizontally(tween(260)) { -it / 12 } + fadeOut(tween(260)))
+                                    val forward = when (targetState) {
+                                        null -> false
+                                        MovieReviewScreen.LIST -> initialState == null
+                                        MovieReviewScreen.DETAIL, MovieReviewScreen.EDITOR -> initialState == null || initialState == MovieReviewScreen.LIST
+                                    }
+                                    if (forward) {
+                                        (slideInHorizontally(tween(300)) { it / 12 } + fadeIn(tween(300))) togetherWith
+                                            (slideOutHorizontally(tween(260)) { -it / 12 } + fadeOut(tween(260)))
+                                    } else {
+                                        (slideInHorizontally(tween(300)) { -it / 12 } + fadeIn(tween(300))) togetherWith
+                                            (slideOutHorizontally(tween(260)) { it / 12 } + fadeOut(tween(260)))
+                                    }
                                 },
                                 label = "movie-review-page"
                             ) { reviewScreen ->
