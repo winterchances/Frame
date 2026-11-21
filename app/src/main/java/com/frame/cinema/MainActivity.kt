@@ -2653,7 +2653,6 @@ private fun HomePage(
     onSettings: () -> Unit, onVideo: (VideoItem) -> Unit
 ) {
     val context = LocalContext.current
-    val scrollToTopScope = rememberCoroutineScope()
     val continuing = remember(videos) { videos.filter { it.lastPlayedAt > 0L && it.progress < 100f }.sortedByDescending { it.lastPlayedAt }.take(4) }
     val recent = remember(videos) { videos.sortedByDescending { it.addedAt }.take(10) }
     val homeExpansionPreferences = remember {
@@ -2705,18 +2704,15 @@ private fun HomePage(
         }
     }
     val homePageBg = PageBg
-    Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
-        scrollToTopScope.launch { listState.animateScrollToItem(0) }
-    }) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
             exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.TopCenter).zIndex(3f)
+            modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -2938,7 +2934,6 @@ private fun HomePage(
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                 .background(
                     if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
                     else Color.Transparent
@@ -3000,7 +2995,6 @@ private fun LibraryPage(
     onBatchStatus: (Set<Long>, String) -> Unit,
     onBatchRemove: (Set<Long>) -> Unit
 ) {
-    val scrollToTopScope = rememberCoroutineScope()
     var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
@@ -3057,7 +3051,7 @@ private fun LibraryPage(
     Box(
         Modifier.fillMaxSize().clipToBounds()
             .onGloballyPositioned { onViewportBoundsChanged(it.boundsInRoot()) }
-            .onBlankAreaDoubleTap { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
+            
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(columns),
@@ -3144,8 +3138,7 @@ private fun LibraryPage(
                     translationY = if (multiSelectMode) 0f else -libraryTitleScrollDistancePx.value
                     alpha = if (multiSelectMode) 1f else titleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp)
-                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } },
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -3272,7 +3265,6 @@ private fun LibraryPage(
             onOpenCategoryDrawer = onOpenCategoryDrawer,
             alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
             modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
-                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                 .graphicsLayer {
                     translationY = if (multiSelectMode) {
                         libraryTitleHeightPx.intValue.toFloat()
@@ -3388,7 +3380,6 @@ private fun LibraryFilterHeader(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: List<VideoItem>, onVideo: (VideoItem) -> Unit, onClear: () -> Unit, onMore: (VideoItem) -> Unit) {
-    val scrollToTopScope = rememberCoroutineScope()
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
@@ -3452,9 +3443,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
             else listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == nextIndex }?.offset ?: Int.MAX_VALUE
         }
     }
-    Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
-        scrollToTopScope.launch { listState.animateScrollToItem(0) }
-    }) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         LazyColumn(state = listState, flingBehavior = softListFlingBehavior, modifier = Modifier.fillMaxSize().background(PageBg).clipToBounds(), contentPadding = PaddingValues(bottom = 112.dp)) {
             item(key = "recent-large-title") {
                 Row(
@@ -3506,8 +3495,7 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
                     translationY = -recentTitleScrollDistancePx.value
                     alpha = titleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp)
-                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } },
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("最近", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -3516,7 +3504,6 @@ private fun RecentPage(hazeState: HazeState, listState: LazyListState, videos: L
         if (activeGroupIndex >= 0) {
             Box(
                 Modifier.fillMaxWidth()
-                    .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                     .offset {
                     val nextOffset = nextHeaderOffsetState.value
                     val pushOffset = if (activeGroupIndex >= 0 && nextOffset != Int.MAX_VALUE) {
@@ -3661,7 +3648,6 @@ private fun RecordsPage(
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
-    val scrollToTopScope = rememberCoroutineScope()
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     var showRecordSortMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -3816,9 +3802,7 @@ private fun RecordsPage(
     val watchedCount = completedVideos.size
     val totalHours = completedVideos.sumOf { it.durationMs } / 3600000
     val reviewedCount = reviews.size
-    Box(Modifier.fillMaxSize().clipToBounds().onBlankAreaDoubleTap {
-        scrollToTopScope.launch { listState.animateScrollToItem(0) }
-    }) {
+    Box(Modifier.fillMaxSize().clipToBounds()) {
         AnimatedVisibility(
             visible = showTopBar,
             enter = fadeIn(tween(200)),
@@ -3827,7 +3811,6 @@ private fun RecordsPage(
         ) {
             Box(
                 Modifier.fillMaxWidth()
-                    .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                     .background(PageBg)
                     .statusBarsPadding()
                     .padding(vertical = 12.dp),
@@ -4390,8 +4373,7 @@ private fun RecordsPage(
                     translationY = -recordsTitleScrollDistancePx.value
                     alpha = recordsTitleAlphaState.value
                 }
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp)
-                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } },
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("记录", Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
@@ -4476,7 +4458,6 @@ private fun RecordsPage(
         Box(
             Modifier.align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .onHeaderDoubleTapToTop { scrollToTopScope.launch { listState.animateScrollToItem(0) } }
                 .background(
                     if (stickyTitleVisibility.currentState || stickyTitleVisibility.targetState) PageBg
                     else Color.Transparent
@@ -5696,58 +5677,6 @@ private fun ActionIcon(
     }
 }
 
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun Modifier.onHeaderDoubleTapToTop(onDoubleTap: () -> Unit): Modifier {
-    val interactionSource = remember { MutableInteractionSource() }
-    return combinedClickable(
-        interactionSource = interactionSource,
-        indication = null,
-        onClick = {},
-        onDoubleClick = onDoubleTap
-    )
-}
-
-private fun Modifier.onBlankAreaDoubleTap(onDoubleTap: () -> Unit): Modifier =
-    pointerInput(onDoubleTap) {
-        awaitPointerEventScope {
-            var previousTapTime = 0L
-            var previousTapPosition = Offset.Zero
-            while (true) {
-                val downEvent = awaitPointerEvent(PointerEventPass.Final)
-                val down = downEvent.changes.firstOrNull { it.pressed && !it.previousPressed } ?: continue
-                if (down.isConsumed) continue
-
-                var validTap = true
-                var released: androidx.compose.ui.input.pointer.PointerInputChange? = null
-                while (released == null) {
-                    val event = awaitPointerEvent(PointerEventPass.Final)
-                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                    if (change.isConsumed ||
-                        (change.position - down.position).getDistance() > viewConfiguration.touchSlop
-                    ) validTap = false
-                    if (!change.pressed) released = change
-                }
-                val up = released ?: continue
-                if (!validTap || up.uptimeMillis - down.uptimeMillis > viewConfiguration.longPressTimeoutMillis) {
-                    previousTapTime = 0L
-                    continue
-                }
-
-                val isDoubleTap = previousTapTime > 0L &&
-                    up.uptimeMillis - previousTapTime <= viewConfiguration.doubleTapTimeoutMillis &&
-                    (up.position - previousTapPosition).getDistance() <= viewConfiguration.touchSlop * 2f
-                if (isDoubleTap) {
-                    onDoubleTap()
-                    previousTapTime = 0L
-                } else {
-                    previousTapTime = up.uptimeMillis
-                    previousTapPosition = up.position
-                }
-            }
-        }
-    }
 
 private fun titleFadeAlpha(
     scrollOffsetPx: Float,
