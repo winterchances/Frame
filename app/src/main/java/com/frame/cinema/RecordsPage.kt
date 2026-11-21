@@ -627,22 +627,19 @@ internal fun RecordsPage(
                                         val lineColor = timelineAccent.copy(alpha = 0.32f)
                                         val dotColor = timelineAccent.copy(alpha = 0.48f)
                                         if (entries.size > 1) {
-                                            when (index) {
-                                                0 -> drawLine(
-                                                    lineColor,
-                                                    Offset(axisX, dotCenterY),
-                                                    Offset(axisX, size.height),
-                                                    strokeWidth = lineWidth
-                                                )
-                                                entries.lastIndex -> drawLine(
+                                            val dotRadius = 3.dp.toPx()
+                                            if (index > 0) {
+                                                drawLine(
                                                     lineColor,
                                                     Offset(axisX, 0f),
-                                                    Offset(axisX, dotCenterY),
+                                                    Offset(axisX, dotCenterY - dotRadius),
                                                     strokeWidth = lineWidth
                                                 )
-                                                else -> drawLine(
+                                            }
+                                            if (index < entries.lastIndex) {
+                                                drawLine(
                                                     lineColor,
-                                                    Offset(axisX, 0f),
+                                                    Offset(axisX, dotCenterY + dotRadius),
                                                     Offset(axisX, size.height),
                                                     strokeWidth = lineWidth
                                                 )
