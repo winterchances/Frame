@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -103,16 +102,12 @@ internal fun MovieReviewDetailPage(
                     value = content,
                     onValueChange = { content = it },
                     modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
-                    textStyle = TextStyle(
-                        spanStyle = SpanStyle(
-                            fontSize = 16.sp,
-                            letterSpacing = 0.sp,
-                            color = MainText
-                        ),
-                        paragraphStyle = ParagraphStyle(
-                            lineHeight = 28.sp,
-                            textIndent = TextIndent(firstLine = 32.sp)
-                        )
+                    textStyle = TextStyle.Default.copy(
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp,
+                        letterSpacing = 0.sp,
+                        color = MainText,
+                        textIndent = TextIndent(firstLine = 32.sp)
                     ),
                     decorationBox = { inner ->
                         Box(Modifier.fillMaxWidth()) {
@@ -122,16 +117,12 @@ internal fun MovieReviewDetailPage(
                                     fontSize = 16.sp,
                                     letterSpacing = 0.sp,
                                     color = MutedText,
-                                    style = TextStyle(
-                                        spanStyle = SpanStyle(
-                                            fontSize = 16.sp,
-                                            letterSpacing = 0.sp,
-                                            color = MutedText
-                                        ),
-                                        paragraphStyle = ParagraphStyle(
-                                            lineHeight = 28.sp,
-                                            textIndent = TextIndent(firstLine = 32.sp)
-                                        )
+                                    style = TextStyle.Default.copy(
+                                        fontSize = 16.sp,
+                                        lineHeight = 28.sp,
+                                        letterSpacing = 0.sp,
+                                        color = MutedText,
+                                        textIndent = TextIndent(firstLine = 32.sp)
                                     )
                                 )
                             }
@@ -146,16 +137,12 @@ internal fun MovieReviewDetailPage(
                     fontSize = 16.sp,
                     letterSpacing = 0.sp,
                     color = MainText,
-                    style = TextStyle(
-                        spanStyle = SpanStyle(
-                            fontSize = 16.sp,
-                            letterSpacing = 0.sp,
-                            color = MainText
-                        ),
-                        paragraphStyle = ParagraphStyle(
-                            lineHeight = 28.sp,
-                            textIndent = TextIndent(firstLine = 32.sp)
-                        )
+                    style = TextStyle.Default.copy(
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp,
+                        letterSpacing = 0.sp,
+                        color = MainText,
+                        textIndent = TextIndent(firstLine = 32.sp)
                     )
                 )
             }
