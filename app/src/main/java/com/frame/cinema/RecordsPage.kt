@@ -561,16 +561,6 @@ internal fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            val standaloneMovieReview = movieReviewsByStandalone[entry.id]
-                            Text(
-                                if (standaloneMovieReview != null) "影评" else "写影评",
-                                modifier = Modifier.noRippleClickable { onOpenStandaloneMovieReview(entry) },
-                                color = ActiveAccent,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "导出",
                                 modifier = Modifier.then(
@@ -852,6 +842,16 @@ internal fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
+                            val standaloneMovieReview = movieReviewsByStandalone[entry.id]
+                            Text(
+                                if (standaloneMovieReview != null) "影评" else "写影评",
+                                modifier = Modifier.noRippleClickable { onOpenStandaloneMovieReview(entry) },
+                                color = ActiveAccent,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "导出",
                                 modifier = Modifier.then(
