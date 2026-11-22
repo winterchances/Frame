@@ -1006,7 +1006,8 @@ internal fun RecordsPage(
                         expanded = showRecordSortMenu,
                         onDismissRequest = { showRecordSortMenu = false },
                         offset = androidx.compose.ui.unit.IntOffset.Zero,
-                        modifier = Modifier.width(192.dp)
+                        modifier = Modifier.width(192.dp),
+                        animateFromAnchor = true
                     ) {
                         CustomSortMenuItem("按添加时间", sortMode == RecordSortMode.ADDED) {
                             onRecordSortModeChange(RecordSortMode.ADDED)
