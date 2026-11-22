@@ -31,6 +31,7 @@ import java.util.Locale
 internal fun MovieReviewDetailPage(
     video: VideoItem,
     entry: MovieReviewEntry?,
+    stateKey: String = video.id.toString(),
     initialContent: String,
     onBack: () -> Unit,
     onSave: (String) -> Unit,
@@ -39,7 +40,7 @@ internal fun MovieReviewDetailPage(
     onExport: () -> Unit,
     onCopy: () -> Unit
 ) {
-    var content by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
+    var content by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
     var isEditing by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry == null) }
     var showMenu by remember { mutableStateOf(false) }
 
