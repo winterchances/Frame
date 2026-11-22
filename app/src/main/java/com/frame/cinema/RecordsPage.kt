@@ -352,11 +352,65 @@ internal fun RecordsPage(
             if (directed != 0) directed else a.createdAt.compareTo(b.createdAt)
         }
     }
-    val hasRecords = displayVideos.isNotEmpty() || standaloneReviews.isNotEmpty()
-    LaunchedEffect(targetReviewId, targetVideoId, displayVideos, standaloneReviews) {
+    val recordItems = remember(displayVideos, standaloneReviews, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection) {
+        (displayVideos.map { it to null as ReviewEntry? } + standaloneReviews.map { null as VideoItem? to it })
+            .sortedWith { a, b ->
+                val aVideo = a.first
+                val bVideo = b.first
+                val aReview = a.second
+                val bReview = b.second
+                val primary = when (sortMode) {
+                    RecordSortMode.ADDED -> (aVideo?.addedAt ?: aReview!!.createdAt).compareTo(bVideo?.addedAt ?: bReview!!.createdAt)
+                    RecordSortMode.RECORD_TIME -> {
+                        val aTime = aVideo?.let { video ->
+                            maxOf(
+                                reviewsByVideo[video.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                                movieReviewsByVideo[video.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                                video.lastPlayedAt
+                            )
+                        } ?: aReview!!.createdAt
+                        val bTime = bVideo?.let { video ->
+                            maxOf(
+                                reviewsByVideo[video.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                                movieReviewsByVideo[video.id].orEmpty().maxOfOrNull { it.createdAt } ?: 0L,
+                                video.lastPlayedAt
+                            )
+                        } ?: bReview!!.createdAt
+                        aTime.compareTo(bTime)
+                    }
+                    RecordSortMode.NAME -> compareNaturalVideoNames(
+                        aVideo?.name ?: aReview!!.title,
+                        bVideo?.name ?: bReview!!.title
+                    )
+                    RecordSortMode.RATING -> (aVideo?.rating ?: aReview!!.rating).compareTo(bVideo?.rating ?: bReview!!.rating)
+                    RecordSortMode.WATCHED -> (aVideo?.lastPlayedAt ?: aReview!!.createdAt).compareTo(bVideo?.lastPlayedAt ?: bReview!!.createdAt)
+                }
+                val aRating = aVideo?.rating ?: aReview!!.rating
+                val bRating = bVideo?.rating ?: bReview!!.rating
+                val directed = if (sortMode == RecordSortMode.RATING && (aRating == 0f || bRating == 0f)) {
+                    when {
+                        aRating == 0f && bRating > 0f -> 1
+                        aRating > 0f && bRating == 0f -> -1
+                        else -> 0
+                    }
+                } else if (sortDirection == SortDirection.ASCENDING) primary else -primary
+                if (directed != 0) directed else {
+                    val aTie = aVideo?.addedAt ?: aReview!!.createdAt
+                    val bTie = bVideo?.addedAt ?: bReview!!.createdAt
+                    val tie = aTie.compareTo(bTie)
+                    if (tie != 0) tie else {
+                        val aId = aVideo?.id ?: aReview!!.id
+                        val bId = bVideo?.id ?: bReview!!.id
+                        aId.compareTo(bId)
+                    }
+                }
+            }
+    }
+    val hasRecords = recordItems.isNotEmpty()
+    LaunchedEffect(targetReviewId, targetVideoId, recordItems) {
         val videoTargetId = targetVideoId
         if (videoTargetId != null) {
-            val videoIndex = displayVideos.indexOfFirst { it.id == videoTargetId }
+            val videoIndex = recordItems.indexOfFirst { it.first?.id == videoTargetId }
             if (videoIndex >= 0) {
                 listState.animateScrollToItem(5 + videoIndex)
                 onTargetHandled()
@@ -364,7 +418,7 @@ internal fun RecordsPage(
             return@LaunchedEffect
         }
         val targetId = targetReviewId ?: return@LaunchedEffect
-        val videoIndex = displayVideos.indexOfFirst { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } }
+        val videoIndex = recordItems.indexOfFirst { item -> item.first?.let { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } } == true }
         if (videoIndex >= 0) {
             setVideoReviewsExpanded(displayVideos[videoIndex].id, true)
             listState.animateScrollToItem(5 + videoIndex)
@@ -372,10 +426,10 @@ internal fun RecordsPage(
             val standaloneRootId = standaloneReviews.firstOrNull { root ->
                 root.id == targetId || reviews.any { it.id == targetId && it.standaloneGroupId == root.id }
             }?.id
-            val standaloneIndex = standaloneReviews.indexOfFirst { it.id == standaloneRootId }
+            val standaloneIndex = recordItems.indexOfFirst { it.second?.id == standaloneRootId }
             if (standaloneIndex >= 0) {
                 setStandaloneReviewExpanded(standaloneRootId!!, true)
-                listState.animateScrollToItem(5 + displayVideos.size + standaloneIndex)
+                listState.animateScrollToItem(5 + standaloneIndex)
             } else onTargetHandled()
         }
     }
@@ -454,7 +508,11 @@ internal fun RecordsPage(
                 item(key = "records-list-heading-gap-top") { Spacer(Modifier.height(4.dp)) }
                 item(key = "records-list-heading") { SectionHeading("观看记录", horizontalPadding = 20.dp) }
                 item(key = "records-list-heading-gap-bottom") { Spacer(Modifier.height(4.dp)) }
-                items(displayVideos, key = { "video_${it.id}" }) { video ->
+                recordItems.forEach { recordItem ->
+                    val recordVideo = recordItem.first
+                    if (recordVideo != null) {
+                        item(key = "video_${recordVideo.id}") {
+                            val video = recordVideo video ->
                     val entries = sortedReviewsByVideo[video.id].orEmpty()
                     val completed = video.status == "watched" || video.progress >= 100f
                     val expanded = expandedVideoReviews[video.id] ?: true
@@ -735,8 +793,11 @@ internal fun RecordsPage(
                             }
                         }
                     }
-                }
-                items(standaloneReviews, key = { "review_${it.id}" }) { entry ->
+                
+                        }
+                    } else {
+                        item(key = "review_${recordItem.second!!.id}") {
+                            val entry = recordItem.second!! entry ->
                     val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
                     val entryHighlight = entry.id == targetReviewId
                     val expanded = expandedStandaloneReviews[entry.id] ?: true
@@ -982,9 +1043,11 @@ internal fun RecordsPage(
                             }
                         }
                     }
+                
+                        }
+                    }
                 }
-            }
-            item { Spacer(Modifier.height(20.dp)) }
+                item { Spacer(Modifier.height(20.dp)) }
         }
 
         Row(
