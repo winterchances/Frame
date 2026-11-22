@@ -557,6 +557,15 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.delete("movie_reviews", "id=?", arrayOf(id.toString()))
     }
 
+    @Synchronized fun updateStandaloneMovieReviewTitle(standaloneReviewId: Long, title: String) {
+        writableDatabase.update(
+            "movie_reviews",
+            ContentValues().apply { put("title", title) },
+            "standalone_review_id=?",
+            arrayOf(standaloneReviewId.toString())
+        )
+    }
+
     @Synchronized fun deleteStandaloneMovieReviews(standaloneReviewId: Long) {
         writableDatabase.delete("movie_reviews", "standalone_review_id=?", arrayOf(standaloneReviewId.toString()))
     }
