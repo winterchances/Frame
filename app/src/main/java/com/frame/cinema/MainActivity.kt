@@ -1404,7 +1404,13 @@ private fun FrameNativeApp(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
-                         .padding(top = 26.dp, bottom = if (sheetKeyboardUp) 400.dp else 50.dp)
+                         .padding(
+                            top = 26.dp,
+                            bottom = if (sheetKeyboardUp &&
+                                displayedSheet != SheetType.SEARCH &&
+                                displayedSheet != SheetType.RECORD_SEARCH
+                            ) 400.dp else 50.dp
+                        )
                         .navigationBarsPadding()
                 ) {
                 when (displayedSheet) {
@@ -1483,7 +1489,7 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.RECORD_SEARCH -> Column(
-                        Modifier.fillMaxWidth()
+                        Modifier.fillMaxHeight().fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .animateContentSize(
                                 tween(320, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))
@@ -1691,7 +1697,7 @@ private fun FrameNativeApp(
                         }
                     }
                     SheetType.SEARCH -> Column(
-                        Modifier.fillMaxWidth()
+                        Modifier.fillMaxHeight().fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .animateContentSize(
                                 tween(320, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))
