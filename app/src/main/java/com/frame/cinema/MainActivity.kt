@@ -479,6 +479,7 @@ private fun FrameNativeApp(
     var movieReviewEntries by remember { mutableStateOf(repository.movieReviews()) }
     var movieReviewScreen by rememberSaveable { mutableStateOf<MovieReviewScreen?>(null) }
     var movieReviewVideoId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var movieReviewStandaloneId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editingMovieReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
     var movieReviewEditorSession by rememberSaveable { mutableIntStateOf(0) }
@@ -612,12 +613,25 @@ private fun FrameNativeApp(
     fun openMovieReviewList(video: VideoItem) {
         showFab = false
         movieReviewVideoId = video.id
+        movieReviewStandaloneId = null
         val existing = movieReviewEntries
             .filter { it.videoId == video.id }
             .maxWithOrNull(compareBy<MovieReviewEntry> { it.createdAt }.thenBy { it.id })
         selectedMovieReviewId = existing?.id
         editingMovieReviewId = null
         movieReviewDraftTitle = ""
+        movieReviewDraftContent = existing?.content.orEmpty()
+        movieReviewEditorReturnToList = false
+        movieReviewScreen = MovieReviewScreen.DETAIL
+    }
+    fun openStandaloneMovieReview(root: ReviewEntry) {
+        showFab = false
+        movieReviewVideoId = null
+        movieReviewStandaloneId = root.id
+        val existing = movieReviewEntries.firstOrNull { it.standaloneReviewId == root.id }
+        selectedMovieReviewId = existing?.id
+        editingMovieReviewId = null
+        movieReviewDraftTitle = root.title
         movieReviewDraftContent = existing?.content.orEmpty()
         movieReviewEditorReturnToList = false
         movieReviewScreen = MovieReviewScreen.DETAIL
@@ -632,13 +646,21 @@ private fun FrameNativeApp(
         movieReviewScreen = MovieReviewScreen.EDITOR
     }
     fun saveMovieReview(title: String, content: String) {
-        val videoId = movieReviewVideoId ?: return
+        val standaloneId = movieReviewStandaloneId
+        val workTitle = if (standaloneId != null) {
+            reviewEntries.firstOrNull { it.id == standaloneId }?.title.orEmpty()
+        } else ""
         val editingId = selectedMovieReviewId
         if (editingId == null) {
-            val newId = repository.addMovieReview(videoId, "", content) ?: return
+            val newId = if (standaloneId != null) {
+                repository.addStandaloneMovieReview(standaloneId, content)
+            } else {
+                val videoId = movieReviewVideoId ?: return
+                repository.addMovieReview(videoId, workTitle, content)
+            } ?: return
             selectedMovieReviewId = newId
         } else {
-            if (!repository.updateMovieReview(editingId, "", content)) return
+            if (!repository.updateMovieReview(editingId, workTitle, content)) return
         }
         movieReviewDraftContent = content
         refresh()
@@ -648,6 +670,7 @@ private fun FrameNativeApp(
     fun closeMovieReviewPages() {
         movieReviewScreen = null
         movieReviewVideoId = null
+        movieReviewStandaloneId = null
         selectedMovieReviewId = null
         editingMovieReviewId = null
         movieReviewEditorReturnToList = true
@@ -1064,7 +1087,21 @@ private fun FrameNativeApp(
                                 },
                                 label = "movie-review-page"
                             ) { reviewScreen ->
-                                val reviewVideo = videos.firstOrNull { it.id == movieReviewVideoId }
+                                val standaloneReviewRoot = reviewEntries.firstOrNull {
+                                    it.id == movieReviewStandaloneId && it.videoId == null && it.standaloneGroupId == null
+                                }
+                                val reviewVideo = videos.firstOrNull { it.id == movieReviewVideoId } ?: standaloneReviewRoot?.let { root ->
+                                    VideoItem(
+                                        id = root.id,
+                                        uri = "",
+                                        name = root.title.ifBlank { "未命名" },
+                                        size = "",
+                                        date = "",
+                                        addedAt = root.createdAt,
+                                        rating = root.rating,
+                                        thumbPath = root.coverPath
+                                    )
+                                }
                                 val selectedMovieReview = movieReviewEntries.firstOrNull { it.id == selectedMovieReviewId }
                                 when (reviewScreen) {
                                     null -> RecordsPage(
@@ -1097,6 +1134,7 @@ private fun FrameNativeApp(
                                         onEdit = { openReviewEditor(it) },
                                         onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
                                         onOpenMovieReviews = { video -> openMovieReviewList(video) },
+                                        onOpenStandaloneMovieReview = { root -> openStandaloneMovieReview(root) },
                                         onPlayVideo = { video -> playVideo(video) },
                                         onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                         onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
@@ -1106,12 +1144,17 @@ private fun FrameNativeApp(
                                         MovieReviewDetailPage(
                                             video = reviewVideo,
                                             entry = selectedMovieReview,
+                                            stateKey = movieReviewStandaloneId?.let { "standalone_$it" } ?: "video_${reviewVideo.id}",
                                             initialContent = movieReviewDraftContent,
                                             onBack = { closeMovieReviewPages() },
                                             onSave = { content -> saveMovieReview("", content) },
                                             onDelete = { sheet = SheetType.DELETE_MOVIE_REVIEW },
                                             onRate = { rating ->
-                                                repository.updateVideoRating(reviewVideo.id, rating)
+                                                if (movieReviewStandaloneId != null) {
+                                                    repository.updateStandaloneReviewRating(movieReviewStandaloneId!!, rating)
+                                                } else {
+                                                    repository.updateVideoRating(reviewVideo.id, rating)
+                                                }
                                                 refresh()
                                             },
                                             onExport = {
