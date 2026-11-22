@@ -106,11 +106,13 @@ internal fun MovieReviewDetailPage(
                     textStyle = TextStyle(
                         spanStyle = SpanStyle(
                             fontSize = 16.sp,
-                            lineHeight = 28.sp,
                             letterSpacing = 0.sp,
                             color = MainText
                         ),
-                        paragraphStyle = ParagraphStyle(textIndent = TextIndent(firstLine = 32.sp))
+                        paragraphStyle = ParagraphStyle(
+$1    lineHeight = 28.sp,
+$1    textIndent = TextIndent(firstLine = 32.sp)
+$1)
                     ),
                     decorationBox = { inner ->
                         Box(Modifier.fillMaxWidth()) {
@@ -118,17 +120,18 @@ internal fun MovieReviewDetailPage(
                                 Text(
                                     "写下你对这部作品的整体感受……",
                                     fontSize = 16.sp,
-                                    lineHeight = 28.sp,
                                     letterSpacing = 0.sp,
                                     color = MutedText,
                                     style = TextStyle(
                                         spanStyle = SpanStyle(
                                             fontSize = 16.sp,
-                                            lineHeight = 28.sp,
                                             letterSpacing = 0.sp,
                                             color = MutedText
                                         ),
-                                        paragraphStyle = ParagraphStyle(textIndent = TextIndent(firstLine = 32.sp))
+                                        paragraphStyle = ParagraphStyle(
+$1    lineHeight = 28.sp,
+$1    textIndent = TextIndent(firstLine = 32.sp)
+$1)
                                     )
                                 )
                             }
@@ -141,17 +144,18 @@ internal fun MovieReviewDetailPage(
                     content,
                     modifier = Modifier.fillMaxWidth().clickable { isEditing = true },
                     fontSize = 16.sp,
-                    lineHeight = 28.sp,
                     letterSpacing = 0.sp,
                     color = MainText,
                     style = TextStyle(
                         spanStyle = SpanStyle(
                             fontSize = 16.sp,
-                            lineHeight = 28.sp,
                             letterSpacing = 0.sp,
                             color = MainText
                         ),
-                        paragraphStyle = ParagraphStyle(textIndent = TextIndent(firstLine = 32.sp))
+                        paragraphStyle = ParagraphStyle(
+$1    lineHeight = 28.sp,
+$1    textIndent = TextIndent(firstLine = 32.sp)
+$1)
                     )
                 )
             }
