@@ -132,6 +132,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -506,7 +507,7 @@ internal fun AnimatedDropdownPopup(
                             if (animateFromAnchor) {
                                 val visibleWidth = size.width * revealProgress
                                 val visibleHeight = size.height * revealProgress
-                                androidx.compose.ui.graphics.drawscope.clipRect(
+                                clipRect(
                                     left = size.width - visibleWidth,
                                     top = 0f,
                                     right = size.width,
