@@ -100,6 +100,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1490,7 +1491,12 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
-                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                        Column(
+                            Modifier.weight(1f).fillMaxWidth().verticalScroll(
+                                state = rememberScrollState(),
+                                flingBehavior = ScrollableDefaults.flingBehavior()
+                            )
+                        ) {
                         BasicTextField(
                             recordSearch,
                             { recordSearch = it },
@@ -1698,7 +1704,12 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
-                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                        Column(
+                            Modifier.weight(1f).fillMaxWidth().verticalScroll(
+                                state = rememberScrollState(),
+                                flingBehavior = ScrollableDefaults.flingBehavior()
+                            )
+                        ) {
                         BasicTextField(
                             search,
                             { search = it },
