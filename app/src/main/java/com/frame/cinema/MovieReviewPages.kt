@@ -5,17 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -44,7 +41,6 @@ internal fun MovieReviewDetailPage(
     var content by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
     var isEditing by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry == null) }
     var showMenu by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     fun save(): Boolean {
         if (content.isBlank()) return false
@@ -80,7 +76,7 @@ internal fun MovieReviewDetailPage(
                 ) {
                     CustomSortMenuItem("导出", false) { showMenu = false; onExport() }
                     CustomSortMenuItem("复制", false) { showMenu = false; onCopy() }
-                    CustomSortMenuItem("删除", false) { showMenu = false; showDeleteConfirm = true }
+                    CustomSortMenuItem("删除", false) { showMenu = false; onDelete() }
                 }
             }
         }
@@ -124,18 +120,7 @@ internal fun MovieReviewDetailPage(
             Spacer(Modifier.height(32.dp))
         }
     }
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("删除这篇影评？", color = MainText) },
-            text = { Text("删除后无法恢复，但不会影响作品评分和随记。", color = MutedText) },
-            confirmButton = { TextButton(onClick = { showDeleteConfirm = false; onDelete() }) { Text("删除", color = ActiveAccent) } },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("取消", color = MutedText) } },
-            containerColor = PageBg,
-            shape = RoundedCornerShape(30.dp)
-        )
-    }
-}
+
 
 @Composable
 private fun MovieReviewWorkHeader(video: VideoItem) {
