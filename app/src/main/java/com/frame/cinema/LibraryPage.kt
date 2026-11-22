@@ -369,7 +369,8 @@ internal fun LibraryPage(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false },
                         offset = androidx.compose.ui.unit.IntOffset.Zero,
-                        modifier = Modifier.width(192.dp)
+                        modifier = Modifier.width(192.dp),
+                        animateFromAnchor = true
                     ) {
                         CustomSortMenuItem("2列大图", !compact) { onCompactChange(false); showSortMenu = false }
                         CustomSortMenuItem("3列小图", compact) { onCompactChange(true); showSortMenu = false }
