@@ -110,9 +110,9 @@ internal fun MovieReviewDetailPage(
                             color = MainText
                         ),
                         paragraphStyle = ParagraphStyle(
-    lineHeight = 28.sp,
-    textIndent = TextIndent(firstLine = 32.sp)
-)
+                            lineHeight = 28.sp,
+                            textIndent = TextIndent(firstLine = 32.sp)
+                        )
                     ),
                     decorationBox = { inner ->
                         Box(Modifier.fillMaxWidth()) {
@@ -129,9 +129,9 @@ internal fun MovieReviewDetailPage(
                                             color = MutedText
                                         ),
                                         paragraphStyle = ParagraphStyle(
-    lineHeight = 28.sp,
-    textIndent = TextIndent(firstLine = 32.sp)
-)
+                                            lineHeight = 28.sp,
+                                            textIndent = TextIndent(firstLine = 32.sp)
+                                        )
                                     )
                                 )
                             }
@@ -153,9 +153,9 @@ internal fun MovieReviewDetailPage(
                             color = MainText
                         ),
                         paragraphStyle = ParagraphStyle(
-    lineHeight = 28.sp,
-    textIndent = TextIndent(firstLine = 32.sp)
-)
+                            lineHeight = 28.sp,
+                            textIndent = TextIndent(firstLine = 32.sp)
+                        )
                     )
                 )
             }
