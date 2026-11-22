@@ -182,6 +182,7 @@ class NativeLibraryRepository(context: Context) {
     fun deleteReview(id: Long) {
         val entry = store.allReviews().firstOrNull { it.id == id } ?: return
         if (entry.standaloneGroupId == null && entry.videoId == null) {
+            store.deleteStandaloneMovieReviews(id)
             store.allReviews().filter { it.standaloneGroupId == id }.forEach { child ->
                 child.coverPath?.let { File(it).delete() }
                 store.deleteReview(child.id)
