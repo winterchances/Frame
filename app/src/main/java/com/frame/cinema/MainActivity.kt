@@ -1111,25 +1111,59 @@ private fun FrameNativeApp(
                                             onSave = { content -> saveMovieReview("", content) },
                                             onDelete = { sheet = SheetType.DELETE_MOVIE_REVIEW },
                                             onExport = {
-                                                val date = java.text.SimpleDateFormat("yyyy/M/d", java.util.Locale.getDefault())
-                                                    .format(java.util.Date(selectedMovieReview?.createdAt ?: System.currentTimeMillis()))
-                                                val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                                                    textSize = 32f
-                                                    typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
-                                                }
-                                                val bitmap = createUnifiedReviewExportBitmap(
-                                                    title = displayVideoName(reviewVideo.name),
-                                                    coverPath = reviewVideo.thumbPath,
-                                                    rating = reviewVideo.rating,
-                                                    reviews = listOf(date to wrapReviewExportText(selectedMovieReview?.content ?: movieReviewDraftContent, paint, 850f))
-                                                )
+
                                                 scope.launch {
-                                                    val saved = saveVideoScreenshot(context, bitmap)
-                                                    bitmap.recycle()
+
+                                                    var bitmap: android.graphics.Bitmap? = null
+
+                                                    val saved = try {
+
+                                                        bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+
+                                                            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+
+                                                                textSize = 32f
+
+                                                                typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
+
+                                                            }
+
+                                                            createUnifiedReviewExportBitmap(
+
+                                                                title = displayVideoName(reviewVideo.name),
+
+                                                                coverPath = reviewVideo.thumbPath,
+
+                                                                rating = reviewVideo.rating,
+
+                                                                reviews = emptyList(),
+
+                                                                singleReviewBody = wrapReviewExportText(selectedMovieReview?.content ?: movieReviewDraftContent, paint, 936f),
+
+                                                                eyebrowLabel = "REVIEW"
+
+                                                            )
+
+                                                        }
+
+                                                        saveVideoScreenshot(context, bitmap!!)
+
+                                                    } catch (_: Exception) {
+
+                                                        false
+
+                                                    } finally {
+
+                                                        bitmap?.recycle()
+
+                                                    }
+
                                                     notify(if (saved) "影评已导出到相册" else "影评导出失败")
+
                                                 }
+
                                             },
-                                            onCopy = {
+                                            onCopy = {onCopy = {
                                                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("影评", selectedMovieReview?.content ?: movieReviewDraftContent))
                                                 notify("已复制影评")
