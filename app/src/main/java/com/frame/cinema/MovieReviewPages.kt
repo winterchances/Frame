@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,8 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.ParagraphStyle
-import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,17 +61,29 @@ internal fun MovieReviewDetailPage(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-                Box(Modifier.size(40.dp).clickable { if (isEditing) { if (!save()) onBack() } else onBack() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText)
+                Box(
+                    Modifier.size(36.dp)
+                        .shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .clickable { if (isEditing) { if (!save()) onBack() } else onBack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText, modifier = Modifier.size(20.dp))
                 }
-                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxSize().clickable {
-                        if (isEditing) save() else showMenu = true
-                    }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier.fillMaxSize()
+                            .shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .clickable { if (isEditing) save() else showMenu = true },
+                        contentAlignment = Alignment.Center
+                    ) {
                         if (isEditing) {
-                            Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = ActiveAccent)
+                            Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = ActiveAccent, modifier = Modifier.size(20.dp))
                         } else {
-                            Icon(Icons.Outlined.MoreHoriz, contentDescription = "更多", tint = MainText)
+                            Icon(Icons.Outlined.MoreHoriz, contentDescription = "更多", tint = MainText, modifier = Modifier.size(20.dp))
                         }
                     }
                     AnimatedDropdownPopup(
@@ -107,7 +120,6 @@ internal fun MovieReviewDetailPage(
                         lineHeight = 28.sp,
                         letterSpacing = 0.sp,
                         color = MainText,
-                        textIndent = TextIndent(firstLine = 32.sp)
                     ),
                     decorationBox = { inner ->
                         Box(Modifier.fillMaxWidth()) {
@@ -122,7 +134,6 @@ internal fun MovieReviewDetailPage(
                                         lineHeight = 28.sp,
                                         letterSpacing = 0.sp,
                                         color = MutedText,
-                                        textIndent = TextIndent(firstLine = 32.sp)
                                     )
                                 )
                             }
@@ -142,7 +153,6 @@ internal fun MovieReviewDetailPage(
                         lineHeight = 28.sp,
                         letterSpacing = 0.sp,
                         color = MainText,
-                        textIndent = TextIndent(firstLine = 32.sp)
                     )
                 )
             }
@@ -165,11 +175,11 @@ private fun MovieReviewWorkHeader(video: VideoItem, onRate: (Float) -> Unit) {
                 name = video.name,
                 modifier = Modifier.fillMaxWidth(),
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
-                englishFontSize = 14.sp,
+                englishFontSize = 15.sp,
                 englishColor = MutedText,
-                lineHeight = 22.sp,
+                lineHeight = 24.sp,
                 englishSpacing = 2.dp,
                 maxLines = 2,
                 showEnglish = true,
@@ -181,7 +191,8 @@ private fun MovieReviewWorkHeader(video: VideoItem, onRate: (Float) -> Unit) {
             video.rating,
             14.dp,
             onRate = onRate,
-            spacing = 1.dp
+            spacing = 1.dp,
+            modifier = Modifier.offset(x = (-4).dp)
         )
     }
 }
