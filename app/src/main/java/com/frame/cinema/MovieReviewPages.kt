@@ -1,17 +1,17 @@
 package com.frame.cinema
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -24,8 +24,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -33,115 +31,97 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-internal fun MovieReviewListPage(
+internal fun MovieReviewDetailPage(
     video: VideoItem,
-    reviews: List<MovieReviewEntry>,
+    entry: MovieReviewEntry?,
+    initialContent: String,
     onBack: () -> Unit,
-    onCreate: () -> Unit,
-    onOpen: (MovieReviewEntry) -> Unit
+    onSave: (String) -> Unit,
+    onDelete: () -> Unit,
+    onExport: () -> Unit,
+    onCopy: () -> Unit
 ) {
-    Column(Modifier.fillMaxSize().background(PageBg)) {
-        MovieReviewTopBar(
-            title = "影评",
-            onBack = onBack,
-            onAction = onCreate,
-            showAddIcon = true
-        )
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 32.dp)
+    var content by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
+    var isEditing by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry == null) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    fun save() {
+        if (content.isNotBlank()) {
+            onSave(content)
+            isEditing = false
+        }
+    }
+
+    BackHandler(enabled = isEditing) { save() }
+
+    Column(Modifier.fillMaxSize().background(PageBg).imePadding()) {
+        Box(
+            Modifier.fillMaxWidth().statusBarsPadding().height(56.dp).padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            item(key = "movie-reviews-work") {
-                Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 18.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            Text("影评", fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = MainText)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Box(Modifier.size(40.dp).clickable { if (isEditing) save() else onBack() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText)
+                }
+                Box(Modifier.size(40.dp).clickable {
+                    if (isEditing) save() else showMenu = true
+                }, contentAlignment = Alignment.Center) {
+                    if (isEditing) {
+                        Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = ActiveAccent)
+                    } else {
+                        Icon(Icons.Outlined.MoreHoriz, contentDescription = "更多", tint = MainText)
+                    }
+                }
+                AnimatedDropdownPopup(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
                 ) {
-                    Box(
-                        Modifier.fillMaxWidth().defaultMinSize(minHeight = 68.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        MovieReviewVideoTitle(video.name)
-                    }
-                    Spacer(Modifier.height(5.dp))
-                    Text("${reviews.size} 条影评", fontSize = 12.sp, color = MutedText)
-                }
-            }
-            if (reviews.isEmpty()) {
-                item(key = "movie-reviews-empty") {
-                    Text(
-                        "还没有影评，写下第一篇吧",
-                        fontSize = 14.sp,
-                        color = MutedText,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 28.dp)
-                    )
-                }
-            } else {
-                items(reviews, key = { it.id }) { entry ->
-                    Column(
-                        Modifier.fillMaxWidth().clickable { onOpen(entry) }.padding(horizontal = 20.dp, vertical = 14.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                entry.title.ifBlank { "未命名影评" },
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (entry.title.isBlank()) MutedText else MainText,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(formatMovieReviewDate(entry.createdAt), fontSize = 11.sp, color = MutedText)
-                        }
-                        Spacer(Modifier.height(7.dp))
-                        Text(entry.content, fontSize = 13.sp, lineHeight = 20.sp, color = MutedText, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    }
-                    Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(0.5.dp).background(LocalFramePalette.current.divider))
+                    CustomSortMenuItem("导出", false) { showMenu = false; onExport() }
+                    CustomSortMenuItem("复制", false) { showMenu = false; onCopy() }
+                    CustomSortMenuItem("删除", false) { showMenu = false; showDeleteConfirm = true }
                 }
             }
         }
-    }
-}
-
-@Composable
-internal fun MovieReviewDetailPage(
-    video: VideoItem,
-    entry: MovieReviewEntry,
-    onBack: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
-    var showDeleteConfirm by remember(entry.id) { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().background(PageBg)) {
-        MovieReviewTopBar(
-            title = "影评",
-            onBack = onBack,
-            actionLabel = "编辑",
-            onAction = onEdit
-        )
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(bottom = 48.dp)
         ) {
             MovieReviewWorkHeader(video)
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
+            Text(
+                formatMovieReviewDate(entry?.createdAt ?: System.currentTimeMillis()),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp,
+                color = Color(0xFFAAAAAA)
+            )
+            Spacer(Modifier.height(18.dp))
+            if (isEditing) {
+                BasicTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
+                    textStyle = TextStyle(fontSize = 16.sp, lineHeight = 28.sp, color = MainText),
+                    decorationBox = { inner ->
+                        Box(Modifier.fillMaxWidth()) {
+                            if (content.isEmpty()) {
+                                Text("写下你对这部作品的整体感受……", fontSize = 16.sp, lineHeight = 28.sp, color = MutedText)
+                            }
+                            inner()
+                        }
+                    }
+                )
+            } else {
                 Text(
-                    formatMovieReviewDate(entry.createdAt),
-                    fontSize = 12.sp,
-                    color = Color(0xFFAAAAAA)
+                    content,
+                    modifier = Modifier.fillMaxWidth().clickable { isEditing = true },
+                    fontSize = 16.sp,
+                    lineHeight = 28.sp,
+                    color = MainText
                 )
             }
-            Spacer(Modifier.height(18.dp))
-            Text(entry.content, fontSize = 16.sp, lineHeight = 28.sp, color = MainText)
             Spacer(Modifier.height(32.dp))
-            Text(
-                "删除影评",
-                fontSize = 13.sp,
-                color = MutedText,
-                modifier = Modifier.clickable { showDeleteConfirm = true }.padding(vertical = 10.dp)
-            )
         }
     }
     if (showDeleteConfirm) {
@@ -158,98 +138,6 @@ internal fun MovieReviewDetailPage(
 }
 
 @Composable
-internal fun MovieReviewEditorPage(
-    video: VideoItem,
-    initialContent: String,
-    isEditing: Boolean,
-    sessionKey: Int,
-    onBack: () -> Unit,
-    onSave: (String, String) -> Unit
-) {
-    var content by rememberSaveable(sessionKey, video.id, isEditing, initialContent) { mutableStateOf(initialContent) }
-    val canSave = content.isNotBlank()
-    Column(Modifier.fillMaxSize().background(PageBg).imePadding()) {
-        MovieReviewTopBar(
-            title = if (isEditing) "编辑影评" else "写影评",
-            onBack = onBack,
-            actionLabel = "保存",
-            actionEnabled = canSave,
-            onAction = { if (canSave) onSave("", content) }
-        )
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = 20.dp).padding(bottom = 24.dp)
-        ) {
-            MovieReviewWorkHeader(video)
-            Spacer(Modifier.height(4.dp))
-            BasicTextField(
-                value = content,
-                onValueChange = { content = it },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                textStyle = TextStyle(fontSize = 16.sp, lineHeight = 28.sp, color = MainText),
-                decorationBox = { inner ->
-                    Box(Modifier.fillMaxSize()) {
-                        if (content.isEmpty()) {
-                            Text(
-                                "写下你对这部作品的整体感受……",
-                                fontSize = 16.sp,
-                                lineHeight = 28.sp,
-                                color = MutedText
-                            )
-                        }
-                        inner()
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun MovieReviewTopBar(
-    title: String,
-    onBack: () -> Unit,
-    actionLabel: String? = null,
-    onAction: () -> Unit,
-    actionEnabled: Boolean = true,
-    showAddIcon: Boolean = false
-) {
-    Box(
-        Modifier.fillMaxWidth().statusBarsPadding().height(56.dp).padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = MainText)
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Box(
-                Modifier.size(40.dp).clickable(onClick = onBack),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText)
-            }
-            Box(
-                Modifier.size(40.dp).clickable(enabled = actionEnabled, onClick = onAction),
-                contentAlignment = Alignment.Center
-            ) {
-                if (showAddIcon) {
-                    Icon(Icons.Outlined.Add, contentDescription = "新增影评", tint = MainText)
-                } else if (actionLabel != null) {
-                    Text(
-                        actionLabel,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (actionEnabled) ActiveAccent else MutedText.copy(alpha = .45f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
 private fun MovieReviewWorkHeader(video: VideoItem) {
     Column(
         Modifier.fillMaxWidth().padding(bottom = 18.dp),
@@ -259,7 +147,20 @@ private fun MovieReviewWorkHeader(video: VideoItem) {
             Modifier.fillMaxWidth().defaultMinSize(minHeight = 68.dp),
             contentAlignment = Alignment.Center
         ) {
-            MovieReviewVideoTitle(video.name)
+            VideoCardTitle(
+                name = video.name,
+                modifier = Modifier.fillMaxWidth(),
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                fontSize = 16.sp,
+                color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
+                englishFontSize = 14.sp,
+                englishColor = MutedText,
+                lineHeight = 22.sp,
+                englishSpacing = 2.dp,
+                maxLines = 2,
+                showEnglish = true,
+                textAlign = TextAlign.Center
+            )
         }
         Spacer(Modifier.height(5.dp))
         RatingStars(
@@ -270,24 +171,6 @@ private fun MovieReviewWorkHeader(video: VideoItem) {
             modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
         )
     }
-}
-
-@Composable
-private fun MovieReviewVideoTitle(name: String) {
-    VideoCardTitle(
-        name = name,
-        modifier = Modifier.fillMaxWidth(),
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        color = if (displayVideoName(name) == "未命名") MutedText else MainText,
-        englishFontSize = 14.sp,
-        englishColor = MutedText,
-        lineHeight = 22.sp,
-        englishSpacing = 2.dp,
-        maxLines = 2,
-        showEnglish = true,
-        textAlign = TextAlign.Center
-    )
 }
 
 private fun formatMovieReviewDate(timestamp: Long): String =
