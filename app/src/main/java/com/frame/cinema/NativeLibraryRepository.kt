@@ -69,16 +69,21 @@ class NativeLibraryRepository(context: Context) {
         return store.addMovieReview(videoId, title.trim(), cleanContent, System.currentTimeMillis()).takeIf { it > 0L }
     }
 
-    fun addStandaloneMovieReview(standaloneReviewId: Long): Long? {
+    fun addStandaloneMovieReview(standaloneReviewId: Long, content: String): Long? {
         val parent = store.allReviews().firstOrNull {
             it.id == standaloneReviewId && it.videoId == null && it.standaloneGroupId == null
         } ?: return null
+        val cleanContent = content.trim()
+        if (cleanContent.isEmpty()) return null
         val existing = store.allMovieReviews().firstOrNull { it.standaloneReviewId == standaloneReviewId }
-        if (existing != null) return existing.id
+        if (existing != null) {
+            store.updateMovieReview(existing.id, parent.title.trim(), cleanContent, System.currentTimeMillis())
+            return existing.id
+        }
         return store.addStandaloneMovieReview(
             standaloneReviewId,
             parent.title.trim(),
-            "",
+            cleanContent,
             System.currentTimeMillis()
         ).takeIf { it > 0L }
     }
