@@ -353,7 +353,7 @@ internal fun RecordsPage(
         }
     }
     val recordItems = remember(displayVideos, standaloneReviews, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection) {
-        (displayVideos.map { it to null as ReviewEntry? } + standaloneReviews.map { null as VideoItem? to it })
+        (displayVideos.map { Pair<VideoItem?, ReviewEntry?>(it, null) } + standaloneReviews.map { Pair<VideoItem?, ReviewEntry?>(null, it) })
             .sortedWith { a, b ->
                 val aVideo = a.first
                 val bVideo = b.first
