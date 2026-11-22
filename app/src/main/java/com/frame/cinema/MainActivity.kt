@@ -1117,7 +1117,7 @@ private fun FrameNativeApp(
                                             onOpen = { selectedMovieReviewId = it.id; movieReviewScreen = MovieReviewScreen.DETAIL }
                                         )
                                     } else Box(Modifier.fillMaxSize())
-                                    MovieReviewScreen.DETAIL -> if (selectedMovieReview != null) {
+                                    MovieReviewScreen.DETAIL -> if (reviewVideo != null && selectedMovieReview != null) {
                                         MovieReviewDetailPage(
                                             video = reviewVideo,
                                             entry = selectedMovieReview,
