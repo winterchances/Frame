@@ -1110,6 +1110,10 @@ private fun FrameNativeApp(
                                             onBack = { closeMovieReviewPages() },
                                             onSave = { content -> saveMovieReview("", content) },
                                             onDelete = { sheet = SheetType.DELETE_MOVIE_REVIEW },
+                                            onRate = { rating ->
+                                                repository.updateVideoRating(reviewVideo.id, rating)
+                                                refresh()
+                                            },
                                             onExport = {
                                                 scope.launch {
                                                     var bitmap: android.graphics.Bitmap? = null
