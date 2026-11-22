@@ -41,7 +41,7 @@ internal fun MovieReviewDetailPage(
     onCopy: () -> Unit
 ) {
     var content by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
-    var isEditing by rememberSaveable(video.id, entry?.id) { mutableStateOf(entry == null) }
+    var isEditing by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry == null) }
     var showMenu by remember { mutableStateOf(false) }
 
     fun save(): Boolean {
