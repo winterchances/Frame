@@ -1574,7 +1574,7 @@ private fun FrameNativeApp(
                                                 else Text("感想", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                             }
                                             Column(Modifier.weight(1f)) {
-                                                if (video != null) {
+                                                if (video != null && entry.content.isNotBlank()) {
                                                     VideoCardTitle(
                                                         name = video.name,
                                                         modifier = Modifier.fillMaxWidth(),
@@ -1589,11 +1589,11 @@ private fun FrameNativeApp(
                                                     )
                                                 } else {
                                                     Text(
-                                                        "独立感想",
+                                                        video?.let { displayVideoName(it.name) } ?: "独立感想",
                                                         color = MainText,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Normal,
-                                                        lineHeight = 17.sp,
+                                                        fontSize = if (video == null) 12.sp else 16.sp,
+                                                        fontWeight = if (video == null) FontWeight.Normal else FontWeight.Medium,
+                                                        lineHeight = if (video == null) 17.sp else 21.sp,
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )
