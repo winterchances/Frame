@@ -610,11 +610,19 @@ private fun FrameNativeApp(
     }
     fun openMovieReviewList(video: VideoItem) {
         showFab = false
-        movieReviewEditorReturnToList = true
         movieReviewVideoId = video.id
-        selectedMovieReviewId = null
+        val existing = movieReviewEntries
+            .filter { it.videoId == video.id }
+            .maxWithOrNull(compareBy<MovieReviewEntry> { it.createdAt }.thenBy { it.id })
+        selectedMovieReviewId = existing?.id
         editingMovieReviewId = null
-        movieReviewScreen = MovieReviewScreen.LIST
+        movieReviewEditorReturnToList = false
+        if (existing == null) {
+            openMovieReviewEditor()
+            movieReviewEditorReturnToList = false
+        } else {
+            movieReviewScreen = MovieReviewScreen.DETAIL
+        }
     }
     fun openMovieReviewEditor(entry: MovieReviewEntry? = null) {
         movieReviewEditorReturnToList = true
@@ -636,7 +644,7 @@ private fun FrameNativeApp(
             if (!repository.updateMovieReview(editingId, title, content)) return
         }
         refresh()
-        movieReviewScreen = if (editingId == null) MovieReviewScreen.LIST else MovieReviewScreen.DETAIL
+        movieReviewScreen = MovieReviewScreen.DETAIL
         movieReviewEditorReturnToList = true
         editingMovieReviewId = null
     }
@@ -895,7 +903,7 @@ private fun FrameNativeApp(
                 }
                 editingMovieReviewId = null
             }
-            movieReviewScreen == MovieReviewScreen.DETAIL -> movieReviewScreen = MovieReviewScreen.LIST
+            movieReviewScreen == MovieReviewScreen.DETAIL -> closeMovieReviewPages()
             movieReviewScreen == MovieReviewScreen.LIST -> closeMovieReviewPages()
             showFab -> showFab = false
         }
@@ -1091,19 +1099,7 @@ private fun FrameNativeApp(
                                         onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
                                         onEdit = { openReviewEditor(it) },
                                         onRateVideo = { video, rating -> repository.updateVideoRating(video.id, rating); refresh() },
-                                        onOpenMovieReviews = { video ->
-                                            if (movieReviewEntries.none { it.videoId == video.id }) {
-                                                showFab = false
-                                                movieReviewVideoId = video.id
-                                                selectedMovieReviewId = null
-                                                editingMovieReviewId = null
-                                                movieReviewEditorReturnToList = false
-                                                openMovieReviewEditor()
-                                                movieReviewEditorReturnToList = false
-                                            } else {
-                                                openMovieReviewList(video)
-                                            }
-                                        },
+                                        onOpenMovieReviews = { video -> openMovieReviewList(video) },
                                         onPlayVideo = { video -> playVideo(video) },
                                         onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                         onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
@@ -1121,20 +1117,18 @@ private fun FrameNativeApp(
                                         MovieReviewDetailPage(
                                             video = reviewVideo,
                                             entry = selectedMovieReview,
-                                            onBack = { movieReviewScreen = MovieReviewScreen.LIST },
+                                            onBack = { closeMovieReviewPages() },
                                             onEdit = { openMovieReviewEditor(selectedMovieReview) },
                                             onDelete = {
                                                 repository.deleteMovieReview(selectedMovieReview.id)
                                                 refresh()
-                                                movieReviewScreen = MovieReviewScreen.LIST
-                                                selectedMovieReviewId = null
+                                                closeMovieReviewPages()
                                             }
                                         )
                                     } else Box(Modifier.fillMaxSize())
                                     MovieReviewScreen.EDITOR -> if (reviewVideo != null) {
                                         MovieReviewEditorPage(
                                             video = reviewVideo,
-                                            initialTitle = movieReviewDraftTitle,
                                             initialContent = movieReviewDraftContent,
                                             isEditing = editingMovieReviewId != null,
                                             sessionKey = movieReviewEditorSession,
