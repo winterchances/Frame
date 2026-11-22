@@ -618,7 +618,11 @@ private fun FrameNativeApp(
         editingMovieReviewId = null
         movieReviewEditorReturnToList = false
         if (existing == null) {
-            openMovieReviewEditor()
+            movieReviewEditorSession++
+            editingMovieReviewId = null
+            movieReviewDraftTitle = ""
+            movieReviewDraftContent = ""
+            movieReviewScreen = MovieReviewScreen.EDITOR
             movieReviewEditorReturnToList = false
         } else {
             movieReviewScreen = MovieReviewScreen.DETAIL
