@@ -794,7 +794,6 @@ internal fun RecordsPage(
                         }
                     }
                 
-                        }
                     } else {
                         item(key = "review_${recordItem.second!!.id}") {
                             val entry = recordItem.second!!
