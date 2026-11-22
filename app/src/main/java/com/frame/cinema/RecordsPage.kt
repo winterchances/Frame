@@ -198,6 +198,7 @@ internal fun RecordsPage(
     onEdit: (ReviewEntry) -> Unit,
     onRateVideo: (VideoItem, Float) -> Unit,
     onOpenMovieReviews: (VideoItem) -> Unit,
+    onOpenStandaloneMovieReview: (ReviewEntry) -> Unit,
     onPlayVideo: (VideoItem) -> Unit,
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
@@ -283,7 +284,10 @@ internal fun RecordsPage(
         reviews.filter { it.videoId != null }.groupBy { it.videoId!! }
     }
     val movieReviewsByVideo = remember(movieReviews) {
-        movieReviews.groupBy { it.videoId }
+        movieReviews.filter { it.standaloneReviewId == null }.groupBy { it.videoId }
+    }
+    val movieReviewsByStandalone = remember(movieReviews) {
+        movieReviews.filter { it.standaloneReviewId != null }.associateBy { it.standaloneReviewId!! }
     }
     val movieReviewCounts = remember(movieReviewsByVideo) {
         movieReviewsByVideo.mapValues { (_, entries) -> entries.size }
@@ -521,7 +525,7 @@ internal fun RecordsPage(
                                             style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                                         )
                                         Text(
-                                            if (movieReviewCount > 0) "影评 ${movieReviewCount} 条" else "写影评",
+                                            if (movieReviewCount > 0) "影评" else "写影评",
                                             color = ActiveAccent,
                                             fontSize = 12.sp,
                                             lineHeight = 16.sp,
@@ -557,6 +561,16 @@ internal fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
+                            val standaloneMovieReview = movieReviewsByStandalone[entry.id]
+                            Text(
+                                if (standaloneMovieReview != null) "影评" else "写影评",
+                                modifier = Modifier.noRippleClickable { onOpenStandaloneMovieReview(entry) },
+                                color = ActiveAccent,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "导出",
                                 modifier = Modifier.then(
