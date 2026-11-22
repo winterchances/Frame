@@ -52,7 +52,7 @@ jobs:
       - name: Apply repository launcher icon
         run: |
           mkdir -p app/src/main/res/drawable-nodpi
-          cp icon.png app/src/main/res/drawable-nodpi/ic_launcher.png
+          cp app-icon.png app/src/main/res/drawable-nodpi/ic_launcher.png
 
       - name: Build signed release APK
         env:
