@@ -1162,4 +1162,3 @@ internal fun RecordsPage(
         }
     }
 }
-}
