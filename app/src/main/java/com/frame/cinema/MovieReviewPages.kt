@@ -48,7 +48,10 @@ internal fun MovieReviewDetailPage(
     val bodyScrollState = rememberScrollState()
 
     LaunchedEffect(content, isEditing) {
-        if (isEditing) bodyScrollState.animateScrollTo(bodyScrollState.maxValue)
+        if (isEditing) {
+            withFrameNanos { }
+            bodyScrollState.animateScrollTo(bodyScrollState.maxValue)
+        }
     }
     var showMenu by remember { mutableStateOf(false) }
 
