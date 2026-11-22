@@ -77,7 +77,7 @@ internal fun MovieReviewDetailPage(
                             .shadow(2.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surface)
-                            .clickable { if (isEditing) save() else showMenu = true },
+                            .noRippleClickable { if (isEditing) save() else showMenu = true },
                         contentAlignment = Alignment.Center
                     ) {
                         if (isEditing) {
@@ -89,7 +89,8 @@ internal fun MovieReviewDetailPage(
                     AnimatedDropdownPopup(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
-                        modifier = Modifier.width(152.dp)
+                        modifier = Modifier.width(152.dp),
+                        animateFromAnchor = true
                     ) {
                         CustomSortMenuItem("导出", false) { showMenu = false; onExport() }
                         CustomSortMenuItem("复制", false) { showMenu = false; onCopy() }
