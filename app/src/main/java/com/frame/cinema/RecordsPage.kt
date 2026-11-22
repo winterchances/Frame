@@ -795,7 +795,8 @@ internal fun RecordsPage(
                                     englishFontSize = 14.sp,
                                     englishColor = MutedText,
                                     lineHeight = 22.sp,
-                                    maxLines = 2,
+                                    englishSpacing = 2.dp,
+                                    maxLines = 1,
                                     showEnglish = true
                                 )
                                 Spacer(Modifier.weight(1f))
@@ -807,15 +808,35 @@ internal fun RecordsPage(
                                     modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Text(
-                                    SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                    color = MutedText,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                                )
+                                Spacer(Modifier.weight(1f))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                        color = MutedText,
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    )
+                                    val standaloneMovieReview = movieReviewsByStandalone[entry.id]
+                                    Text(
+                                        " · ",
+                                        color = MutedText,
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                    )
+                                    Text(
+                                        if (standaloneMovieReview != null) "影评" else "写影评",
+                                        color = ActiveAccent,
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        maxLines = 1,
+                                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                        modifier = Modifier.noRippleClickable { onOpenStandaloneMovieReview(entry) }
+                                    )
+                                }
                                 Spacer(Modifier.weight(1f))
                             }
                         }
@@ -842,16 +863,6 @@ internal fun RecordsPage(
                                 style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                             )
                             Spacer(Modifier.weight(1f))
-                            val standaloneMovieReview = movieReviewsByStandalone[entry.id]
-                            Text(
-                                if (standaloneMovieReview != null) "影评" else "写影评",
-                                modifier = Modifier.noRippleClickable { onOpenStandaloneMovieReview(entry) },
-                                color = ActiveAccent,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
-                            )
-                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text(
                                 "导出",
                                 modifier = Modifier.then(
