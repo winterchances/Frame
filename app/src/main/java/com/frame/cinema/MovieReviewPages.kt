@@ -100,7 +100,7 @@ internal fun MovieReviewDetailPage(
                 }
         }
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            Modifier.weight(1f).fillMaxWidth()
                 .padding(horizontal = 20.dp).padding(top = 24.dp, bottom = 48.dp)
         ) {
             MovieReviewWorkHeader(video, onRate)
@@ -112,53 +112,57 @@ internal fun MovieReviewDetailPage(
                 color = Color(0xFFAAAAAA)
             )
             Spacer(Modifier.height(18.dp))
-            if (isEditing) {
-                BasicTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
-                    textStyle = TextStyle.Default.copy(
-                        fontSize = 16.sp,
-                        lineHeight = 28.sp,
-                        letterSpacing = 0.sp,
-                        color = MainText,
-                    ),
-                    decorationBox = { inner ->
-                        Box(Modifier.fillMaxWidth()) {
-                            if (content.isEmpty()) {
-                                Text(
-                                    "写下你对这部作品的整体感受……",
-                                    fontSize = 16.sp,
-                                    letterSpacing = 0.sp,
-                                    color = MutedText,
-                                    style = TextStyle.Default.copy(
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+            ) {
+                if (isEditing) {
+                    BasicTextField(
+                        value = content,
+                        onValueChange = { content = it },
+                        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
+                        textStyle = TextStyle.Default.copy(
+                            fontSize = 16.sp,
+                            lineHeight = 28.sp,
+                            letterSpacing = 0.sp,
+                            color = MainText,
+                        ),
+                        decorationBox = { inner ->
+                            Box(Modifier.fillMaxWidth()) {
+                                if (content.isEmpty()) {
+                                    Text(
+                                        "写下你对这部作品的整体感受……",
                                         fontSize = 16.sp,
-                                        lineHeight = 28.sp,
                                         letterSpacing = 0.sp,
                                         color = MutedText,
+                                        style = TextStyle.Default.copy(
+                                            fontSize = 16.sp,
+                                            lineHeight = 28.sp,
+                                            letterSpacing = 0.sp,
+                                            color = MutedText,
+                                        )
                                     )
-                                )
+                                }
+                                inner()
                             }
-                            inner()
                         }
-                    }
-                )
-            } else {
-                Text(
-                    content,
-                    modifier = Modifier.fillMaxWidth().clickable { isEditing = true },
-                    fontSize = 16.sp,
-                    letterSpacing = 0.sp,
-                    color = MainText,
-                    style = TextStyle.Default.copy(
+                    )
+                } else {
+                    Text(
+                        content,
+                        modifier = Modifier.fillMaxWidth().clickable { isEditing = true },
                         fontSize = 16.sp,
-                        lineHeight = 28.sp,
                         letterSpacing = 0.sp,
                         color = MainText,
+                        style = TextStyle.Default.copy(
+                            fontSize = 16.sp,
+                            lineHeight = 28.sp,
+                            letterSpacing = 0.sp,
+                            color = MainText,
+                        )
                     )
-                )
+                }
+                Spacer(Modifier.height(32.dp))
             }
-            Spacer(Modifier.height(32.dp))
         }
     }
 }
