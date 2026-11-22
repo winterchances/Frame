@@ -468,18 +468,20 @@ internal fun AnimatedDropdownPopup(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val visibilityState = remember { MutableTransitionState(false) }
-    // Use a fixed top-right pivot from the very first frame so the menu
-    // visibly grows leftward from the button-side corner without pivot jumps.
-    val popupTransformOrigin = if (animateFromAnchor) {
-        TransformOrigin(1f, 0f)
-    } else TransformOrigin(0.5f, 0.5f)
     visibilityState.targetState = expanded
     val cornerRadius by animateDpAsState(
         targetValue = if (expanded) 16.dp else 180.dp,
         animationSpec = tween(280),
         label = "sortMenuCornerRadius"
     )
-    // Keep the anchor-side corner fixed while the menu reveals from the top-right.
+    // Reveal the fixed-size menu from its top-right corner. Unlike scaleIn,
+    // this keeps the menu's geometry stationary while the visible clip grows
+    // leftward and downward from the anchor corner.
+    val revealProgress by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = tween(280),
+        label = "dropdownRevealProgress"
+    )
     val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
 
     if (visibilityState.currentState || visibilityState.targetState) {
@@ -491,25 +493,31 @@ internal fun AnimatedDropdownPopup(
         ) {
             AnimatedVisibility(
                 visibleState = visibilityState,
-                enter = fadeIn(animationSpec = tween(280)) +
-                    scaleIn(
-                        initialScale = 0.10f,
-                        transformOrigin = popupTransformOrigin,
-                        animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
-                    ),
-                exit = fadeOut(animationSpec = tween(180)) +
-                    scaleOut(
-                        targetScale = 0.10f,
-                        transformOrigin = popupTransformOrigin,
-                        animationSpec = tween(180)
-                    )
+                enter = fadeIn(animationSpec = tween(280)),
+                exit = fadeOut(animationSpec = tween(180))
             ) {
                 Column(
                     modifier = modifier
                         .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
                         .clip(menuShape)
                         .background(MaterialTheme.colorScheme.surface)
-                        .border(0.7.dp, LocalFramePalette.current.divider, menuShape),
+                        .border(0.7.dp, LocalFramePalette.current.divider, menuShape)
+                        .drawWithContent {
+                            if (animateFromAnchor) {
+                                val visibleWidth = size.width * revealProgress
+                                val visibleHeight = size.height * revealProgress
+                                androidx.compose.ui.graphics.drawscope.clipRect(
+                                    left = size.width - visibleWidth,
+                                    top = 0f,
+                                    right = size.width,
+                                    bottom = visibleHeight
+                                ) {
+                                    this@drawWithContent.drawContent()
+                                }
+                            } else {
+                                this@drawWithContent.drawContent()
+                            }
+                        },
                     content = content
                 )
             }
