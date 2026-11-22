@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,12 +56,11 @@ internal fun MovieReviewDetailPage(
     BackHandler(enabled = isEditing) { if (!save()) onBack() }
 
     Column(Modifier.fillMaxSize().background(PageBg).imePadding()) {
-        Box(
-            Modifier.fillMaxWidth().statusBarsPadding().height(56.dp).padding(horizontal = 12.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            Modifier.fillMaxWidth().statusBarsPadding().padding(top = 40.dp).height(40.dp).padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("影评", fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = MainText)
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Box(Modifier.size(40.dp).clickable { if (isEditing) { if (!save()) onBack() } else onBack() }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText)
                 }
@@ -83,7 +84,6 @@ internal fun MovieReviewDetailPage(
                         CustomSortMenuItem("删除", false) { showMenu = false; onDelete() }
                     }
                 }
-            }
         }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -93,7 +93,7 @@ internal fun MovieReviewDetailPage(
             Text(
                 formatMovieReviewDate(entry?.createdAt ?: System.currentTimeMillis()),
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Start,
                 fontSize = 12.sp,
                 color = Color(0xFFAAAAAA)
             )
@@ -103,11 +103,24 @@ internal fun MovieReviewDetailPage(
                     value = content,
                     onValueChange = { content = it },
                     modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
-                    textStyle = TextStyle(fontSize = 16.sp, lineHeight = 28.sp, letterSpacing = 0.sp, color = MainText),
+                    textStyle = TextStyle(
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp,
+                        letterSpacing = 0.sp,
+                        color = MainText,
+                        paragraphStyle = ParagraphStyle(textIndent = TextIndent(firstLine = 32.sp))
+                    ),
                     decorationBox = { inner ->
                         Box(Modifier.fillMaxWidth()) {
                             if (content.isEmpty()) {
-                                Text("写下你对这部作品的整体感受……", fontSize = 16.sp, lineHeight = 28.sp, letterSpacing = 0.sp, color = MutedText)
+                                Text(
+                                    "写下你对这部作品的整体感受……",
+                                    fontSize = 16.sp,
+                                    lineHeight = 28.sp,
+                                    letterSpacing = 0.sp,
+                                    color = MutedText,
+                                    style = TextStyle(paragraphStyle = ParagraphStyle(textIndent = TextIndent(firstLine = 32.sp)))
+                                )
                             }
                             inner()
                         }
@@ -120,7 +133,8 @@ internal fun MovieReviewDetailPage(
                     fontSize = 16.sp,
                     lineHeight = 28.sp,
                     letterSpacing = 0.sp,
-                    color = MainText
+                    color = MainText,
+                    style = TextStyle(paragraphStyle = ParagraphStyle(textIndent = TextIndent(firstLine = 32.sp)))
                 )
             }
             Spacer(Modifier.height(32.dp))
@@ -132,11 +146,11 @@ internal fun MovieReviewDetailPage(
 private fun MovieReviewWorkHeader(video: VideoItem, onRate: (Float) -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(bottom = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start
     ) {
         Box(
             Modifier.fillMaxWidth().defaultMinSize(minHeight = 68.dp),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.CenterStart
         ) {
             VideoCardTitle(
                 name = video.name,
@@ -150,7 +164,7 @@ private fun MovieReviewWorkHeader(video: VideoItem, onRate: (Float) -> Unit) {
                 englishSpacing = 2.dp,
                 maxLines = 2,
                 showEnglish = true,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Start
             )
         }
         Spacer(Modifier.height(5.dp))
