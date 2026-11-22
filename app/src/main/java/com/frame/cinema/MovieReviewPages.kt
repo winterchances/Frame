@@ -35,6 +35,7 @@ internal fun MovieReviewDetailPage(
     onBack: () -> Unit,
     onSave: (String) -> Unit,
     onDelete: () -> Unit,
+    onRate: (Float) -> Unit,
     onExport: () -> Unit,
     onCopy: () -> Unit
 ) {
@@ -61,22 +62,25 @@ internal fun MovieReviewDetailPage(
                 Box(Modifier.size(40.dp).clickable { if (isEditing) { if (!save()) onBack() } else onBack() }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText)
                 }
-                Box(Modifier.size(40.dp).clickable {
-                    if (isEditing) save() else showMenu = true
-                }, contentAlignment = Alignment.Center) {
-                    if (isEditing) {
-                        Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = ActiveAccent)
-                    } else {
-                        Icon(Icons.Outlined.MoreHoriz, contentDescription = "更多", tint = MainText)
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxSize().clickable {
+                        if (isEditing) save() else showMenu = true
+                    }, contentAlignment = Alignment.Center) {
+                        if (isEditing) {
+                            Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = ActiveAccent)
+                        } else {
+                            Icon(Icons.Outlined.MoreHoriz, contentDescription = "更多", tint = MainText)
+                        }
                     }
-                }
-                AnimatedDropdownPopup(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    CustomSortMenuItem("导出", false) { showMenu = false; onExport() }
-                    CustomSortMenuItem("复制", false) { showMenu = false; onCopy() }
-                    CustomSortMenuItem("删除", false) { showMenu = false; onDelete() }
+                    AnimatedDropdownPopup(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.width(192.dp)
+                    ) {
+                        CustomSortMenuItem("导出", false) { showMenu = false; onExport() }
+                        CustomSortMenuItem("复制", false) { showMenu = false; onCopy() }
+                        CustomSortMenuItem("删除", false) { showMenu = false; onDelete() }
+                    }
                 }
             }
         }
@@ -84,7 +88,7 @@ internal fun MovieReviewDetailPage(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(bottom = 48.dp)
         ) {
-            MovieReviewWorkHeader(video)
+            MovieReviewWorkHeader(video, onRate)
             Text(
                 formatMovieReviewDate(entry?.createdAt ?: System.currentTimeMillis()),
                 modifier = Modifier.fillMaxWidth(),
@@ -123,7 +127,7 @@ internal fun MovieReviewDetailPage(
 }
 
 @Composable
-private fun MovieReviewWorkHeader(video: VideoItem) {
+private fun MovieReviewWorkHeader(video: VideoItem, onRate: (Float) -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(bottom = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -151,7 +155,7 @@ private fun MovieReviewWorkHeader(video: VideoItem) {
         RatingStars(
             video.rating,
             14.dp,
-            onRate = null,
+            onRate = onRate,
             spacing = 1.dp,
             modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
         )
