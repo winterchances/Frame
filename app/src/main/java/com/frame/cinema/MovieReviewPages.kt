@@ -120,7 +120,7 @@ internal fun MovieReviewDetailPage(
             Spacer(Modifier.height(32.dp))
         }
     }
-
+}
 
 @Composable
 private fun MovieReviewWorkHeader(video: VideoItem) {
