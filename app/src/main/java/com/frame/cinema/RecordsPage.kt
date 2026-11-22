@@ -420,7 +420,7 @@ internal fun RecordsPage(
         val targetId = targetReviewId ?: return@LaunchedEffect
         val videoIndex = recordItems.indexOfFirst { item -> item.first?.let { video -> reviewsByVideo[video.id].orEmpty().any { it.id == targetId } } == true }
         if (videoIndex >= 0) {
-            setVideoReviewsExpanded(displayVideos[videoIndex].id, true)
+            setVideoReviewsExpanded(recordItems[videoIndex].first!!.id, true)
             listState.animateScrollToItem(5 + videoIndex)
         } else {
             val standaloneRootId = standaloneReviews.firstOrNull { root ->
@@ -512,7 +512,7 @@ internal fun RecordsPage(
                     val recordVideo = recordItem.first
                     if (recordVideo != null) {
                         item(key = "video_${recordVideo.id}") {
-                            val video = recordVideo video ->
+                            val video = recordVideo
                     val entries = sortedReviewsByVideo[video.id].orEmpty()
                     val completed = video.status == "watched" || video.progress >= 100f
                     val expanded = expandedVideoReviews[video.id] ?: true
@@ -797,7 +797,7 @@ internal fun RecordsPage(
                         }
                     } else {
                         item(key = "review_${recordItem.second!!.id}") {
-                            val entry = recordItem.second!! entry ->
+                            val entry = recordItem.second!!
                     val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
                     val entryHighlight = entry.id == targetReviewId
                     val expanded = expandedStandaloneReviews[entry.id] ?: true
