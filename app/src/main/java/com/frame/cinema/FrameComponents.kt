@@ -470,20 +470,6 @@ internal fun AnimatedDropdownPopup(
 ) {
     val visibilityState = remember { MutableTransitionState(false) }
     visibilityState.targetState = expanded
-    val cornerRadius by animateDpAsState(
-        targetValue = if (expanded) 16.dp else 180.dp,
-        animationSpec = tween(280),
-        label = "sortMenuCornerRadius"
-    )
-    // Reveal the fixed-size menu from its top-right corner. Unlike scaleIn,
-    // this keeps the menu's geometry stationary while the visible clip grows
-    // leftward and downward from the anchor corner.
-    val revealProgress by animateFloatAsState(
-        targetValue = if (expanded) 1f else 0f,
-        animationSpec = tween(280),
-        label = "dropdownRevealProgress"
-    )
-    val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
 
     if (visibilityState.currentState || visibilityState.targetState) {
         Popup(
@@ -494,9 +480,23 @@ internal fun AnimatedDropdownPopup(
         ) {
             AnimatedVisibility(
                 visibleState = visibilityState,
-                enter = fadeIn(animationSpec = tween(280)),
-                exit = fadeOut(animationSpec = tween(180))
+                enter = fadeIn(animationSpec = tween(if (animateFromAnchor) 100 else 280)),
+                exit = fadeOut(animationSpec = tween(if (animateFromAnchor) 100 else 180))
             ) {
+                val revealProgress by transition.animateFloat(
+                    transitionSpec = { tween(280) },
+                    label = "dropdownRevealProgress"
+                ) { state ->
+                    if (state == androidx.compose.animation.EnterExitState.Visible) 1f else 0f
+                }
+                val cornerRadius by transition.animateDp(
+                    transitionSpec = { tween(280) },
+                    label = "sortMenuCornerRadius"
+                ) { state ->
+                    if (state == androidx.compose.animation.EnterExitState.Visible) 16.dp else 180.dp
+                }
+                val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
+
                 Column(
                     modifier = modifier
                         .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
