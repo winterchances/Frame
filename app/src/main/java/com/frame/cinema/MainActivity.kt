@@ -178,7 +178,7 @@ import kotlin.math.roundToInt
 
 
 internal enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_CATEGORY, NEW_CATEGORY }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_MOVIE_REVIEW, DELETE_CATEGORY, NEW_CATEGORY }
 private enum class MovieReviewScreen { LIST, DETAIL, EDITOR }
 internal enum class SortMode { ADDED, NAME }
 internal enum class SortDirection { ASCENDING, DESCENDING }
@@ -1109,11 +1109,7 @@ private fun FrameNativeApp(
                                             initialContent = movieReviewDraftContent,
                                             onBack = { closeMovieReviewPages() },
                                             onSave = { content -> saveMovieReview("", content) },
-                                            onDelete = {
-                                                selectedMovieReview?.let { repository.deleteMovieReview(it.id) }
-                                                refresh()
-                                                closeMovieReviewPages()
-                                            },
+                                            onDelete = { sheet = SheetType.DELETE_MOVIE_REVIEW },
                                             onExport = {
                                                 val date = java.text.SimpleDateFormat("yyyy/M/d", java.util.Locale.getDefault())
                                                     .format(java.util.Date(selectedMovieReview?.createdAt ?: System.currentTimeMillis()))
@@ -2125,6 +2121,22 @@ private fun FrameNativeApp(
                     SheetType.CLEAR_DATA -> Unit
                     SheetType.DELETE_RECENT -> SheetContent("删除这条播放记录？") {
                         SheetAction("删除播放记录", danger = true, bottomPadding = 0.dp) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
+                    }
+                    SheetType.DELETE_MOVIE_REVIEW -> SheetContent("删除这篇影评？") {
+                        Text("删除后无法恢复，但不会影响作品评分和随记。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(bottom = 16.dp))
+                        SheetActionPair(
+                            confirmText = "删除",
+                            cancelText = "取消",
+                            confirmDanger = true,
+                            confirmOnRight = true,
+                            onConfirm = {
+                                selectedMovieReview?.let { repository.deleteMovieReview(it.id) }
+                                refresh()
+                                sheet = SheetType.NONE
+                                closeMovieReviewPages()
+                            },
+                            onCancel = { sheet = SheetType.NONE }
+                        )
                     }
                     SheetType.DELETE_CATEGORY -> SheetContent("确定删除该分类？") {
                         SheetAction("删除该分类", danger = true, bottomPadding = 0.dp) {
