@@ -461,9 +461,19 @@ internal fun AnimatedDropdownPopup(
     modifier: Modifier = Modifier,
     offset: androidx.compose.ui.unit.IntOffset = androidx.compose.ui.unit.IntOffset.Zero,
     alignment: Alignment = Alignment.TopEnd,
+    animateFromAnchor: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val visibilityState = remember { MutableTransitionState(false) }
+    var popupWidthPx by remember { mutableIntStateOf(0) }
+    var popupHeightPx by remember { mutableIntStateOf(0) }
+    val anchorCenterPx = with(LocalDensity.current) { 18.dp.toPx() }
+    val popupTransformOrigin = if (animateFromAnchor && popupWidthPx > 0 && popupHeightPx > 0) {
+        TransformOrigin(
+            ((popupWidthPx - anchorCenterPx) / popupWidthPx).coerceIn(0f, 1f),
+            (anchorCenterPx / popupHeightPx).coerceIn(0f, 1f)
+        )
+    } else TransformOrigin(0.5f, 0.5f)
     visibilityState.targetState = expanded
     val cornerRadius by animateDpAsState(
         targetValue = if (expanded) 16.dp else 180.dp,
@@ -484,18 +494,22 @@ internal fun AnimatedDropdownPopup(
                 enter = fadeIn(animationSpec = tween(280)) +
                     scaleIn(
                         initialScale = 0.10f,
-                        transformOrigin = TransformOrigin(0.5f, 0.5f),
+                        transformOrigin = popupTransformOrigin,
                         animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
                     ),
                 exit = fadeOut(animationSpec = tween(180)) +
                     scaleOut(
                         targetScale = 0.10f,
-                        transformOrigin = TransformOrigin(0.5f, 0.5f),
+                        transformOrigin = popupTransformOrigin,
                         animationSpec = tween(180)
                     )
             ) {
                 Column(
                     modifier = modifier
+                        .onGloballyPositioned {
+                            popupWidthPx = it.size.width
+                            popupHeightPx = it.size.height
+                        }
                         .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
                         .clip(menuShape)
                         .background(MaterialTheme.colorScheme.surface)
