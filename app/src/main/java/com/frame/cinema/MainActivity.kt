@@ -1580,6 +1580,7 @@ private fun FrameNativeApp(
                                                         modifier = Modifier.fillMaxWidth(),
                                                         fontWeight = FontWeight.Medium,
                                                         fontSize = 16.sp,
+                                                        color = MainText,
                                                         englishFontSize = 14.sp,
                                                         englishColor = MutedText,
                                                         lineHeight = 21.sp,
