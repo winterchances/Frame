@@ -82,7 +82,7 @@ internal fun MovieReviewDetailPage(
                         contentAlignment = Alignment.Center
                     ) {
                         if (isEditing) {
-                            Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = ActiveAccent, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Outlined.Check, contentDescription = "完成编辑", tint = MainText, modifier = Modifier.size(20.dp))
                         } else {
                             Icon(Icons.Outlined.MoreHoriz, contentDescription = "更多", tint = MainText, modifier = Modifier.size(20.dp))
                         }

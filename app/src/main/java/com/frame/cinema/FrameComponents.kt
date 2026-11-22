@@ -32,6 +32,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -153,6 +155,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -476,7 +479,8 @@ internal fun AnimatedDropdownPopup(
         animationSpec = tween(280),
         label = "sortMenuCornerRadius"
     )
-    val menuShape = RoundedCornerShape(cornerRadius)
+    // Keep the anchor-side corner fixed while the menu reveals from the top-right.
+    val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
 
     if (visibilityState.currentState || visibilityState.targetState) {
         Popup(
@@ -487,18 +491,36 @@ internal fun AnimatedDropdownPopup(
         ) {
             AnimatedVisibility(
                 visibleState = visibilityState,
-                enter = fadeIn(animationSpec = tween(280)) +
-                    scaleIn(
-                        initialScale = 0.10f,
-                        transformOrigin = popupTransformOrigin,
-                        animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
-                    ),
-                exit = fadeOut(animationSpec = tween(180)) +
-                    scaleOut(
-                        targetScale = 0.10f,
-                        transformOrigin = popupTransformOrigin,
-                        animationSpec = tween(180)
-                    )
+                enter = if (animateFromAnchor) {
+                    fadeIn(animationSpec = tween(280)) +
+                        expandIn(
+                            expandFrom = Alignment.TopEnd,
+                            initialSize = { IntSize(0, 0) },
+                            animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+                        )
+                } else {
+                    fadeIn(animationSpec = tween(280)) +
+                        scaleIn(
+                            initialScale = 0.10f,
+                            transformOrigin = popupTransformOrigin,
+                            animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+                        )
+                },
+                exit = if (animateFromAnchor) {
+                    fadeOut(animationSpec = tween(180)) +
+                        shrinkOut(
+                            shrinkTowards = Alignment.TopEnd,
+                            targetSize = { IntSize(0, 0) },
+                            animationSpec = tween(180)
+                        )
+                } else {
+                    fadeOut(animationSpec = tween(180)) +
+                        scaleOut(
+                            targetScale = 0.10f,
+                            transformOrigin = popupTransformOrigin,
+                            animationSpec = tween(180)
+                        )
+                }
             ) {
                 Column(
                     modifier = modifier

@@ -403,13 +403,6 @@ internal fun createUnifiedReviewExportBitmap(
             textLeft, maxOf(titleY + 42f, coverTop + 250f), ratingPaint
         )
     }
-    val notePaint = android.graphics.Paint(metaPaint).apply {
-        color = android.graphics.Color.rgb(155, 164, 161)
-        textSize = 27f
-        typeface = android.graphics.Typeface.create("serif", android.graphics.Typeface.NORMAL)
-    }
-    canvas.drawText("A frame, A moment.", textLeft, coverTop + coverHeight - 24f, notePaint)
-
     val dividerPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(232, 238, 235)
         strokeWidth = 2f
