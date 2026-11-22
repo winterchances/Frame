@@ -258,7 +258,9 @@ internal fun createUnifiedReviewExportBitmap(
     title: String,
     coverPath: String?,
     rating: Float,
-    reviews: List<Pair<String, List<String>>>
+    reviews: List<Pair<String, List<String>>>,
+    singleReviewBody: List<String>? = null,
+    eyebrowLabel: String = "JOURNAL"
 ): Bitmap {
     val width = 1080
     val margin = 72f
@@ -301,8 +303,12 @@ internal fun createUnifiedReviewExportBitmap(
         76f + lines.size * 48f
     }
     var contentBottom = firstReviewTop
-    timelineEntryHeights.forEach { entryHeight ->
-        contentBottom += entryHeight + 12f
+    if (singleReviewBody != null) {
+        contentBottom += singleReviewBody.size * 48f
+    } else {
+        timelineEntryHeights.forEach { entryHeight ->
+            contentBottom += entryHeight + 12f
+        }
     }
     val contentHeight = (contentBottom + 150f).toInt().coerceAtLeast(1050)
     val exportHeight = maxOf(1440, contentHeight)
@@ -326,7 +332,7 @@ internal fun createUnifiedReviewExportBitmap(
         letterSpacing = 2.2f
         typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
     }
-    val eyebrow = "FRAME  〡  JOURNAL"
+    val eyebrow = "FRAME  〡  $eyebrowLabel"
     val eyebrowWidth = eyebrowPaint.measureText(eyebrow) +
         eyebrowPaint.letterSpacing * (eyebrow.length - 1).coerceAtLeast(0)
     val eyebrowScale = minOf(1f, (width - margin * 2f) / eyebrowWidth)
@@ -410,21 +416,29 @@ internal fun createUnifiedReviewExportBitmap(
     }
     canvas.drawLine(margin, sectionTop, width - margin, sectionTop, dividerPaint)
 
-    var cursorY = firstReviewTop
-    reviews.forEachIndexed { index, (date, lines) ->
-        val entryHeight = timelineEntryHeights[index]
-        val dotPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = accentColor
-            style = android.graphics.Paint.Style.FILL
-        }
-        canvas.drawCircle(margin + 22f, cursorY + 24f, 7f, dotPaint)
-        canvas.drawText(date, margin + 48f, cursorY + 31f, metaPaint)
-        var bodyY = cursorY + 76f
-        lines.forEach { line ->
-            canvas.drawText(line, margin + 48f, bodyY, bodyPaint)
+    if (singleReviewBody != null) {
+        var bodyY = firstReviewTop + 12f
+        singleReviewBody.forEach { line ->
+            canvas.drawText(line, margin, bodyY, bodyPaint)
             bodyY += 48f
         }
-        cursorY += entryHeight + 12f
+    } else {
+        var cursorY = firstReviewTop
+        reviews.forEachIndexed { index, (date, lines) ->
+            val entryHeight = timelineEntryHeights[index]
+            val dotPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = accentColor
+                style = android.graphics.Paint.Style.FILL
+            }
+            canvas.drawCircle(margin + 22f, cursorY + 24f, 7f, dotPaint)
+            canvas.drawText(date, margin + 48f, cursorY + 31f, metaPaint)
+            var bodyY = cursorY + 76f
+            lines.forEach { line ->
+                canvas.drawText(line, margin + 48f, bodyY, bodyPaint)
+                bodyY += 48f
+            }
+            cursorY += entryHeight + 12f
+        }
     }
 
     val footerPaint = android.graphics.Paint(metaPaint).apply {
