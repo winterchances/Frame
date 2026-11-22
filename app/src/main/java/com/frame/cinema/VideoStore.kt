@@ -557,6 +557,10 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         writableDatabase.delete("movie_reviews", "id=?", arrayOf(id.toString()))
     }
 
+    @Synchronized fun deleteStandaloneMovieReviews(standaloneReviewId: Long) {
+        writableDatabase.delete("movie_reviews", "standalone_review_id=?", arrayOf(standaloneReviewId.toString()))
+    }
+
     @Synchronized fun addReview(videoId: Long?, content: String, rating: Float, createdAt: Long, title: String = "", coverPath: String? = null, standaloneGroupId: Long? = null, playbackPositionMs: Long? = null): Long {
         val values = ContentValues().apply {
             if (videoId == null) putNull("video_id") else put("video_id", videoId)
