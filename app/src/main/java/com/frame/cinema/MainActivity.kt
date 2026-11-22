@@ -1381,10 +1381,13 @@ private fun FrameNativeApp(
                         )
                         .fillMaxWidth()
                         .then(
-                            if (displayedSheet == SheetType.SETTINGS) {
-                                Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .5f)
-                            } else {
-                                Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
+                            when (displayedSheet) {
+                                SheetType.SETTINGS ->
+                                    Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .5f)
+                                SheetType.SEARCH, SheetType.RECORD_SEARCH ->
+                                    Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .85f)
+                                else ->
+                                    Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
                             }
                         )
                         .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
