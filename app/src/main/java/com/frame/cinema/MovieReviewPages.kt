@@ -101,7 +101,7 @@ internal fun MovieReviewDetailPage(
         }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp).padding(bottom = 48.dp)
+                .padding(horizontal = 20.dp).padding(top = 24.dp, bottom = 48.dp)
         ) {
             MovieReviewWorkHeader(video, onRate)
             Text(
