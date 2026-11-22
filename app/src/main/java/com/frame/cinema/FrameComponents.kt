@@ -491,36 +491,18 @@ internal fun AnimatedDropdownPopup(
         ) {
             AnimatedVisibility(
                 visibleState = visibilityState,
-                enter = if (animateFromAnchor) {
-                    fadeIn(animationSpec = tween(280)) +
-                        expandIn(
-                            expandFrom = Alignment.TopEnd,
-                            initialSize = { IntSize(0, 0) },
-                            animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
-                        )
-                } else {
-                    fadeIn(animationSpec = tween(280)) +
-                        scaleIn(
-                            initialScale = 0.10f,
-                            transformOrigin = popupTransformOrigin,
-                            animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
-                        )
-                },
-                exit = if (animateFromAnchor) {
-                    fadeOut(animationSpec = tween(180)) +
-                        shrinkOut(
-                            shrinkTowards = Alignment.TopEnd,
-                            targetSize = { IntSize(0, 0) },
-                            animationSpec = tween(180)
-                        )
-                } else {
-                    fadeOut(animationSpec = tween(180)) +
-                        scaleOut(
-                            targetScale = 0.10f,
-                            transformOrigin = popupTransformOrigin,
-                            animationSpec = tween(180)
-                        )
-                }
+                enter = fadeIn(animationSpec = tween(280)) +
+                    scaleIn(
+                        initialScale = 0.10f,
+                        transformOrigin = popupTransformOrigin,
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+                    ),
+                exit = fadeOut(animationSpec = tween(180)) +
+                    scaleOut(
+                        targetScale = 0.10f,
+                        transformOrigin = popupTransformOrigin,
+                        animationSpec = tween(180)
+                    )
             ) {
                 Column(
                     modifier = modifier
