@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.ParagraphStyle
@@ -172,8 +171,7 @@ private fun MovieReviewWorkHeader(video: VideoItem, onRate: (Float) -> Unit) {
             video.rating,
             14.dp,
             onRate = onRate,
-            spacing = 1.dp,
-            modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() }
+            spacing = 1.dp
         )
     }
 }
