@@ -75,7 +75,7 @@ internal fun MovieReviewDetailPage(
                     AnimatedDropdownPopup(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
-                        modifier = Modifier.width(192.dp)
+                        modifier = Modifier.width(152.dp)
                     ) {
                         CustomSortMenuItem("导出", false) { showMenu = false; onExport() }
                         CustomSortMenuItem("复制", false) { showMenu = false; onCopy() }
@@ -102,11 +102,11 @@ internal fun MovieReviewDetailPage(
                     value = content,
                     onValueChange = { content = it },
                     modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
-                    textStyle = TextStyle(fontSize = 16.sp, lineHeight = 28.sp, color = MainText),
+                    textStyle = TextStyle(fontSize = 16.sp, lineHeight = 28.sp, letterSpacing = 0.sp, color = MainText),
                     decorationBox = { inner ->
                         Box(Modifier.fillMaxWidth()) {
                             if (content.isEmpty()) {
-                                Text("写下你对这部作品的整体感受……", fontSize = 16.sp, lineHeight = 28.sp, color = MutedText)
+                                Text("写下你对这部作品的整体感受……", fontSize = 16.sp, lineHeight = 28.sp, letterSpacing = 0.sp, color = MutedText)
                             }
                             inner()
                         }
@@ -118,6 +118,7 @@ internal fun MovieReviewDetailPage(
                     modifier = Modifier.fillMaxWidth().clickable { isEditing = true },
                     fontSize = 16.sp,
                     lineHeight = 28.sp,
+                    letterSpacing = 0.sp,
                     color = MainText
                 )
             }
