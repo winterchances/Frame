@@ -1391,7 +1391,10 @@ private fun FrameNativeApp(
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
                         .then(
-                            if (displayedSheet == SheetType.SETTINGS) Modifier
+                            if (displayedSheet == SheetType.SETTINGS ||
+                                displayedSheet == SheetType.RECORD_SEARCH ||
+                                displayedSheet == SheetType.SEARCH
+                            ) Modifier
                             else Modifier.verticalScroll(rememberScrollState())
                         )
                         .clickable(
@@ -1484,6 +1487,7 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
+                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                         BasicTextField(
                             recordSearch,
                             { recordSearch = it },
@@ -1570,21 +1574,36 @@ private fun FrameNativeApp(
                                                 else Text("感想", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                             }
                                             Column(Modifier.weight(1f)) {
-                                                Text(
-                                                    video?.let { displayVideoName(it.name) } ?: "独立感想",
-                                                    color = MainText,
-                                                    fontSize = if (video == null) 12.sp else 16.sp,
-                                                    fontWeight = if (video == null) FontWeight.Normal else FontWeight.Medium,
-                                                    lineHeight = if (video == null) 17.sp else 21.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
-                                                    color = MutedText,
-                                                    fontSize = 11.sp,
-                                                    modifier = Modifier.padding(top = 2.dp)
-                                                )
+                                                if (video != null) {
+                                                    VideoCardTitle(
+                                                        name = video.name,
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = 16.sp,
+                                                        englishFontSize = 14.sp,
+                                                        englishColor = MutedText,
+                                                        lineHeight = 21.sp,
+                                                        maxLines = 2,
+                                                        showEnglish = true,
+                                                        textAlign = TextAlign.Start
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        "独立感想",
+                                                        color = MainText,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Normal,
+                                                        lineHeight = 17.sp,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        SimpleDateFormat("M/d HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                                        color = MutedText,
+                                                        fontSize = 11.sp,
+                                                        modifier = Modifier.padding(top = 2.dp)
+                                                    )
+                                                }
                                                 if (entry.content.isNotBlank()) {
                                                     Text(
                                                         entry.content,
@@ -1665,6 +1684,7 @@ private fun FrameNativeApp(
                         if (!sheetKeyboardUp && recordSearchResultCount in 1..4) {
                             Spacer(Modifier.height(with(LocalDensity.current) { recordSearchBottomSpacerPx.toDp() }))
                         }
+                        }
                     }
                     SheetType.SEARCH -> Column(
                         Modifier.fillMaxWidth()
@@ -1674,6 +1694,7 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
+                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                         BasicTextField(
                             search,
                             { search = it },
@@ -1764,6 +1785,7 @@ private fun FrameNativeApp(
                         }
                         if (!sheetKeyboardUp && searchResults.size in 1..4) {
                             Spacer(Modifier.height(with(LocalDensity.current) { videoSearchBottomSpacerPx.toDp() }))
+                        }
                         }
                     }
                     SheetType.RENAME -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
