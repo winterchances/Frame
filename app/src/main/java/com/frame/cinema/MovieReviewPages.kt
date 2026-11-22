@@ -46,14 +46,14 @@ internal fun MovieReviewDetailPage(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    fun save() {
-        if (content.isNotBlank()) {
-            onSave(content)
-            isEditing = false
-        }
+    fun save(): Boolean {
+        if (content.isBlank()) return false
+        onSave(content)
+        isEditing = false
+        return true
     }
 
-    BackHandler(enabled = isEditing) { save() }
+    BackHandler(enabled = isEditing) { if (!save()) onBack() }
 
     Column(Modifier.fillMaxSize().background(PageBg).imePadding()) {
         Box(
@@ -62,7 +62,7 @@ internal fun MovieReviewDetailPage(
         ) {
             Text("影评", fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = MainText)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Box(Modifier.size(40.dp).clickable { if (isEditing) save() else onBack() }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(40.dp).clickable { if (isEditing) { if (!save()) onBack() } else onBack() }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Outlined.ArrowBack, contentDescription = "返回", tint = MainText)
                 }
                 Box(Modifier.size(40.dp).clickable {
