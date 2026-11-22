@@ -2138,7 +2138,7 @@ private fun FrameNativeApp(
                             confirmDanger = true,
                             confirmOnRight = true,
                             onConfirm = {
-                                selectedMovieReview?.let { repository.deleteMovieReview(it.id) }
+                                selectedMovieReviewId?.let { repository.deleteMovieReview(it) }
                                 refresh()
                                 sheet = SheetType.NONE
                                 closeMovieReviewPages()
