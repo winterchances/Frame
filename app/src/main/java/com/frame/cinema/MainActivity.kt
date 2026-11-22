@@ -439,6 +439,7 @@ private fun FrameNativeApp(
     onCategoryDrawerOverlay: (Float) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val openPlayerRequestValue by openPlayerRequest
     val appVersion = remember(context) {
         runCatching {
@@ -616,17 +617,10 @@ private fun FrameNativeApp(
             .maxWithOrNull(compareBy<MovieReviewEntry> { it.createdAt }.thenBy { it.id })
         selectedMovieReviewId = existing?.id
         editingMovieReviewId = null
+        movieReviewDraftTitle = ""
+        movieReviewDraftContent = existing?.content.orEmpty()
         movieReviewEditorReturnToList = false
-        if (existing == null) {
-            movieReviewEditorSession++
-            editingMovieReviewId = null
-            movieReviewDraftTitle = ""
-            movieReviewDraftContent = ""
-            movieReviewScreen = MovieReviewScreen.EDITOR
-            movieReviewEditorReturnToList = false
-        } else {
-            movieReviewScreen = MovieReviewScreen.DETAIL
-        }
+        movieReviewScreen = MovieReviewScreen.DETAIL
     }
     fun openMovieReviewEditor(entry: MovieReviewEntry? = null) {
         movieReviewEditorReturnToList = true
@@ -639,16 +633,15 @@ private fun FrameNativeApp(
     }
     fun saveMovieReview(title: String, content: String) {
         val videoId = movieReviewVideoId ?: return
-        val editingId = editingMovieReviewId
+        val editingId = selectedMovieReviewId
         if (editingId == null) {
-            val newId = repository.addMovieReview(videoId, title, content)
-            if (newId == null) return
+            val newId = repository.addMovieReview(videoId, "", content) ?: return
             selectedMovieReviewId = newId
         } else {
-            if (!repository.updateMovieReview(editingId, title, content)) return
+            if (!repository.updateMovieReview(editingId, "", content)) return
         }
+        movieReviewDraftContent = content
         refresh()
-        movieReviewScreen = MovieReviewScreen.DETAIL
         movieReviewEditorReturnToList = true
         editingMovieReviewId = null
     }
@@ -1108,45 +1101,46 @@ private fun FrameNativeApp(
                                         onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                         onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
                                     )
-                                    MovieReviewScreen.LIST -> if (reviewVideo != null) {
-                                        MovieReviewListPage(
-                                            video = reviewVideo,
-                                            reviews = movieReviewEntries.filter { it.videoId == reviewVideo.id }.sortedWith(compareByDescending<MovieReviewEntry> { it.createdAt }.thenByDescending { it.id }),
-                                            onBack = { closeMovieReviewPages() },
-                                            onCreate = { openMovieReviewEditor() },
-                                            onOpen = { selectedMovieReviewId = it.id; movieReviewScreen = MovieReviewScreen.DETAIL }
-                                        )
-                                    } else Box(Modifier.fillMaxSize())
-                                    MovieReviewScreen.DETAIL -> if (reviewVideo != null && selectedMovieReview != null) {
+                                    MovieReviewScreen.LIST -> Box(Modifier.fillMaxSize())
+                                    MovieReviewScreen.DETAIL -> if (reviewVideo != null) {
                                         MovieReviewDetailPage(
                                             video = reviewVideo,
                                             entry = selectedMovieReview,
+                                            initialContent = movieReviewDraftContent,
                                             onBack = { closeMovieReviewPages() },
-                                            onEdit = { openMovieReviewEditor(selectedMovieReview) },
+                                            onSave = { content -> saveMovieReview("", content) },
                                             onDelete = {
-                                                repository.deleteMovieReview(selectedMovieReview.id)
+                                                selectedMovieReview?.let { repository.deleteMovieReview(it.id) }
                                                 refresh()
                                                 closeMovieReviewPages()
+                                            },
+                                            onExport = {
+                                                val date = java.text.SimpleDateFormat("yyyy/M/d", java.util.Locale.getDefault())
+                                                    .format(java.util.Date(selectedMovieReview?.createdAt ?: System.currentTimeMillis()))
+                                                val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                                                    textSize = 32f
+                                                    typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
+                                                }
+                                                val bitmap = createUnifiedReviewExportBitmap(
+                                                    title = displayVideoName(reviewVideo.name),
+                                                    coverPath = reviewVideo.thumbPath,
+                                                    rating = reviewVideo.rating,
+                                                    reviews = listOf(date to wrapReviewExportText(selectedMovieReview?.content ?: movieReviewDraftContent, paint, 850f))
+                                                )
+                                                scope.launch {
+                                                    val saved = saveVideoScreenshot(context, bitmap)
+                                                    bitmap.recycle()
+                                                    notify(if (saved) "影评已导出到相册" else "影评导出失败")
+                                                }
+                                            },
+                                            onCopy = {
+                                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("影评", selectedMovieReview?.content ?: movieReviewDraftContent))
+                                                notify("已复制影评")
                                             }
                                         )
                                     } else Box(Modifier.fillMaxSize())
-                                    MovieReviewScreen.EDITOR -> if (reviewVideo != null) {
-                                        MovieReviewEditorPage(
-                                            video = reviewVideo,
-                                            initialContent = movieReviewDraftContent,
-                                            isEditing = editingMovieReviewId != null,
-                                            sessionKey = movieReviewEditorSession,
-                                            onBack = {
-                                                when {
-                                                    editingMovieReviewId != null -> movieReviewScreen = MovieReviewScreen.DETAIL
-                                                    movieReviewEditorReturnToList -> movieReviewScreen = MovieReviewScreen.LIST
-                                                    else -> closeMovieReviewPages()
-                                                }
-                                                editingMovieReviewId = null
-                                            },
-                                            onSave = { title, content -> saveMovieReview(title, content) }
-                                        )
-                                    } else Box(Modifier.fillMaxSize())
+                                    MovieReviewScreen.EDITOR -> Box(Modifier.fillMaxSize())
                                 }
                             }
                         }
