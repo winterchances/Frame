@@ -45,6 +45,11 @@ internal fun MovieReviewDetailPage(
 ) {
     var content by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
     var isEditing by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry == null) }
+    val bodyScrollState = rememberScrollState()
+
+    LaunchedEffect(content, isEditing) {
+        if (isEditing) bodyScrollState.animateScrollTo(bodyScrollState.maxValue)
+    }
     var showMenu by remember { mutableStateOf(false) }
 
     fun save(): Boolean {
@@ -101,7 +106,7 @@ internal fun MovieReviewDetailPage(
         }
         Column(
             Modifier.weight(1f).fillMaxWidth()
-                .padding(horizontal = 20.dp).padding(top = 24.dp, bottom = 48.dp)
+                .padding(horizontal = 20.dp).padding(top = 24.dp)
         ) {
             MovieReviewWorkHeader(video, onRate)
             Text(
@@ -113,7 +118,7 @@ internal fun MovieReviewDetailPage(
             )
             Spacer(Modifier.height(18.dp))
             Column(
-                Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(bodyScrollState)
             ) {
                 if (isEditing) {
                     BasicTextField(
