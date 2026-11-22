@@ -514,7 +514,14 @@ internal fun RecordsPage(
                                     val movieReviewCount = movieReviewCounts[video.id] ?: 0
                                     if (completed || movieReviewCount > 0) {
                                         Text(
-                                            if (movieReviewCount > 0) " · 影评 ${movieReviewCount} 条" else " · 写影评",
+                                            " · ",
+                                            color = MutedText,
+                                            fontSize = 12.sp,
+                                            lineHeight = 16.sp,
+                                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                                        )
+                                        Text(
+                                            if (movieReviewCount > 0) "影评 ${movieReviewCount} 条" else "写影评",
                                             color = ActiveAccent,
                                             fontSize = 12.sp,
                                             lineHeight = 16.sp,
