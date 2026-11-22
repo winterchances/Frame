@@ -169,6 +169,7 @@ class NativeLibraryRepository(context: Context) {
         val newPath = coverUri?.let { saveReviewCover(it, id) }
         val finalPath = newPath ?: existingCoverPath
         store.updateReview(id, null, text, rating, title.trim(), finalPath)
+        store.updateStandaloneMovieReviewTitle(id, title.trim())
         if (newPath != null && existingCoverPath != null && existingCoverPath != newPath) File(existingCoverPath).delete()
         return true
     }
