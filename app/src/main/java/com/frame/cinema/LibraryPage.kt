@@ -454,7 +454,7 @@ internal fun LibraryPage(
                         onDismissRequest = { showStatusDialog = false },
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
-                        modifier = Modifier.width(160.dp)
+                        modifier = Modifier.width(112.dp)
                     ) {
                         listOf("未看", "在看", "已看").forEach { target ->
                             val targetStatus = when (target) {
