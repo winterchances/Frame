@@ -394,8 +394,19 @@ internal fun LibraryPage(
             Row(
                 Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 16.dp)
                     .height(58.dp)
-                    .shadow(8.dp, RoundedCornerShape(90.dp), ambientColor = Color.Black.copy(alpha = .08f), spotColor = Color.Black.copy(alpha = .10f))
-                    .clip(RoundedCornerShape(90.dp)).background(MaterialTheme.colorScheme.surface),
+                    .shadow(12.dp, RoundedCornerShape(90.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
+                    .hazeEffect(
+                        state = hazeState,
+                        style = HazeStyle(
+                            backgroundColor = PageBg,
+                            tints = emptyList(),
+                            blurRadius = 20.dp,
+                            noiseFactor = 0f
+                        )
+                    )
+                    .clip(RoundedCornerShape(90.dp))
+                    .background(Glass.copy(alpha = Glass.alpha - 0.05f))
+                    .border(0.3.dp, LocalFramePalette.current.divider, RoundedCornerShape(90.dp)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {

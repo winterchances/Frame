@@ -119,7 +119,7 @@ internal fun MovieReviewDetailPage(
                         hazeState = hazeState,
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
-                        modifier = Modifier.width(152.dp),
+                        modifier = Modifier.width(112.dp),
                         animateFromAnchor = true
                     ) {
                         CustomSortMenuItem("导出", false) { showMenu = false; onExport() }

@@ -483,8 +483,8 @@ internal fun AnimatedDropdownPopup(
         ) {
             AnimatedVisibility(
                 visibleState = visibilityState,
-                enter = fadeIn(animationSpec = tween(if (animateFromAnchor) 320 else 280, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
-                exit = fadeOut(animationSpec = tween(if (animateFromAnchor) 280 else 180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+                enter = if (animateFromAnchor) androidx.compose.animation.EnterTransition.None else fadeIn(animationSpec = tween(280, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
+                exit = if (animateFromAnchor) androidx.compose.animation.ExitTransition.None else fadeOut(animationSpec = tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
             ) {
                 val revealProgress by transition.animateFloat(
                     transitionSpec = { tween(if (animateFromAnchor) 320 else 280, easing = androidx.compose.animation.core.FastOutSlowInEasing) },
@@ -502,23 +502,23 @@ internal fun AnimatedDropdownPopup(
 
                 Box(
                     modifier = modifier
-                        .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
                         .drawWithContent {
-                        if (animateFromAnchor) {
-                            val visibleWidth = size.width * revealProgress
-                            val visibleHeight = size.height * revealProgress
-                            clipRect(
-                                left = size.width - visibleWidth,
-                                top = 0f,
-                                right = size.width,
-                                bottom = visibleHeight
-                            ) {
+                            if (animateFromAnchor) {
+                                val visibleWidth = size.width * revealProgress
+                                val visibleHeight = size.height * revealProgress
+                                clipRect(
+                                    left = size.width - visibleWidth,
+                                    top = 0f,
+                                    right = size.width,
+                                    bottom = visibleHeight
+                                ) {
+                                    this@drawWithContent.drawContent()
+                                }
+                            } else {
                                 this@drawWithContent.drawContent()
                             }
-                        } else {
-                            this@drawWithContent.drawContent()
                         }
-                    }
+                        .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth()
