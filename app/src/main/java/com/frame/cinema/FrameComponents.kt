@@ -461,6 +461,8 @@ internal fun RatingStars(
 
 
 @Composable
+internal val LocalDropdownScrimReporter = compositionLocalOf<((Any, Boolean) -> Unit)?> { null }
+
 internal fun Modifier.frameGlassSurface(
     hazeState: HazeState,
     shape: androidx.compose.ui.graphics.Shape,
@@ -537,6 +539,13 @@ internal fun AnimatedDropdownPopup(
     anchorCornerRadius: androidx.compose.ui.unit.Dp = 18.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val scrimReporter = LocalDropdownScrimReporter.current
+    val scrimKey = remember { Any() }
+    SideEffect { scrimReporter?.invoke(scrimKey, expanded) }
+    DisposableEffect(scrimKey, scrimReporter) {
+        onDispose { scrimReporter?.invoke(scrimKey, false) }
+    }
+
     val visibilityState = remember { MutableTransitionState(false) }
     visibilityState.targetState = expanded
 
