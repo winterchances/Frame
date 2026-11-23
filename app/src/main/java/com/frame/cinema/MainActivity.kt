@@ -1040,7 +1040,7 @@ private fun FrameNativeApp(
                                 onViewportBoundsChanged = { viewport -> contextMenuViewportBounds = viewport },
                                 onStickyHeaderBoundsChanged = { header -> contextMenuStickyHeaderBounds = header },
                                 multiSelectMode = libraryMultiSelectMode,
-                                onMultiSelectModeChange = { libraryMultiSelectMode = it },
+                                onMultiSelectModeChange = { libraryMultiSelectMode = it }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
