@@ -471,6 +471,7 @@ internal fun LibraryPage(
                 }
             }
         }
+        }
         LibraryFilterHeader(
             categories = categories, status = status, category = category,
             categoryScrollState = floatingCategoryScrollState,
