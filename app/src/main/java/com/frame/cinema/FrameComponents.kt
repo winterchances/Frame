@@ -532,7 +532,7 @@ internal fun AnimatedDropdownPopup(
                                 )
                             )
                             .clip(menuShape)
-                            .background(Glass)
+                            .background(Glass.copy(alpha = Glass.alpha - 0.05f))
                             .border(0.3.dp, LocalFramePalette.current.divider, menuShape),
                         content = content
                     )

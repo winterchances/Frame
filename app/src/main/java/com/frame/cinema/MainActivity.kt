@@ -1331,7 +1331,7 @@ private fun FrameNativeApp(
                         .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                         .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
                         .clip(CircleShape)
-                        .background(Glass)
+                        .background(Glass.copy(alpha = Glass.alpha - 0.05f))
                         .border(0.3.dp, LocalFramePalette.current.divider, CircleShape)
                         .noRippleClickable { showFab = !showFab },
                     contentAlignment = Alignment.Center
