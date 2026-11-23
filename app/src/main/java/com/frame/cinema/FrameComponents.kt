@@ -462,6 +462,7 @@ internal fun RatingStars(
 
 @Composable
 internal fun AnimatedDropdownPopup(
+    hazeState: HazeState,
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
@@ -519,10 +520,19 @@ internal fun AnimatedDropdownPopup(
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth()
-                            .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
+                            .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .12f))
+                            .hazeEffect(
+                                state = hazeState,
+                                style = HazeStyle(
+                                    backgroundColor = Color.White.copy(alpha = .85f),
+                                    tints = emptyList(),
+                                    blurRadius = 20.dp,
+                                    noiseFactor = 0f
+                                )
+                            )
                             .clip(menuShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(0.7.dp, LocalFramePalette.current.divider, menuShape),
+                            .border(0.7.dp, Color.White.copy(alpha = .68f), menuShape)
+                            .border(0.5.dp, Color.Black.copy(alpha = .05f), menuShape),
                         content = content
                     )
                 }
