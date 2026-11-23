@@ -529,6 +529,9 @@ internal fun AnimatedDropdownPopup(
     offset: androidx.compose.ui.unit.IntOffset = androidx.compose.ui.unit.IntOffset.Zero,
     alignment: Alignment = Alignment.TopEnd,
     animateFromAnchor: Boolean = false,
+    anchorWidth: androidx.compose.ui.unit.Dp = 36.dp,
+    anchorHeight: androidx.compose.ui.unit.Dp = 36.dp,
+    anchorCornerRadius: androidx.compose.ui.unit.Dp = 18.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val visibilityState = remember { MutableTransitionState(false) }
@@ -568,12 +571,16 @@ internal fun AnimatedDropdownPopup(
                 ) { state ->
                     if (state == androidx.compose.animation.EnterExitState.Visible) 18.dp else 180.dp
                 }
-                val anchorCornerRadiusPx = with(LocalDensity.current) { 18.dp.toPx() }
+                val anchorCornerRadiusPx = with(LocalDensity.current) {
+                    anchorCornerRadius.toPx().coerceAtMost(minOf(anchorWidth, anchorHeight).toPx() / 2f)
+                }
                 val menuShape: androidx.compose.ui.graphics.Shape = if (animateFromAnchor) {
                     DropdownRevealShape(
                         progress = revealProgress,
                         cornerRadiusPx = anchorCornerRadiusPx,
-                        anchorSizePx = with(LocalDensity.current) { 36.dp.toPx() },
+                        anchorSizePx = with(LocalDensity.current) {
+                            minOf(anchorWidth, anchorHeight).toPx()
+                        },
                         fromBottomCenter = alignment == Alignment.BottomCenter
                     )
                 } else {
