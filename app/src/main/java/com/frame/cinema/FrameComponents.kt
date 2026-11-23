@@ -501,7 +501,9 @@ internal fun AnimatedDropdownPopup(
                 val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
 
                 Box(
-                    modifier = modifier.drawWithContent {
+                    modifier = modifier
+                        .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .12f))
+                        .drawWithContent {
                         if (animateFromAnchor) {
                             val visibleWidth = size.width * revealProgress
                             val visibleHeight = size.height * revealProgress
@@ -520,7 +522,6 @@ internal fun AnimatedDropdownPopup(
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth()
-                            .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .12f))
                             .hazeEffect(
                                 state = hazeState,
                                 style = HazeStyle(
