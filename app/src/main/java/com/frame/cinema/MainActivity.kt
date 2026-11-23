@@ -1000,10 +1000,9 @@ private fun FrameNativeApp(
             label = "player-card-transition"
         ) { targetPlaying ->
           if (targetPlaying == null) {
-            Box(
-                Modifier.fillMaxSize().background(PageBg).blur(backdropBlur)
-            ) {
-                androidx.compose.animation.AnimatedContent(
+            Box(Modifier.fillMaxSize().background(PageBg)) {
+                Box(Modifier.fillMaxSize().blur(backdropBlur)) {
+                    androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
                     targetState = page,
                     transitionSpec = {
