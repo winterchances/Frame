@@ -1142,6 +1142,7 @@ private fun FrameNativeApp(
                                     MovieReviewScreen.LIST -> Box(Modifier.fillMaxSize())
                                     MovieReviewScreen.DETAIL -> if (reviewVideo != null) {
                                         MovieReviewDetailPage(
+                                            hazeState = hazeState,
                                             video = reviewVideo,
                                             entry = selectedMovieReview,
                                             stateKey = movieReviewStandaloneId?.let { "standalone_$it" } ?: "video_${reviewVideo.id}",
