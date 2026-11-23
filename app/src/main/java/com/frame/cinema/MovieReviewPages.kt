@@ -33,6 +33,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,6 +41,7 @@ import java.util.Locale
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun MovieReviewDetailPage(
+    hazeState: HazeState,
     video: VideoItem,
     entry: MovieReviewEntry?,
     stateKey: String = video.id.toString(),
@@ -114,6 +116,7 @@ internal fun MovieReviewDetailPage(
                         }
                     }
                     AnimatedDropdownPopup(
+                        hazeState = hazeState,
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
                         modifier = Modifier.width(152.dp),
