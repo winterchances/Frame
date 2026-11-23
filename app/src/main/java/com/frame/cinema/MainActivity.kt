@@ -1376,6 +1376,7 @@ private fun FrameNativeApp(
             }
         }
         }
+        }
 
         if (dropdownScrimAlpha > 0f) {
             Box(
