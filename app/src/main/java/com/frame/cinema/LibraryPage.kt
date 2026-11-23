@@ -194,8 +194,8 @@ internal fun LibraryPage(
     categoryDrawerVisible: Boolean, onOpenCategoryDrawer: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
-    multiSelectMode: Boolean, onMultiSelectModeChange: (Boolean) -> Unit,
- ) {
+    multiSelectMode: Boolean, onMultiSelectModeChange: (Boolean) -> Unit
+) {
     var selectedVideoIds by selectedVideoIdsState
     var showSortMenu by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
