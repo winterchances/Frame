@@ -1385,7 +1385,7 @@ private fun FrameNativeApp(
                                 SheetType.SETTINGS ->
                                     Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .5f)
                                 SheetType.SEARCH, SheetType.RECORD_SEARCH ->
-                                    Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .85f)
+                                    Modifier.fillMaxHeight(.85f)
                                 else ->
                                     Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
                             }
@@ -1496,7 +1496,7 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
-                        Column(Modifier.weight(1f).fillMaxWidth().imePadding().verticalScroll(rememberScrollState())) {
+                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                         BasicTextField(
                             recordSearch,
                             { recordSearch = it },
@@ -1704,7 +1704,7 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
-                        Column(Modifier.weight(1f).fillMaxWidth().imePadding().verticalScroll(rememberScrollState())) {
+                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                         BasicTextField(
                             search,
                             { search = it },
