@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -21,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.TextStyle
@@ -46,11 +49,13 @@ internal fun MovieReviewDetailPage(
     var content by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
     var isEditing by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry == null) }
     val bodyScrollState = rememberScrollState()
+    val bodyBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
-    LaunchedEffect(content, isEditing) {
-        if (isEditing) {
+    LaunchedEffect(imeVisible, isEditing) {
+        if (imeVisible && isEditing) {
             withFrameNanos { }
-            bodyScrollState.animateScrollTo(bodyScrollState.maxValue)
+            bodyBringIntoViewRequester.bringIntoView()
         }
     }
     var showMenu by remember { mutableStateOf(false) }
@@ -112,22 +117,24 @@ internal fun MovieReviewDetailPage(
                 .padding(horizontal = 20.dp).padding(top = 24.dp)
         ) {
             MovieReviewWorkHeader(video, onRate)
-            Text(
-                formatMovieReviewDate(entry?.createdAt ?: System.currentTimeMillis()),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start,
-                fontSize = 12.sp,
-                color = Color(0xFFAAAAAA)
-            )
-            Spacer(Modifier.height(18.dp))
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(bodyScrollState)
             ) {
+                Text(
+                    formatMovieReviewDate(entry?.createdAt ?: System.currentTimeMillis()),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                    fontSize = 12.sp,
+                    color = Color(0xFFAAAAAA)
+                )
+                Spacer(Modifier.height(18.dp))
                 if (isEditing) {
                     BasicTextField(
                         value = content,
                         onValueChange = { content = it },
-                        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 260.dp),
+                        modifier = Modifier.fillMaxWidth()
+                            .defaultMinSize(minHeight = 260.dp)
+                            .bringIntoViewRequester(bodyBringIntoViewRequester),
                         textStyle = TextStyle.Default.copy(
                             fontSize = 16.sp,
                             lineHeight = 28.sp,
