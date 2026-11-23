@@ -520,6 +520,13 @@ internal fun AnimatedDropdownPopup(
 
                 Box(
                     modifier = modifier
+                        .graphicsLayer {
+                            shadowElevation = 12.dp.toPx() * revealProgress
+                            shape = menuShape
+                            clip = false
+                            ambientShadowColor = Color.Black.copy(alpha = .18f)
+                            spotShadowColor = Color.Black.copy(alpha = .28f)
+                        }
                         .drawWithContent {
                             if (animateFromAnchor) {
                                 val visibleWidth = size.width * revealProgress
@@ -536,7 +543,6 @@ internal fun AnimatedDropdownPopup(
                                 this@drawWithContent.drawContent()
                             }
                         }
-                        .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().frameGlassSurface(hazeState, menuShape),

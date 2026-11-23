@@ -391,13 +391,18 @@ internal fun LibraryPage(
             exit = slideOutVertically(tween(200, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { it } + fadeOut(tween(160)),
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
         ) {
-            Row(
+            Box(
                 Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 16.dp)
                     .height(58.dp)
                     .shadow(12.dp, RoundedCornerShape(90.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
-                    .frameGlassSurface(hazeState, RoundedCornerShape(90.dp)),
-                verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    Modifier.fillMaxSize().frameGlassSurface(hazeState, RoundedCornerShape(90.dp))
+                )
+                Row(
+                    Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
                     onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
                     selectedVideoIds = emptySet()
@@ -580,7 +585,7 @@ internal fun LibraryFilterHeader(
                         val label = when (value) { "全部" -> "全部"; "全部分类" -> "未分类"; "我的最爱" -> "收藏"; else -> value }
                         Text(label, color = if (category == value) Color.White else MutedText, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
-                }
+                    }
             }
         }
     }
