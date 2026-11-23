@@ -27,6 +27,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -46,16 +49,24 @@ internal fun MovieReviewDetailPage(
     onExport: () -> Unit,
     onCopy: () -> Unit
 ) {
-    var content by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry?.content ?: initialContent) }
+    val initialText = entry?.content ?: initialContent
+    var textFieldValue by rememberSaveable(stateKey, entry?.id, stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initialText, selection = TextRange(initialText.length)))
+    }
+    val content = textFieldValue.text
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var isEditing by rememberSaveable(stateKey, entry?.id) { mutableStateOf(entry == null) }
     val bodyScrollState = rememberScrollState()
     val bodyBringIntoViewRequester = remember { BringIntoViewRequester() }
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
-    LaunchedEffect(imeVisible, isEditing) {
+    LaunchedEffect(textFieldValue.selection, textLayoutResult, imeVisible, isEditing) {
         if (imeVisible && isEditing) {
-            withFrameNanos { }
-            bodyBringIntoViewRequester.bringIntoView()
+            val cursorRect = textLayoutResult?.getCursorRect(textFieldValue.selection.end)
+            if (cursorRect != null) {
+                withFrameNanos { }
+                bodyBringIntoViewRequester.bringIntoView(cursorRect)
+            }
         }
     }
     var showMenu by remember { mutableStateOf(false) }
@@ -130,11 +141,12 @@ internal fun MovieReviewDetailPage(
                 Spacer(Modifier.height(18.dp))
                 if (isEditing) {
                     BasicTextField(
-                        value = content,
-                        onValueChange = { content = it },
+                        value = textFieldValue,
+                        onValueChange = { textFieldValue = it },
                         modifier = Modifier.fillMaxWidth()
                             .defaultMinSize(minHeight = 260.dp)
                             .bringIntoViewRequester(bodyBringIntoViewRequester),
+                        onTextLayout = { textLayoutResult = it },
                         textStyle = TextStyle.Default.copy(
                             fontSize = 16.sp,
                             lineHeight = 28.sp,
