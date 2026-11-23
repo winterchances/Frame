@@ -1001,7 +1001,9 @@ private fun FrameNativeApp(
         ) { targetPlaying ->
           if (targetPlaying == null) {
             Box(
-                Modifier.fillMaxSize().blur(backdropBlur)
+                Modifier.fillMaxSize()
+                    .graphicsLayer { alpha = if (playing == null) 1f else 0f }
+                    .blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
