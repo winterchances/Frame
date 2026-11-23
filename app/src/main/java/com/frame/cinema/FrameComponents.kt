@@ -463,7 +463,8 @@ internal fun RatingStars(
 @Composable
 internal fun Modifier.frameGlassSurface(
     hazeState: HazeState,
-    shape: androidx.compose.ui.graphics.Shape
+    shape: androidx.compose.ui.graphics.Shape,
+    glassAlpha: Float = Glass.alpha - 0.05f
 ): Modifier = this
     .hazeEffect(
         state = hazeState,
@@ -475,7 +476,7 @@ internal fun Modifier.frameGlassSurface(
         )
     )
     .clip(shape)
-    .background(Glass.copy(alpha = Glass.alpha - 0.05f))
+    .background(Glass.copy(alpha = glassAlpha.coerceIn(0f, 1f)))
     .border(0.3.dp, LocalFramePalette.current.divider, shape)
 
 private class DropdownRevealShape(
