@@ -499,30 +499,33 @@ internal fun AnimatedDropdownPopup(
                 }
                 val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
 
-                Column(
-                    modifier = modifier
-                        .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
-                        .clip(menuShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(0.7.dp, LocalFramePalette.current.divider, menuShape)
-                        .drawWithContent {
-                            if (animateFromAnchor) {
-                                val visibleWidth = size.width * revealProgress
-                                val visibleHeight = size.height * revealProgress
-                                clipRect(
-                                    left = size.width - visibleWidth,
-                                    top = 0f,
-                                    right = size.width,
-                                    bottom = visibleHeight
-                                ) {
-                                    this@drawWithContent.drawContent()
-                                }
-                            } else {
+                Box(
+                    modifier = modifier.drawWithContent {
+                        if (animateFromAnchor) {
+                            val visibleWidth = size.width * revealProgress
+                            val visibleHeight = size.height * revealProgress
+                            clipRect(
+                                left = size.width - visibleWidth,
+                                top = 0f,
+                                right = size.width,
+                                bottom = visibleHeight
+                            ) {
                                 this@drawWithContent.drawContent()
                             }
-                        },
-                    content = content
-                )
+                        } else {
+                            this@drawWithContent.drawContent()
+                        }
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                            .shadow(6.dp, menuShape, ambientColor = Color.Black.copy(alpha = .06f), spotColor = Color.Black.copy(alpha = .05f))
+                            .clip(menuShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(0.7.dp, LocalFramePalette.current.divider, menuShape),
+                        content = content
+                    )
+                }
             }
         }
     }
