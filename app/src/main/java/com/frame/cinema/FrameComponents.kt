@@ -462,6 +462,7 @@ internal fun RatingStars(
 
 internal val LocalDropdownScrimReporter = compositionLocalOf<((Any, Boolean) -> Unit)?> { null }
 
+@Composable
 internal fun Modifier.frameGlassSurface(
     hazeState: HazeState,
     shape: androidx.compose.ui.graphics.Shape,
