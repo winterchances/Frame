@@ -521,11 +521,11 @@ internal fun AnimatedDropdownPopup(
                 Box(
                     modifier = modifier
                         .graphicsLayer {
-                            shadowElevation = 12.dp.toPx() * revealProgress
+                            shadowElevation = 16.dp.toPx() * revealProgress
                             shape = menuShape
                             clip = false
                             ambientShadowColor = Color.Black.copy(alpha = .18f)
-                            spotShadowColor = Color.Black.copy(alpha = .28f)
+                            spotShadowColor = Color.Black.copy(alpha = .33f)
                         }
                         .drawWithContent {
                             if (animateFromAnchor) {
