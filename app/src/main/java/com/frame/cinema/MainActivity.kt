@@ -980,7 +980,7 @@ private fun FrameNativeApp(
         androidx.compose.animation.AnimatedContent(
             targetState = playing,
             contentKey = { it },
-            modifier = Modifier.fillMaxSize().background(Color.Black),
+            modifier = Modifier.fillMaxSize().background(if (playing == null) Color.Transparent else Color.Black),
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 if (targetState != null) {
@@ -1001,7 +1001,7 @@ private fun FrameNativeApp(
         ) { targetPlaying ->
           if (targetPlaying == null) {
             Box(
-                Modifier.fillMaxSize().background(PageBg).blur(backdropBlur)
+                Modifier.fillMaxSize().blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
