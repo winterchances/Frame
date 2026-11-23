@@ -461,6 +461,24 @@ internal fun RatingStars(
 
 
 @Composable
+internal fun Modifier.frameGlassSurface(
+    hazeState: HazeState,
+    shape: androidx.compose.ui.graphics.Shape
+): Modifier = this
+    .hazeEffect(
+        state = hazeState,
+        style = HazeStyle(
+            backgroundColor = PageBg,
+            tints = emptyList(),
+            blurRadius = 20.dp,
+            noiseFactor = 0f
+        )
+    )
+    .clip(shape)
+    .background(Glass.copy(alpha = Glass.alpha - 0.05f))
+    .border(0.3.dp, LocalFramePalette.current.divider, shape)
+
+@Composable
 internal fun AnimatedDropdownPopup(
     hazeState: HazeState,
     expanded: Boolean,
@@ -521,19 +539,7 @@ internal fun AnimatedDropdownPopup(
                         .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxWidth()
-                            .hazeEffect(
-                                state = hazeState,
-                                style = HazeStyle(
-                                    backgroundColor = PageBg,
-                                    tints = emptyList(),
-                                    blurRadius = 20.dp,
-                                    noiseFactor = 0f
-                                )
-                            )
-                            .clip(menuShape)
-                            .background(Glass.copy(alpha = Glass.alpha - 0.05f))
-                            .border(0.3.dp, LocalFramePalette.current.divider, menuShape),
+                        modifier = Modifier.fillMaxWidth().frameGlassSurface(hazeState, menuShape),
                         content = content
                     )
                 }

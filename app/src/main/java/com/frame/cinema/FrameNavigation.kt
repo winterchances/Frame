@@ -195,10 +195,7 @@ internal fun BottomPillNavigation(current: MainPage, hazeState: HazeState, sheet
         val navWidth = maxWidth
         Box(
             Modifier.fillMaxSize()
-                .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = PageBg, tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-                .clip(RoundedCornerShape(28.dp))
-                .background(Glass.copy(alpha = Glass.alpha - 0.05f))
-                .border(0.3.dp, LocalFramePalette.current.divider, RoundedCornerShape(28.dp))
+                .frameGlassSurface(hazeState, RoundedCornerShape(28.dp))
                 .padding(5.dp)
         ) {
             val slot = (navWidth - 10.dp) / 4
