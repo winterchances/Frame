@@ -482,6 +482,7 @@ internal fun Modifier.frameGlassSurface(
 private class DropdownRevealShape(
     private val progress: Float,
     private val cornerRadiusPx: Float,
+    private val anchorSizePx: Float,
     private val fromBottomCenter: Boolean
 ) : androidx.compose.ui.graphics.Shape {
     override fun createOutline(
@@ -490,12 +491,9 @@ private class DropdownRevealShape(
         density: androidx.compose.ui.unit.Density
     ): androidx.compose.ui.graphics.Outline {
         val fraction = progress.coerceIn(0f, 1f)
-        if (fraction <= 0f) return androidx.compose.ui.graphics.Outline.Rectangle(
-            androidx.compose.ui.geometry.Rect.Zero
-        )
-
-        val visibleWidth = size.width * fraction
-        val visibleHeight = size.height * fraction
+        val anchorSize = anchorSizePx.coerceAtMost(minOf(size.width, size.height))
+        val visibleWidth = anchorSize + (size.width - anchorSize) * fraction
+        val visibleHeight = anchorSize + (size.height - anchorSize) * fraction
         val left = if (fromBottomCenter) {
             (size.width - visibleWidth) / 2f
         } else {
@@ -575,6 +573,7 @@ internal fun AnimatedDropdownPopup(
                     DropdownRevealShape(
                         progress = revealProgress,
                         cornerRadiusPx = anchorCornerRadiusPx,
+                        anchorSizePx = with(LocalDensity.current) { 36.dp.toPx() },
                         fromBottomCenter = alignment == Alignment.BottomCenter
                     )
                 } else {
