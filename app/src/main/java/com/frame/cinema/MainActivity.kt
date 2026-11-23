@@ -972,7 +972,7 @@ private fun FrameNativeApp(
     ) {
         Box(Modifier.fillMaxSize().background(PageBg)) {
             Box(
-                Modifier.fillMaxSize().background(PageBg).graphicsLayer {
+                Modifier.fillMaxSize().graphicsLayer {
                     scaleX = 1f - .02f * sheetProgress
                     scaleY = 1f - .02f * sheetProgress
                 }
