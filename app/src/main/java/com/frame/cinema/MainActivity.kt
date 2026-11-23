@@ -1066,7 +1066,8 @@ private fun FrameNativeApp(
                                 onClear = { sheet = SheetType.CLEAR_RECENT },
                                 onMore = { selected = it; sheet = SheetType.DELETE_RECENT }
                             )
-                            MainPage.RECORDS -> androidx.compose.animation.AnimatedContent(
+                            MainPage.RECORDS -> CompositionLocalProvider(LocalDropdownScrimReporter provides dropdownScrimReporter) {
+                                androidx.compose.animation.AnimatedContent(
                                 targetState = movieReviewScreen,
                                 transitionSpec = {
                                     val initialDepth = when (initialState) {
@@ -1198,6 +1199,7 @@ private fun FrameNativeApp(
                                         )
                                     } else Box(Modifier.fillMaxSize())
                                     MovieReviewScreen.EDITOR -> Box(Modifier.fillMaxSize())
+                                }
                                 }
                             }
                         }
