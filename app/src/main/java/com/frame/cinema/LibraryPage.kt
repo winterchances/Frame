@@ -392,12 +392,16 @@ internal fun LibraryPage(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
         ) {
             Box(
-                Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 16.dp)
-                    .height(58.dp)
-                    .shadow(12.dp, RoundedCornerShape(90.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    .height(56.dp)
+                    .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
             ) {
                 Box(
-                    Modifier.fillMaxSize().frameGlassSurface(hazeState, RoundedCornerShape(90.dp))
+                    Modifier.fillMaxSize().frameGlassSurface(
+                        hazeState,
+                        RoundedCornerShape(28.dp),
+                        glassAlpha = (Glass.alpha + 0.05f).coerceAtMost(0.95f)
+                    )
                 )
                 Row(
                     Modifier.fillMaxSize(),
