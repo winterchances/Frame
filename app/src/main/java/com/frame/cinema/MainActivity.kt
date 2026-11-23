@@ -971,16 +971,17 @@ private fun FrameNativeApp(
             }
     ) {
         Box(Modifier.fillMaxSize().background(PageBg)) {
-            Box(
-                Modifier.fillMaxSize().background(PageBg).graphicsLayer {
-                    scaleX = 1f - .02f * sheetProgress
-                    scaleY = 1f - .02f * sheetProgress
-                }
-            ) {
+            Box(Modifier.fillMaxSize().blur(backdropBlur)) {
+                Box(
+                    Modifier.fillMaxSize().background(PageBg).graphicsLayer {
+                        scaleX = 1f - .02f * sheetProgress
+                        scaleY = 1f - .02f * sheetProgress
+                    }
+                ) {
         androidx.compose.animation.AnimatedContent(
             targetState = playing,
             contentKey = { it },
-            modifier = Modifier.fillMaxSize().background(Color.Black),
+            modifier = Modifier.fillMaxSize().background(if (playing == null) PageBg else Color.Black),
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 if (targetState != null) {
@@ -1003,7 +1004,6 @@ private fun FrameNativeApp(
             Box(
                 Modifier.fillMaxSize()
                     .background(PageBg)
-                    .blur(backdropBlur, edgeTreatment = androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
@@ -1251,7 +1251,7 @@ private fun FrameNativeApp(
 
         if (playing == null) {
             val bottomFadePageBg = PageBg
-            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
+            Box(Modifier.fillMaxSize()) {
                 if (page == MainPage.LIBRARY && libraryMultiSelectMode && movieReviewScreen == null) {
                     CompositionLocalProvider(LocalDropdownScrimReporter provides dropdownScrimReporter) {
                         LibraryBatchActionBar(
