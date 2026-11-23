@@ -447,6 +447,19 @@ private fun FrameNativeApp(
         }.getOrNull().orEmpty()
     }
     val hazeState = remember { HazeState() }
+    val dropdownScrimTargets = remember { mutableStateMapOf<Any, Boolean>() }
+    val dropdownScrimReporter: (Any, Boolean) -> Unit = remember {
+        { key, visible -> dropdownScrimTargets[key] = visible }
+    }
+    val dropdownScrimVisible = dropdownScrimTargets.values.any { it }
+    val dropdownScrimAlpha by animateFloatAsState(
+        targetValue = if (dropdownScrimVisible) 0.06f else 0f,
+        animationSpec = tween(
+            durationMillis = if (dropdownScrimVisible) 320 else 280,
+            easing = androidx.compose.animation.core.FastOutSlowInEasing
+        ),
+        label = "dropdown-background-scrim"
+    )
     val homeListState = rememberLazyListState()
     val libraryListState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
     val libraryStickyCategoryScrollState = rememberScrollState()
@@ -1013,7 +1026,8 @@ private fun FrameNativeApp(
                                 onSettings = { sheet = SheetType.SETTINGS },
                                 onVideo = { selected = it; playVideo(it) }
                             )
-                            MainPage.LIBRARY -> LibraryPage(
+                            MainPage.LIBRARY -> CompositionLocalProvider(LocalDropdownScrimReporter provides dropdownScrimReporter) {
+                                LibraryPage(
                                 hazeState = hazeState,
                                 selectedVideoIdsState = librarySelectedVideoIds,
                                 listState = libraryListState,
@@ -1043,6 +1057,7 @@ private fun FrameNativeApp(
                                 multiSelectMode = libraryMultiSelectMode,
                                 onMultiSelectModeChange = { libraryMultiSelectMode = it }
                             )
+                            }
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
                                 listState = recentListState,
@@ -1235,7 +1250,8 @@ private fun FrameNativeApp(
             val bottomFadePageBg = PageBg
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
                 if (page == MainPage.LIBRARY && libraryMultiSelectMode && movieReviewScreen == null) {
-                    LibraryBatchActionBar(
+                    CompositionLocalProvider(LocalDropdownScrimReporter provides dropdownScrimReporter) {
+                        LibraryBatchActionBar(
                         hazeState = hazeState,
                         videos = sortedLibraryVideos,
                         categories = categories,
@@ -1258,7 +1274,8 @@ private fun FrameNativeApp(
                             })
                         } }; refresh() },
                         onBatchRemove = { ids -> ids.forEach(repository::removeFromLibrary); refresh() }
-                    )
+                        )
+                    }
                 }
                 if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) {
                     Box(
@@ -1355,6 +1372,14 @@ private fun FrameNativeApp(
         }
             }
         }
+        }
+
+        if (dropdownScrimAlpha > 0f) {
+            Box(
+                Modifier.fillMaxSize()
+                    .zIndex(3f)
+                    .background(Color.Black.copy(alpha = dropdownScrimAlpha))
+            )
         }
 
         // The shared sheet uses its measured full height for a complete entrance/exit.
