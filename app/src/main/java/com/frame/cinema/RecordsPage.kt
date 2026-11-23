@@ -1067,6 +1067,7 @@ internal fun RecordsPage(
                 Box {
                     ActionIcon(FrameGridIcon, "记录排序与视图", { showRecordSortMenu = true })
                     AnimatedDropdownPopup(
+                        hazeState = hazeState,
                         expanded = showRecordSortMenu,
                         onDismissRequest = { showRecordSortMenu = false },
                         offset = androidx.compose.ui.unit.IntOffset.Zero,
