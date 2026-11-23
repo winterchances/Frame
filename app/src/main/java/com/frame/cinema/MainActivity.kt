@@ -465,7 +465,6 @@ private fun FrameNativeApp(
     var sheet by remember { mutableStateOf(SheetType.NONE) }
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
-    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
@@ -1346,14 +1345,7 @@ private fun FrameNativeApp(
         // The shared sheet uses its measured full height for a complete entrance/exit.
         // The complete background layer (page, bottom navigation and adjacent FAB) scales together.
 
-        Box(
-            Modifier.fillMaxSize()
-                .then(
-                    if (displayedSheet == SheetType.SEARCH || displayedSheet == SheetType.RECORD_SEARCH) Modifier.imePadding()
-                    else Modifier
-                )
-                .zIndex(4f)
-        ) {
+        Box(Modifier.fillMaxSize().zIndex(4f)) {
             AnimatedVisibility(
                 visibleState = sheetVisibility,
                 enter = fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
@@ -1393,8 +1385,7 @@ private fun FrameNativeApp(
                                 SheetType.SETTINGS ->
                                     Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .5f)
                                 SheetType.SEARCH, SheetType.RECORD_SEARCH ->
-                                    if (imeVisible) Modifier.fillMaxHeight()
-                                    else Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .85f)
+                                    Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .85f)
                                 else ->
                                     Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
                             }
@@ -1415,11 +1406,10 @@ private fun FrameNativeApp(
                         ) { }
                          .padding(
                             top = 26.dp,
-                            bottom = when {
-                                imeVisible && (displayedSheet == SheetType.SEARCH || displayedSheet == SheetType.RECORD_SEARCH) -> 12.dp
-                                sheetKeyboardUp && displayedSheet != SheetType.SEARCH && displayedSheet != SheetType.RECORD_SEARCH -> 400.dp
-                                else -> 50.dp
-                            }
+                            bottom = if (sheetKeyboardUp &&
+                                displayedSheet != SheetType.SEARCH &&
+                                displayedSheet != SheetType.RECORD_SEARCH
+                            ) 400.dp else 50.dp
                         )
                         .navigationBarsPadding()
                 ) {
@@ -1506,7 +1496,7 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
-                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                        Column(Modifier.weight(1f).fillMaxWidth().imePadding().verticalScroll(rememberScrollState())) {
                         BasicTextField(
                             recordSearch,
                             { recordSearch = it },
@@ -1714,7 +1704,7 @@ private fun FrameNativeApp(
                             )
                     ) {
                         SheetHeading("搜索")
-                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                        Column(Modifier.weight(1f).fillMaxWidth().imePadding().verticalScroll(rememberScrollState())) {
                         BasicTextField(
                             search,
                             { search = it },
