@@ -541,13 +541,23 @@ internal fun AnimatedDropdownPopup(
                 exit = if (animateFromAnchor) androidx.compose.animation.ExitTransition.None else fadeOut(animationSpec = tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing))
             ) {
                 val revealProgress by transition.animateFloat(
-                    transitionSpec = { tween(if (animateFromAnchor) 320 else 280, easing = androidx.compose.animation.core.FastOutSlowInEasing) },
+                    transitionSpec = {
+                        tween(
+                            if (animateFromAnchor && targetState == androidx.compose.animation.EnterExitState.Visible) 320 else 280,
+                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                        )
+                    },
                     label = "dropdownRevealProgress"
                 ) { state ->
                     if (state == androidx.compose.animation.EnterExitState.Visible) 1f else 0f
                 }
                 val cornerRadius by transition.animateDp(
-                    transitionSpec = { tween(if (animateFromAnchor) 320 else 280, easing = androidx.compose.animation.core.FastOutSlowInEasing) },
+                    transitionSpec = {
+                        tween(
+                            if (animateFromAnchor && targetState == androidx.compose.animation.EnterExitState.Visible) 320 else 280,
+                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                        )
+                    },
                     label = "sortMenuCornerRadius"
                 ) { state ->
                     if (state == androidx.compose.animation.EnterExitState.Visible) 18.dp else 180.dp
