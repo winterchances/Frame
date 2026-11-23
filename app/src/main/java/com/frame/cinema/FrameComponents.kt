@@ -481,7 +481,8 @@ internal fun Modifier.frameGlassSurface(
 
 private class DropdownRevealShape(
     private val progress: Float,
-    private val cornerRadiusPx: Float
+    private val cornerRadiusPx: Float,
+    private val fromBottomCenter: Boolean
 ) : androidx.compose.ui.graphics.Shape {
     override fun createOutline(
         size: androidx.compose.ui.geometry.Size,
@@ -495,7 +496,14 @@ private class DropdownRevealShape(
 
         val visibleWidth = size.width * fraction
         val visibleHeight = size.height * fraction
-        val left = size.width - visibleWidth
+        val left = if (fromBottomCenter) {
+            (size.width - visibleWidth) / 2f
+        } else {
+            size.width - visibleWidth
+        }
+        val top = if (fromBottomCenter) size.height - visibleHeight else 0f
+        val right = left + visibleWidth
+        val bottom = if (fromBottomCenter) size.height else visibleHeight
         val radius = cornerRadiusPx.coerceAtMost(
             minOf(visibleWidth, visibleHeight) / 2f
         )
@@ -503,9 +511,9 @@ private class DropdownRevealShape(
             addRoundRect(
                 androidx.compose.ui.geometry.RoundRect(
                     left = left,
-                    top = 0f,
-                    right = size.width,
-                    bottom = visibleHeight,
+                    top = top,
+                    right = right,
+                    bottom = bottom,
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius)
                 )
             )
@@ -564,36 +572,23 @@ internal fun AnimatedDropdownPopup(
                 }
                 val anchorCornerRadiusPx = with(LocalDensity.current) { 18.dp.toPx() }
                 val menuShape: androidx.compose.ui.graphics.Shape = if (animateFromAnchor) {
-                    DropdownRevealShape(revealProgress, anchorCornerRadiusPx)
+                    DropdownRevealShape(
+                        progress = revealProgress,
+                        cornerRadiusPx = anchorCornerRadiusPx,
+                        fromBottomCenter = alignment == Alignment.BottomCenter
+                    )
                 } else {
                     RoundedCornerShape(cornerRadius)
                 }
 
                 Box(
-                    modifier = modifier
-                        .graphicsLayer {
-                            shadowElevation = 10.dp.toPx() * revealProgress
-                            shape = menuShape
-                            clip = false
-                            ambientShadowColor = Color.Black.copy(alpha = .10f)
-                            spotShadowColor = Color.Black.copy(alpha = .16f)
-                        }
-                        .drawWithContent {
-                            if (animateFromAnchor) {
-                                val visibleWidth = size.width * revealProgress
-                                val visibleHeight = size.height * revealProgress
-                                clipRect(
-                                    left = size.width - visibleWidth,
-                                    top = 0f,
-                                    right = size.width,
-                                    bottom = visibleHeight
-                                ) {
-                                    this@drawWithContent.drawContent()
-                                }
-                            } else {
-                                this@drawWithContent.drawContent()
-                            }
-                        }
+                    modifier = modifier.graphicsLayer {
+                        shadowElevation = 12.dp.toPx() * revealProgress
+                        shape = menuShape
+                        clip = true
+                        ambientShadowColor = Color.Black.copy(alpha = .18f)
+                        spotShadowColor = Color.Black.copy(alpha = .28f)
+                    }
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().frameGlassSurface(hazeState, menuShape),
