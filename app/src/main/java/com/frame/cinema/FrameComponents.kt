@@ -482,17 +482,17 @@ internal fun AnimatedDropdownPopup(
         ) {
             AnimatedVisibility(
                 visibleState = visibilityState,
-                enter = fadeIn(animationSpec = tween(if (animateFromAnchor) 100 else 280)),
-                exit = fadeOut(animationSpec = tween(if (animateFromAnchor) 100 else 180))
+                enter = fadeIn(animationSpec = tween(if (animateFromAnchor) 420 else 280, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f))),
+                exit = fadeOut(animationSpec = tween(if (animateFromAnchor) 420 else 180, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)))
             ) {
                 val revealProgress by transition.animateFloat(
-                    transitionSpec = { tween(280) },
+                    transitionSpec = { tween(if (animateFromAnchor) 420 else 280, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)) },
                     label = "dropdownRevealProgress"
                 ) { state ->
                     if (state == androidx.compose.animation.EnterExitState.Visible) 1f else 0f
                 }
                 val cornerRadius by transition.animateDp(
-                    transitionSpec = { tween(280) },
+                    transitionSpec = { tween(if (animateFromAnchor) 420 else 280, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)) },
                     label = "sortMenuCornerRadius"
                 ) { state ->
                     if (state == androidx.compose.animation.EnterExitState.Visible) 16.dp else 180.dp
