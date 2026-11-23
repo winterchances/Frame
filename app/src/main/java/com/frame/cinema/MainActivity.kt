@@ -957,12 +957,13 @@ private fun FrameNativeApp(
                 )
             }
     ) {
-        Box(
-            Modifier.fillMaxSize().graphicsLayer {
-                scaleX = 1f - .02f * sheetProgress
-                scaleY = 1f - .02f * sheetProgress
-            }
-        ) {
+        Box(Modifier.fillMaxSize().background(PageBg)) {
+            Box(
+                Modifier.fillMaxSize().graphicsLayer {
+                    scaleX = 1f - .02f * sheetProgress
+                    scaleY = 1f - .02f * sheetProgress
+                }
+            ) {
         androidx.compose.animation.AnimatedContent(
             targetState = playing,
             contentKey = { it },
@@ -1352,6 +1353,7 @@ private fun FrameNativeApp(
                 }
                 }
         }
+            }
         }
         }
 
