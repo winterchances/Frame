@@ -459,7 +459,10 @@ internal fun LibraryBatchActionBar(
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
                         modifier = Modifier.width(160.dp),
-                        animateFromAnchor = true
+                        animateFromAnchor = true,
+                        anchorWidth = 64.dp,
+                        anchorHeight = 44.dp,
+                        anchorCornerRadius = 14.dp
                     ) {
                         availableMoveCategories.forEach { target ->
                             CustomSortMenuItem(
@@ -486,7 +489,10 @@ internal fun LibraryBatchActionBar(
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
                         modifier = Modifier.width(112.dp),
-                        animateFromAnchor = true
+                        animateFromAnchor = true,
+                        anchorWidth = 64.dp,
+                        anchorHeight = 44.dp,
+                        anchorCornerRadius = 14.dp
                     ) {
                         listOf("未看", "在看", "已看").forEach { target ->
                             val targetStatus = when (target) {
