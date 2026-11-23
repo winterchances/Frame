@@ -481,8 +481,10 @@ internal fun Modifier.frameGlassSurface(
 
 private class DropdownRevealShape(
     private val progress: Float,
-    private val cornerRadiusPx: Float,
-    private val anchorSizePx: Float,
+    private val menuCornerRadiusPx: Float,
+    private val anchorWidthPx: Float,
+    private val anchorHeightPx: Float,
+    private val anchorCornerRadiusPx: Float,
     private val fromBottomCenter: Boolean
 ) : androidx.compose.ui.graphics.Shape {
     override fun createOutline(
@@ -491,9 +493,10 @@ private class DropdownRevealShape(
         density: androidx.compose.ui.unit.Density
     ): androidx.compose.ui.graphics.Outline {
         val fraction = progress.coerceIn(0f, 1f)
-        val anchorSize = anchorSizePx.coerceAtMost(minOf(size.width, size.height))
-        val visibleWidth = anchorSize + (size.width - anchorSize) * fraction
-        val visibleHeight = anchorSize + (size.height - anchorSize) * fraction
+        val anchorWidth = anchorWidthPx.coerceAtMost(size.width)
+        val anchorHeight = anchorHeightPx.coerceAtMost(size.height)
+        val visibleWidth = anchorWidth + (size.width - anchorWidth) * fraction
+        val visibleHeight = anchorHeight + (size.height - anchorHeight) * fraction
         val left = if (fromBottomCenter) {
             (size.width - visibleWidth) / 2f
         } else {
@@ -502,9 +505,9 @@ private class DropdownRevealShape(
         val top = if (fromBottomCenter) size.height - visibleHeight else 0f
         val right = left + visibleWidth
         val bottom = if (fromBottomCenter) size.height else visibleHeight
-        val radius = cornerRadiusPx.coerceAtMost(
-            minOf(visibleWidth, visibleHeight) / 2f
-        )
+        val interpolatedRadius = anchorCornerRadiusPx +
+            (menuCornerRadiusPx - anchorCornerRadiusPx) * fraction
+        val radius = interpolatedRadius.coerceAtMost(minOf(visibleWidth, visibleHeight) / 2f)
         val path = androidx.compose.ui.graphics.Path().apply {
             addRoundRect(
                 androidx.compose.ui.geometry.RoundRect(
@@ -577,10 +580,10 @@ internal fun AnimatedDropdownPopup(
                 val menuShape: androidx.compose.ui.graphics.Shape = if (animateFromAnchor) {
                     DropdownRevealShape(
                         progress = revealProgress,
-                        cornerRadiusPx = anchorCornerRadiusPx,
-                        anchorSizePx = with(LocalDensity.current) {
-                            minOf(anchorWidth, anchorHeight).toPx()
-                        },
+                        menuCornerRadiusPx = with(LocalDensity.current) { 18.dp.toPx() },
+                        anchorWidthPx = with(LocalDensity.current) { anchorWidth.toPx() },
+                        anchorHeightPx = with(LocalDensity.current) { anchorHeight.toPx() },
+                        anchorCornerRadiusPx = anchorCornerRadiusPx,
                         fromBottomCenter = alignment == Alignment.BottomCenter
                     )
                 } else {
