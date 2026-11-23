@@ -502,7 +502,7 @@ internal fun AnimatedDropdownPopup(
 
                 Box(
                     modifier = modifier
-                        .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .12f))
+                        .shadow(12.dp, menuShape, ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
                         .drawWithContent {
                         if (animateFromAnchor) {
                             val visibleWidth = size.width * revealProgress
@@ -525,15 +525,15 @@ internal fun AnimatedDropdownPopup(
                             .hazeEffect(
                                 state = hazeState,
                                 style = HazeStyle(
-                                    backgroundColor = Color.White.copy(alpha = .85f),
+                                    backgroundColor = PageBg,
                                     tints = emptyList(),
                                     blurRadius = 20.dp,
                                     noiseFactor = 0f
                                 )
                             )
                             .clip(menuShape)
-                            .border(0.7.dp, Color.White.copy(alpha = .68f), menuShape)
-                            .border(0.5.dp, Color.Black.copy(alpha = .05f), menuShape),
+                            .background(Glass)
+                            .border(0.3.dp, LocalFramePalette.current.divider, menuShape),
                         content = content
                     )
                 }
