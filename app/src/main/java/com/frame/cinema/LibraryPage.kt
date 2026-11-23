@@ -366,6 +366,7 @@ internal fun LibraryPage(
                 Box {
                     ActionIcon(FrameGridIcon, "视图与排序", { showSortMenu = true })
                     AnimatedDropdownPopup(
+                        hazeState = hazeState,
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false },
                         offset = androidx.compose.ui.unit.IntOffset.Zero,
@@ -411,6 +412,7 @@ internal fun LibraryPage(
                         Text("移动分类", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
                     }
                     AnimatedDropdownPopup(
+                        hazeState = hazeState,
                         expanded = showMoveDialog,
                         onDismissRequest = { showMoveDialog = false },
                         alignment = Alignment.BottomCenter,
@@ -436,6 +438,7 @@ internal fun LibraryPage(
                         Text("修改状态", fontSize = 11.sp, color = MainText, modifier = Modifier.padding(top = 1.dp))
                     }
                     AnimatedDropdownPopup(
+                        hazeState = hazeState,
                         expanded = showStatusDialog,
                         onDismissRequest = { showStatusDialog = false },
                         alignment = Alignment.BottomCenter,
