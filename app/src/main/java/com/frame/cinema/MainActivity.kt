@@ -618,6 +618,7 @@ private fun FrameNativeApp(
         }
     }
     val backdropBlur = maxOf(5.dp * maxOf(sheetProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress), 5.dp * contextMenuProgress)
+    val pageContentBlur = maxOf(5.dp * maxOf(clearDialogProgress, importDialogProgress, categoryDrawerProgress), 5.dp * contextMenuProgress)
     var displayedSheet by remember { mutableStateOf(SheetType.NONE) }
 
     fun refresh() {
@@ -972,15 +973,18 @@ private fun FrameNativeApp(
     ) {
         Box(Modifier.fillMaxSize().background(PageBg)) {
             Box(
-                Modifier.fillMaxSize().background(PageBg).graphicsLayer {
-                    scaleX = 1f - .02f * sheetProgress
-                    scaleY = 1f - .02f * sheetProgress
-                }
+                Modifier.fillMaxSize()
+                    .background(PageBg)
+                    .blur(5.dp * sheetProgress, edgeTreatment = androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded)
+                    .graphicsLayer {
+                        scaleX = 1f - .02f * sheetProgress
+                        scaleY = 1f - .02f * sheetProgress
+                    }
             ) {
         androidx.compose.animation.AnimatedContent(
             targetState = playing,
             contentKey = { it },
-            modifier = Modifier.fillMaxSize().background(Color.Black),
+            modifier = Modifier.fillMaxSize().background(Color.Transparent),
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 if (targetState != null) {
@@ -1003,7 +1007,7 @@ private fun FrameNativeApp(
             Box(
                 Modifier.fillMaxSize()
                     .background(PageBg)
-                    .blur(backdropBlur, edgeTreatment = androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded)
+                    .blur(pageContentBlur, edgeTreatment = androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded)
             ) {
                 androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
