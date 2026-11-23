@@ -397,16 +397,14 @@ internal fun LibraryPage(
                     .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
             ) {
                 Box(
-                    Modifier.fillMaxSize().frameGlassSurface(
-                        hazeState,
-                        RoundedCornerShape(28.dp),
-                        glassAlpha = (Glass.alpha + 0.05f).coerceAtMost(0.95f)
-                    )
-                )
-                Row(
-                    Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically
+                    Modifier.fillMaxSize()
+                        .frameGlassSurface(hazeState, RoundedCornerShape(28.dp))
+                        .padding(5.dp)
                 ) {
+                    Row(
+                        Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable {
                     onBatchFavorite(selectedVideoIds, !selectedAreAllFavorite)
                     selectedVideoIds = emptySet()
@@ -474,6 +472,7 @@ internal fun LibraryPage(
                 Column(Modifier.weight(1f).fillMaxHeight().noRippleClickable { showDeleteDialog = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(Icons.Outlined.DeleteOutline, null, tint = LocalFramePalette.current.danger, modifier = Modifier.size(19.dp))
                     Text("批量移除", fontSize = 11.sp, color = LocalFramePalette.current.danger, modifier = Modifier.padding(top = 1.dp))
+                    }
                 }
             }
         }
