@@ -1201,6 +1201,7 @@ private fun FrameNativeApp(
                             }
                         }
                     }
+                }
             }
 
           } else {
