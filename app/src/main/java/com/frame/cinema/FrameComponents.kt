@@ -460,7 +460,6 @@ internal fun RatingStars(
 }
 
 
-@Composable
 internal val LocalDropdownScrimReporter = compositionLocalOf<((Any, Boolean) -> Unit)?> { null }
 
 internal fun Modifier.frameGlassSurface(
