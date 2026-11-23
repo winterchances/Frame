@@ -182,6 +182,7 @@ import kotlin.math.roundToInt
 @Composable
 internal fun LibraryPage(
     hazeState: HazeState,
+    selectedVideoIdsState: MutableState<Set<Long>>,
     listState: androidx.compose.foundation.lazy.grid.LazyGridState,
     stickyCategoryScrollState: androidx.compose.foundation.ScrollState,
     floatingCategoryScrollState: androidx.compose.foundation.ScrollState,
@@ -199,21 +200,13 @@ internal fun LibraryPage(
     onBatchStatus: (Set<Long>, String) -> Unit,
     onBatchRemove: (Set<Long>) -> Unit
 ) {
-    var selectedVideoIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var selectedVideoIds by selectedVideoIdsState
     var showSortMenu by remember { mutableStateOf(false) }
-    var showMoveDialog by remember { mutableStateOf(false) }
-    var showStatusDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
     BackHandler(enabled = multiSelectMode && !categoryDrawerVisible) {
         selectedVideoIds = emptySet()
         onMultiSelectModeChange(false)
     }
-    val selectedVideos = videos.filter { it.id in selectedVideoIds }
-    val selectedAreAllFavorite = selectedVideos.let { it.isNotEmpty() && it.all { video -> video.isFav } }
-    val commonSelectedCategory = selectedVideos.map { it.category }.distinct().singleOrNull()
-    val commonSelectedStatus = selectedVideos.map { it.status }.distinct().singleOrNull()
-    val availableMoveCategories = categories.filterNot { it == "我的最爱" }
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     val density = LocalDensity.current
     val statusBarBottomPx = WindowInsets.statusBars.getTop(density).toFloat()
@@ -393,6 +386,50 @@ internal fun LibraryPage(
         ) {
             Box(
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+              
+                        libraryTitleHeightPx.intValue.toFloat()
+                    } else if (listState.firstVisibleItemIndex == 0) {
+                        (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
+                    } else 0f
+                }
+        )
+
+
+        }
+    }
+
+@Composable
+internal fun LibraryBatchActionBar(
+    hazeState: HazeState,
+    videos: List<VideoItem>,
+    categories: List<String>,
+    selectedVideoIdsState: MutableState<Set<Long>>,
+    onMultiSelectModeChange: (Boolean) -> Unit,
+    onBatchMove: (Set<Long>, String) -> Unit,
+    onBatchFavorite: (Set<Long>, Boolean) -> Unit,
+    onBatchStatus: (Set<Long>, String) -> Unit,
+    onBatchRemove: (Set<Long>) -> Unit
+) {
+    var selectedVideoIds by selectedVideoIdsState
+    var showMoveDialog by remember { mutableStateOf(false) }
+    var showStatusDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val selectedCount = selectedVideoIds.size
+    val selectedVideos = videos.filter { it.id in selectedVideoIds }
+    val selectedAreAllFavorite = selectedVideos.let { it.isNotEmpty() && it.all { video -> video.isFav } }
+    val commonSelectedCategory = selectedVideos.map { it.category }.distinct().singleOrNull()
+    val commonSelectedStatus = selectedVideos.map { it.status }.distinct().singleOrNull()
+    val availableMoveCategories = categories.filterNot { it == "我的最爱" }
+
+    Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = multiSelectMode && selectedCount > 0,
+            enter = slideInVertically(tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { it } + fadeIn(tween(220)),
+            exit = slideOutVertically(tween(200, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { it } + fadeOut(tween(160)),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
+        ) {
+            Box(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                     .height(56.dp)
                     .shadow(12.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = .18f), spotColor = Color.Black.copy(alpha = .28f))
             ) {
@@ -477,21 +514,7 @@ internal fun LibraryPage(
             }
         }
         }
-        LibraryFilterHeader(
-            categories = categories, status = status, category = category,
-            categoryScrollState = floatingCategoryScrollState,
-            onStatus = onStatus, onCategory = onCategory,
-            onOpenCategoryDrawer = onOpenCategoryDrawer,
-            alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
-            modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
-                .graphicsLayer {
-                    translationY = if (multiSelectMode) {
-                        libraryTitleHeightPx.intValue.toFloat()
-                    } else if (listState.firstVisibleItemIndex == 0) {
-                        (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
-                    } else 0f
-                }
-        )
+
         if (showDeleteDialog) {
             Dialog(onDismissRequest = { showDeleteDialog = false }) {
                 Surface(
@@ -534,9 +557,8 @@ internal fun LibraryPage(
                 }
             }
         }
-
-        }
     }
+}
 
 @Composable
 internal fun LibraryFilterHeader(
