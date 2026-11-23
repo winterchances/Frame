@@ -378,15 +378,15 @@ internal fun LibraryPage(
                 }
             }
         }
-        AnimatedVisibility(
-            visible = multiSelectMode && selectedCount > 0,
-            enter = slideInVertically(tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { it } + fadeIn(tween(220)),
-            exit = slideOutVertically(tween(200, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { it } + fadeOut(tween(160)),
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(4f)
-        ) {
-            Box(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-              
+        LibraryFilterHeader(
+            categories = categories, status = status, category = category,
+            categoryScrollState = floatingCategoryScrollState,
+            onStatus = onStatus, onCategory = onCategory,
+            onOpenCategoryDrawer = onOpenCategoryDrawer,
+            alpha = 1f, onBoundsChanged = { rect -> libraryStickyHeaderHeightPx.intValue = rect.height.roundToInt(); onStickyHeaderBoundsChanged(rect) },
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(2f)
+                .graphicsLayer {
+                    translationY = if (multiSelectMode) {
                         libraryTitleHeightPx.intValue.toFloat()
                     } else if (listState.firstVisibleItemIndex == 0) {
                         (libraryTitleHeightPx.intValue - listState.firstVisibleItemScrollOffset).coerceAtLeast(0).toFloat()
@@ -404,6 +404,7 @@ internal fun LibraryBatchActionBar(
     videos: List<VideoItem>,
     categories: List<String>,
     selectedVideoIdsState: MutableState<Set<Long>>,
+    multiSelectMode: Boolean,
     onMultiSelectModeChange: (Boolean) -> Unit,
     onBatchMove: (Set<Long>, String) -> Unit,
     onBatchFavorite: (Set<Long>, Boolean) -> Unit,
@@ -514,7 +515,6 @@ internal fun LibraryBatchActionBar(
             }
         }
         }
-
         if (showDeleteDialog) {
             Dialog(onDismissRequest = { showDeleteDialog = false }) {
                 Surface(
