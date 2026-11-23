@@ -549,9 +549,9 @@ internal fun AnimatedDropdownPopup(
                     transitionSpec = { tween(if (animateFromAnchor) 320 else 280, easing = androidx.compose.animation.core.FastOutSlowInEasing) },
                     label = "sortMenuCornerRadius"
                 ) { state ->
-                    if (state == androidx.compose.animation.EnterExitState.Visible) 16.dp else 180.dp
+                    if (state == androidx.compose.animation.EnterExitState.Visible) 18.dp else 180.dp
                 }
-                val anchorCornerRadiusPx = with(LocalDensity.current) { 16.dp.toPx() }
+                val anchorCornerRadiusPx = with(LocalDensity.current) { 18.dp.toPx() }
                 val menuShape: androidx.compose.ui.graphics.Shape = if (animateFromAnchor) {
                     DropdownRevealShape(revealProgress, anchorCornerRadiusPx)
                 } else {
@@ -559,13 +559,30 @@ internal fun AnimatedDropdownPopup(
                 }
 
                 Box(
-                    modifier = modifier.graphicsLayer {
-                        shadowElevation = 16.dp.toPx() * revealProgress
-                        shape = menuShape
-                        clip = true
-                        ambientShadowColor = Color.Black.copy(alpha = .18f)
-                        spotShadowColor = Color.Black.copy(alpha = .33f)
-                    }
+                    modifier = modifier
+                        .graphicsLayer {
+                            shadowElevation = 10.dp.toPx() * revealProgress
+                            shape = menuShape
+                            clip = false
+                            ambientShadowColor = Color.Black.copy(alpha = .10f)
+                            spotShadowColor = Color.Black.copy(alpha = .16f)
+                        }
+                        .drawWithContent {
+                            if (animateFromAnchor) {
+                                val visibleWidth = size.width * revealProgress
+                                val visibleHeight = size.height * revealProgress
+                                clipRect(
+                                    left = size.width - visibleWidth,
+                                    top = 0f,
+                                    right = size.width,
+                                    bottom = visibleHeight
+                                ) {
+                                    this@drawWithContent.drawContent()
+                                }
+                            } else {
+                                this@drawWithContent.drawContent()
+                            }
+                        }
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().frameGlassSurface(hazeState, menuShape),
