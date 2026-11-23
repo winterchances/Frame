@@ -478,6 +478,41 @@ internal fun Modifier.frameGlassSurface(
     .background(Glass.copy(alpha = Glass.alpha - 0.05f))
     .border(0.3.dp, LocalFramePalette.current.divider, shape)
 
+private class DropdownRevealShape(
+    private val progress: Float,
+    private val cornerRadiusPx: Float
+) : androidx.compose.ui.graphics.Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): androidx.compose.ui.graphics.Outline {
+        val fraction = progress.coerceIn(0f, 1f)
+        if (fraction <= 0f) return androidx.compose.ui.graphics.Outline.Rectangle(
+            androidx.compose.ui.geometry.Rect.Zero
+        )
+
+        val visibleWidth = size.width * fraction
+        val visibleHeight = size.height * fraction
+        val left = size.width - visibleWidth
+        val radius = cornerRadiusPx.coerceAtMost(
+            minOf(visibleWidth, visibleHeight) / 2f
+        )
+        val path = androidx.compose.ui.graphics.Path().apply {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    left = left,
+                    top = 0f,
+                    right = size.width,
+                    bottom = visibleHeight,
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius)
+                )
+            )
+        }
+        return androidx.compose.ui.graphics.Outline.Generic(path)
+    }
+}
+
 @Composable
 internal fun AnimatedDropdownPopup(
     hazeState: HazeState,
@@ -516,33 +551,21 @@ internal fun AnimatedDropdownPopup(
                 ) { state ->
                     if (state == androidx.compose.animation.EnterExitState.Visible) 16.dp else 180.dp
                 }
-                val menuShape = if (animateFromAnchor) RoundedCornerShape(16.dp) else RoundedCornerShape(cornerRadius)
+                val anchorCornerRadiusPx = with(LocalDensity.current) { 16.dp.toPx() }
+                val menuShape: androidx.compose.ui.graphics.Shape = if (animateFromAnchor) {
+                    DropdownRevealShape(revealProgress, anchorCornerRadiusPx)
+                } else {
+                    RoundedCornerShape(cornerRadius)
+                }
 
                 Box(
-                    modifier = modifier
-                        .graphicsLayer {
-                            shadowElevation = 16.dp.toPx() * revealProgress
-                            shape = menuShape
-                            clip = false
-                            ambientShadowColor = Color.Black.copy(alpha = .18f)
-                            spotShadowColor = Color.Black.copy(alpha = .33f)
-                        }
-                        .drawWithContent {
-                            if (animateFromAnchor) {
-                                val visibleWidth = size.width * revealProgress
-                                val visibleHeight = size.height * revealProgress
-                                clipRect(
-                                    left = size.width - visibleWidth,
-                                    top = 0f,
-                                    right = size.width,
-                                    bottom = visibleHeight
-                                ) {
-                                    this@drawWithContent.drawContent()
-                                }
-                            } else {
-                                this@drawWithContent.drawContent()
-                            }
-                        }
+                    modifier = modifier.graphicsLayer {
+                        shadowElevation = 16.dp.toPx() * revealProgress
+                        shape = menuShape
+                        clip = true
+                        ambientShadowColor = Color.Black.copy(alpha = .18f)
+                        spotShadowColor = Color.Black.copy(alpha = .33f)
+                    }
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().frameGlassSurface(hazeState, menuShape),
