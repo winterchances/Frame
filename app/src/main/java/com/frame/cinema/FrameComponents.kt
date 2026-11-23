@@ -592,6 +592,11 @@ internal fun AnimatedDropdownPopup(
 
                 Box(
                     modifier = modifier.graphicsLayer {
+                        alpha = if (animateFromAnchor && !visibilityState.targetState) {
+                            (revealProgress / 0.35f).coerceIn(0f, 1f)
+                        } else {
+                            1f
+                        }
                         shadowElevation = 12.dp.toPx() * revealProgress
                         shape = menuShape
                         clip = true
