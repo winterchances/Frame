@@ -971,16 +971,16 @@ private fun FrameNativeApp(
             }
     ) {
         Box(Modifier.fillMaxSize().background(PageBg)) {
-            Box(
-                Modifier.fillMaxSize().background(PageBg).graphicsLayer {
-                    scaleX = 1f - .02f * sheetProgress
-                    scaleY = 1f - .02f * sheetProgress
-                }
-            ) {
         androidx.compose.animation.AnimatedContent(
             targetState = playing,
             contentKey = { it },
-            modifier = Modifier.fillMaxSize().background(Color.Black),
+            modifier = Modifier.fillMaxSize()
+                .background(Color.Black)
+                .blur(backdropBlur)
+                .graphicsLayer {
+                    scaleX = 1f - .02f * sheetProgress
+                    scaleY = 1f - .02f * sheetProgress
+                },
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 if (targetState != null) {
@@ -1001,8 +1001,7 @@ private fun FrameNativeApp(
         ) { targetPlaying ->
           if (targetPlaying == null) {
             Box(Modifier.fillMaxSize().background(PageBg)) {
-                Box(Modifier.fillMaxSize().blur(backdropBlur)) {
-                    androidx.compose.animation.AnimatedContent(
+                androidx.compose.animation.AnimatedContent(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
                     targetState = page,
                     transitionSpec = {
@@ -1201,7 +1200,6 @@ private fun FrameNativeApp(
                             }
                         }
                     }
-                }
             }
 
           } else {
@@ -1248,7 +1246,14 @@ private fun FrameNativeApp(
 
         if (playing == null) {
             val bottomFadePageBg = PageBg
-            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
+            Box(
+                Modifier.fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = 1f - .02f * sheetProgress
+                        scaleY = 1f - .02f * sheetProgress
+                    }
+                    .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
+            ) {
                 if (page == MainPage.LIBRARY && libraryMultiSelectMode && movieReviewScreen == null) {
                     CompositionLocalProvider(LocalDropdownScrimReporter provides dropdownScrimReporter) {
                         LibraryBatchActionBar(
@@ -1371,7 +1376,6 @@ private fun FrameNativeApp(
                 }
         }
             }
-        }
         }
 
         if (dropdownScrimAlpha > 0f) {
