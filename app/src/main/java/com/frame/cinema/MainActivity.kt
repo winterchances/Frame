@@ -1041,22 +1041,6 @@ private fun FrameNativeApp(
                                 onStickyHeaderBoundsChanged = { header -> contextMenuStickyHeaderBounds = header },
                                 multiSelectMode = libraryMultiSelectMode,
                                 onMultiSelectModeChange = { libraryMultiSelectMode = it },
-                                onBatchMove = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
-                                onBatchFavorite = { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
-                                onBatchStatus = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { item ->
-                                    repository.update(when (target) {
-                                        "未看" -> item.copy(progress = 0f, status = "all", playbackPositionMs = 0L, playbackCompleted = false)
-                                        "在看" -> item.copy(status = "playing")
-                                        else -> item.copy(
-                                            progress = 100f,
-                                            status = "watched",
-                                            playbackCompleted = true,
-                                            playbackPositionMs = item.playbackPositionMs
-                                                ?: if (item.durationMs > 0L) (item.durationMs * item.progress / 100f).toLong() else null
-                                        )
-                                    })
-                                } }; refresh() },
-                                onBatchRemove = { ids -> ids.forEach(repository::removeFromLibrary); refresh() }
                             )
                             MainPage.RECENT -> RecentPage(
                                 hazeState = hazeState,
