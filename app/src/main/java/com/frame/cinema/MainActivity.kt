@@ -988,7 +988,7 @@ private fun FrameNativeApp(
                         initialOffsetY = { it / 10 },
                         animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
                     ) + fadeIn(tween(350))) togetherWith
-                        fadeOut(tween(350))
+                        fadeOut(tween(0))
                 } else {
                     fadeIn(tween(250)) togetherWith
                         (androidx.compose.animation.slideOutVertically(
