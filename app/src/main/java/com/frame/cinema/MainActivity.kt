@@ -1919,7 +1919,7 @@ private fun FrameNativeApp(
                                         sheet = SheetType.REVIEW_VIDEO_PICKER
                                     }
                                     .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.CenterStart
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text("关联视频", color = MainText, fontSize = 16.sp)
                             }
@@ -1928,7 +1928,7 @@ private fun FrameNativeApp(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable { startNewReview(null) }
                                     .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.CenterStart
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text("不关联视频", color = MainText, fontSize = 16.sp)
                             }
@@ -2544,7 +2544,7 @@ private fun FrameNativeApp(
                                 Row(
                                     Modifier.fillMaxWidth().height(52.dp)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(if (!categoryEditMode && category == value) LocalFramePalette.current.secondarySurface else Color.Transparent)
+                                        .background(if (!categoryEditMode && category == value) Color.White else Color.Transparent)
                                         .then(if (!categoryEditMode) Modifier.noRippleClickable { category = value; showCategoryDrawer = false } else Modifier)
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -2587,7 +2587,7 @@ private fun FrameNativeApp(
                                             }
                                         } else Modifier)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(if (!categoryEditMode && category == value) LocalFramePalette.current.secondarySurface else Color.Transparent)
+                                        .background(if (!categoryEditMode && category == value) Color.White else Color.Transparent)
                                         .then(if (!categoryEditMode) Modifier.noRippleClickable { category = value; showCategoryDrawer = false } else Modifier)
                                         .padding(horizontal = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
