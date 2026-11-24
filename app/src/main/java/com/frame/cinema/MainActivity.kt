@@ -1440,7 +1440,8 @@ private fun FrameNativeApp(
                         .then(
                             if (displayedSheet == SheetType.SETTINGS ||
                                 displayedSheet == SheetType.RECORD_SEARCH ||
-                                displayedSheet == SheetType.SEARCH
+                                displayedSheet == SheetType.SEARCH ||
+                                displayedSheet == SheetType.MOVE
                             ) Modifier
                             else Modifier.verticalScroll(rememberScrollState())
                         )
@@ -1456,7 +1457,8 @@ private fun FrameNativeApp(
                                     displayedSheet != SheetType.RECORD_SEARCH -> 400.dp
                                 displayedSheet == SheetType.SETTINGS ||
                                     displayedSheet == SheetType.SEARCH ||
-                                    displayedSheet == SheetType.RECORD_SEARCH -> 24.dp
+                                    displayedSheet == SheetType.RECORD_SEARCH ||
+                                    displayedSheet == SheetType.MOVE -> 24.dp
                                 else -> 50.dp
                             }
                         )
@@ -1889,10 +1891,13 @@ private fun FrameNativeApp(
                             Text("保存", color = MainText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
                     }
-                    SheetType.MOVE -> SheetContent("移动到分类") {
+                    SheetType.MOVE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        SheetHeading("移动到分类")
                         val moveCategories = categories.filterNot { it == "全部分类" || it == "我的最爱" }
-                        moveCategories.forEachIndexed { index, cat ->
-                            SheetAction(cat, bottomPadding = if (index == moveCategories.lastIndex) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
+                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                            moveCategories.forEachIndexed { index, cat ->
+                                SheetAction(cat, bottomPadding = if (index == moveCategories.lastIndex) 0.dp else 12.dp) { selected?.let { repository.moveCategory(it.id, cat) }; refresh(); sheet = SheetType.NONE }
+                            }
                         }
                     }
                     SheetType.REVIEW_CREATE_OPTIONS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
@@ -2307,6 +2312,8 @@ private fun FrameNativeApp(
                         )
                         Spacer(Modifier.height(12.dp))
                         SheetActionPair(
+                            confirmOnRight = true,
+                            spacing = 12.dp,
                             onConfirm = {
                                 val name = newCategoryName.trim()
                                 when {
