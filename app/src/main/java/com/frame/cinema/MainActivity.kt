@@ -1903,7 +1903,7 @@ private fun FrameNativeApp(
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                         ) {
-                            Row(
+                            Box(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable {
                                         selected = null
@@ -1919,16 +1919,16 @@ private fun FrameNativeApp(
                                         sheet = SheetType.REVIEW_VIDEO_PICKER
                                     }
                                     .padding(horizontal = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                contentAlignment = Alignment.CenterStart
                             ) {
                                 Text("关联视频", color = MainText, fontSize = 16.sp)
                             }
                             Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
-                            Row(
+                            Box(
                                 Modifier.fillMaxWidth().height(52.dp)
                                     .noRippleClickable { startNewReview(null) }
                                     .padding(horizontal = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                contentAlignment = Alignment.CenterStart
                             ) {
                                 Text("不关联视频", color = MainText, fontSize = 16.sp)
                             }
