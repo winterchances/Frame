@@ -1450,10 +1450,15 @@ private fun FrameNativeApp(
                         ) { }
                          .padding(
                             top = 26.dp,
-                            bottom = if (sheetKeyboardUp &&
-                                displayedSheet != SheetType.SEARCH &&
-                                displayedSheet != SheetType.RECORD_SEARCH
-                            ) 400.dp else 50.dp
+                            bottom = when {
+                                sheetKeyboardUp &&
+                                    displayedSheet != SheetType.SEARCH &&
+                                    displayedSheet != SheetType.RECORD_SEARCH -> 400.dp
+                                displayedSheet == SheetType.SETTINGS ||
+                                    displayedSheet == SheetType.SEARCH ||
+                                    displayedSheet == SheetType.RECORD_SEARCH -> 24.dp
+                                else -> 50.dp
+                            }
                         )
                         .navigationBarsPadding()
                 ) {
