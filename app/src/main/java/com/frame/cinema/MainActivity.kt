@@ -2717,6 +2717,9 @@ private fun FrameNativeApp(
                             )
                             Spacer(Modifier.height(12.dp))
                             SheetActionPair(
+                                confirmOnRight = true,
+                                confirmTheme = true,
+                                spacing = 12.dp,
                                 onConfirm = {
                                     val name = newCategoryName.trim()
                                     when {
