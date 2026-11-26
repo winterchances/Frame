@@ -580,6 +580,29 @@ private fun FrameNativeApp(
             val mediaId = player.currentMediaItem?.mediaId
             val currentVideo = mediaId?.let { id -> repository.videos().firstOrNull { it.id.toString() == id } }
             if (currentVideo != null) {
+                // Clear main-screen overlays in the same state update that opens the player.
+                // This prevents drawers and menus from being drawn over the player transition.
+                showCategoryDrawer = false
+                categoryEditMode = false
+                editingCategoryName = null
+                sheet = SheetType.NONE
+                parentSheet = SheetType.NONE
+                sheetKeyboardUp = false
+                displayedSheet = SheetType.NONE
+                sheetVisibility.targetState = false
+                contextMenuOpen = false
+                contextMenuVideo = null
+                contextMenuBounds = null
+                contextMenuStartBounds = null
+                contextMenuViewportBounds = null
+                contextMenuStickyHeaderBounds = null
+                contextMenuNavigationBounds = null
+                contextMenuFabBounds = null
+                dropdownScrimTargets.clear()
+                showClearDataDialog = false
+                showImportDataDialog = false
+                pendingImportUri = null
+                showFab = false
                 playing = currentVideo
                 controlsVisible = true
                 locked = false
