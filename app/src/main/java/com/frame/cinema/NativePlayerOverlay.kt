@@ -629,7 +629,7 @@ internal fun NativePlayerOverlay(
                     Text(displayVideoName(item.name), color = Color.White, fontSize = 16.sp,
                         fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
-                    PlayerIconButton(Icons.Filled.ScreenRotation, "旋转屏幕", 18, onOrientation)
+                    PlayerIconButton(Icons.Outlined.ScreenRotation, "旋转屏幕", 18, onOrientation)
                     PlayerIconButton(Icons.Outlined.Lock, "锁定屏幕", onToggleLock)
                 }
                 Column(
