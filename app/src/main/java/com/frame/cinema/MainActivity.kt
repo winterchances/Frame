@@ -575,6 +575,9 @@ private fun FrameNativeApp(
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
     var controlsVisible by remember { mutableStateOf(true) }
     var locked by remember { mutableStateOf(false) }
+    LaunchedEffect(playing, controlsVisible, locked) {
+        onSystemBarsVisible(playing == null || (controlsVisible && !locked))
+    }
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showImportDataDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -743,7 +746,6 @@ private fun FrameNativeApp(
         controlsVisible = true
         locked = false
         playing = item
-        onSystemBarsVisible(false)
         onPlay(item)
     }
     fun playVideoAt(item: VideoItem, positionMs: Long) {
@@ -751,7 +753,6 @@ private fun FrameNativeApp(
         controlsVisible = true
         locked = false
         playing = item
-        onSystemBarsVisible(false)
         onPlayAt(item, positionMs)
     }
     fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
@@ -760,7 +761,6 @@ private fun FrameNativeApp(
         playing = null
         locked = false
         controlsVisible = true
-        onSystemBarsVisible(true)
         if (isLandscape) { isLandscape = false; onOrientation(false) }
         refresh()
     }
@@ -949,7 +949,6 @@ private fun FrameNativeApp(
                 playing = currentVideo
                 controlsVisible = true
                 locked = false
-                onSystemBarsVisible(false)
             }
         }
     }
@@ -1282,8 +1281,7 @@ private fun FrameNativeApp(
                             notify("记录内容不能为空")
                         }
                     }
-                },
-                onSystemBarsVisible = onSystemBarsVisible
+                }
             )
           }
         }
