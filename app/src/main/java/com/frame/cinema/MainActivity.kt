@@ -178,7 +178,7 @@ import kotlin.math.roundToInt
 
 
 internal enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
-private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_MOVIE_REVIEW, DELETE_CATEGORY, NEW_CATEGORY }
+private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_RECORD_CARD, DELETE_MOVIE_REVIEW, DELETE_CATEGORY, NEW_CATEGORY }
 private enum class MovieReviewScreen { LIST, DETAIL, EDITOR }
 internal enum class SortMode { ADDED, NAME }
 internal enum class SortDirection { ASCENDING, DESCENDING }
@@ -495,6 +495,16 @@ private fun FrameNativeApp(
     var parentSheet by remember { mutableStateOf(SheetType.NONE) }
     var sheetKeyboardUp by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
+    val recordCardVisibilityPreferences = remember(context) {
+        context.getSharedPreferences("frame_record_visibility", Context.MODE_PRIVATE)
+    }
+    var hiddenRecordCardVideoIds by remember {
+        mutableStateOf(
+            recordCardVisibilityPreferences.getStringSet("hidden_video_ids", emptySet())
+                .orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
+        )
+    }
+    var pendingRecordCardDeleteId by remember { mutableStateOf<Long?>(null) }
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuStartBounds by remember { mutableStateOf<Rect?>(null) }
@@ -1152,6 +1162,7 @@ private fun FrameNativeApp(
                                         hazeState = hazeState,
                                         listState = recordsListState,
                                         videos = videos,
+                                        hiddenVideoIds = hiddenRecordCardVideoIds,
                                         reviews = reviewEntries,
                                         movieReviews = movieReviewEntries,
                                         targetReviewId = targetReviewId,
@@ -1180,6 +1191,10 @@ private fun FrameNativeApp(
                                         onOpenMovieReviews = { video -> openMovieReviewList(video) },
                                         onOpenStandaloneMovieReview = { root -> openStandaloneMovieReview(root) },
                                         onPlayVideo = { video -> playVideo(video) },
+                                        onDeleteCardRequest = { video ->
+                                            pendingRecordCardDeleteId = video.id
+                                            sheet = SheetType.DELETE_RECORD_CARD
+                                        },
                                         onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                         onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
                                     )
@@ -2310,6 +2325,19 @@ private fun FrameNativeApp(
                     SheetType.CLEAR_DATA -> Unit
                     SheetType.DELETE_RECENT -> SheetContent("删除这条播放记录？") {
                         SheetAction("删除播放记录", danger = true, bottomPadding = 0.dp) { selected?.let { repository.deleteRecent(it.id) }; refresh(); sheet = SheetType.NONE }
+                    }
+                    SheetType.DELETE_RECORD_CARD -> SheetContent("删除这张卡片？") {
+                        SheetAction("删除卡片", danger = true, bottomPadding = 0.dp) {
+                            pendingRecordCardDeleteId?.let { videoId ->
+                                val updatedIds = hiddenRecordCardVideoIds + videoId
+                                hiddenRecordCardVideoIds = updatedIds
+                                recordCardVisibilityPreferences.edit()
+                                    .putStringSet("hidden_video_ids", updatedIds.map { it.toString() }.toSet())
+                                    .apply()
+                            }
+                            pendingRecordCardDeleteId = null
+                            sheet = SheetType.NONE
+                        }
                     }
                     SheetType.DELETE_MOVIE_REVIEW -> SheetContent("删除这篇影评？") {
                         Text("删除后无法恢复，但不会影响作品评分和随记。", fontSize = 14.sp, lineHeight = 21.sp, color = MutedText, modifier = Modifier.padding(bottom = 16.dp))
