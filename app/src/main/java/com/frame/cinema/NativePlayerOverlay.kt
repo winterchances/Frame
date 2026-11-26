@@ -714,14 +714,19 @@ internal fun NativePlayerOverlay(
             visible = centerMessage.isNotEmpty() && !locked && !timestampNoteSheetVisible && !subtitleSheetVisible,
             modifier = Modifier.align(Alignment.Center).zIndex(10f),
             enter = fadeIn(tween(180)),
-            exit = fadeOut(tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
-                scaleOut(
-                    animationSpec = tween(180, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                    targetScale = 0.96f
+            exit = fadeOut(tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
+                slideOutVertically(
+                    targetOffsetY = { it / 8 },
+                    animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)
                 )
         ) {
-            Box(Modifier.clip(CircleShape).background(Color(0xE6F0F2F1)).padding(horizontal = 22.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-                Text(centerMessage, color = Color(0xFF303638), fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Box(
+                Modifier.clip(RoundedCornerShape(18.dp))
+                    .background(Color.White.copy(alpha = .2f))
+                    .padding(horizontal = 22.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(centerMessage, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
         if (subtitleSheetVisible) {
