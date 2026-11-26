@@ -496,11 +496,11 @@ private fun FrameNativeApp(
     var sheetKeyboardUp by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<VideoItem?>(null) }
     val recordCardVisibilityPreferences = remember(context) {
-        context.getSharedPreferences("frame_record_visibility", Context.MODE_PRIVATE)
+        context.getSharedPreferences("frame_record_card_visibility", Context.MODE_PRIVATE)
     }
     var hiddenRecordCardVideoIds by remember {
         mutableStateOf(
-            recordCardVisibilityPreferences.getStringSet("hidden_video_ids", emptySet())
+            recordCardVisibilityPreferences.getStringSet("removed_card_video_ids", emptySet())
                 .orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
         )
     }
@@ -2332,7 +2332,7 @@ private fun FrameNativeApp(
                                 val updatedIds = hiddenRecordCardVideoIds + videoId
                                 hiddenRecordCardVideoIds = updatedIds
                                 recordCardVisibilityPreferences.edit()
-                                    .putStringSet("hidden_video_ids", updatedIds.map { it.toString() }.toSet())
+                                    .putStringSet("removed_card_video_ids", updatedIds.map { it.toString() }.toSet())
                                     .apply()
                             }
                             pendingRecordCardDeleteId = null
