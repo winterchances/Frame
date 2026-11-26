@@ -571,7 +571,7 @@ internal fun NativePlayerOverlay(
                                     showCenterMessage("音量 ${(volume * 100).toInt()}%")
                                 }
                                 dragMode == "progress" && abs(dx) > abs(dy) -> {
-                                    val changeMs = (dx / (size.width * .8f) * duration.coerceAtLeast(0L)).toLong()
+                                    val changeMs = (dx / (size.width * .8f) * duration.coerceAtLeast(0L) * .05f).toLong()
                                     current = (dragStartPosition + changeMs).coerceIn(0L, duration.coerceAtLeast(0L))
                                     showCenterMessage("${formatTime(current)} / ${formatTime(duration)}")
                                 }
@@ -721,10 +721,10 @@ internal fun NativePlayerOverlay(
             Box(
                 Modifier.fillMaxSize().zIndex(9f), contentAlignment = Alignment.Center
             ) {
-                Box(Modifier.size(60.dp).clip(CircleShape).background(Color.Black.copy(alpha = .5f))
-                    .border(1.dp, Color.White.copy(alpha = .2f), CircleShape)
+                Box(Modifier.size(40.dp).clip(CircleShape)
+                    .background(Color.White.copy(alpha = .2f))
                     .noRippleClickable { unlockVisible = false; onToggleLock() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Outlined.LockOpen, contentDescription = "解锁", tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -732,10 +732,10 @@ internal fun NativePlayerOverlay(
             visible = centerMessage.isNotEmpty() && !locked && !timestampNoteSheetVisible && !subtitleSheetVisible,
             modifier = Modifier.align(Alignment.Center).zIndex(10f),
             enter = fadeIn(tween(180)),
-            exit = fadeOut(tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
+            exit = fadeOut(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
                 slideOutVertically(
-                    targetOffsetY = { it / 8 },
-                    animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    targetOffsetY = { it / 12 },
+                    animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
                 )
         ) {
             Box(
