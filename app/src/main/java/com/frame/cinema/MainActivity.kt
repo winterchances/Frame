@@ -1036,7 +1036,7 @@ private fun FrameNativeApp(
                     ) + fadeIn(tween(350))) togetherWith
                         fadeOut(tween(0))
                 } else {
-                    fadeIn(tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)) togetherWith
+                    androidx.compose.animation.EnterTransition.None togetherWith
                         androidx.compose.animation.slideOutVertically(
                             targetOffsetY = { it / 10 },
                             animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
@@ -1048,7 +1048,9 @@ private fun FrameNativeApp(
           if (targetPlaying == null) {
             Box(
                 Modifier.fillMaxSize()
-                    .graphicsLayer { alpha = if (playing == null) 1f else 0f }
+                    .graphicsLayer {
+                        alpha = if (transition.currentState == null && transition.targetState == null && !transition.isRunning) 1f else 0f
+                    }
                     .blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
