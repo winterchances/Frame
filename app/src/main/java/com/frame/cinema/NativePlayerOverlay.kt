@@ -629,7 +629,7 @@ internal fun NativePlayerOverlay(
                     Text(displayVideoName(item.name), color = Color.White, fontSize = 16.sp,
                         fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
-                    PlayerIconButton(Icons.Outlined.ScreenRotation, "旋转屏幕", onOrientation)
+                    PlayerIconButton(Icons.Filled.ScreenRotation, "旋转屏幕", 18, onOrientation)
                     PlayerIconButton(Icons.Outlined.Lock, "锁定屏幕", onToggleLock)
                 }
                 Column(
@@ -701,7 +701,7 @@ internal fun NativePlayerOverlay(
                             Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         }
                         Spacer(Modifier.width(15.dp))
-                        PlayerIconButton(Icons.Outlined.ClosedCaption, "字幕") {
+                        PlayerIconButton(Icons.Outlined.ClosedCaption, "字幕", 22) { {
                             subtitleSheetVisible = true
                         }
                         Spacer(Modifier.width(15.dp))
