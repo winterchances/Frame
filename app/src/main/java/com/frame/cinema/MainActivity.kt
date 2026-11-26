@@ -557,11 +557,6 @@ private fun FrameNativeApp(
         onKeepAwake(keepAwake)
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
-    val playerBackgroundAlpha by animateFloatAsState(
-        targetValue = if (playing == null) 1f else 0f,
-        animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-        label = "player-background-crossfade"
-    )
     var isLandscape by remember { mutableStateOf(false) }
     var speedIndex by remember { mutableIntStateOf(0) }
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
@@ -1007,7 +1002,7 @@ private fun FrameNativeApp(
           if (targetPlaying == null) {
             Box(
                 Modifier.fillMaxSize()
-                    .graphicsLayer { alpha = playerBackgroundAlpha }
+                    .graphicsLayer { alpha = if (playing == null) 1f else 0f }
                     .blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
