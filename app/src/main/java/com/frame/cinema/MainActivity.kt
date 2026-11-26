@@ -2453,7 +2453,6 @@ private fun FrameNativeApp(
                         .shadow(16.dp, RoundedCornerShape(18.dp))
                         .clip(RoundedCornerShape(18.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .border(1.dp, Color.Black.copy(alpha = .05f), RoundedCornerShape(18.dp))
                         .padding(vertical = 4.dp)
                         .zIndex(2f)
                 ) {
