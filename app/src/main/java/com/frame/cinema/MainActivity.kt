@@ -1435,6 +1435,7 @@ private fun FrameNativeApp(
         // The shared sheet uses its measured full height for a complete entrance/exit.
         // The complete background layer (page, bottom navigation and adjacent FAB) scales together.
 
+        if (playing == null) {
         Box(Modifier.fillMaxSize().zIndex(4f)) {
             AnimatedVisibility(
                 visibleState = sheetVisibility,
@@ -2389,8 +2390,9 @@ private fun FrameNativeApp(
             }
             }
         }
+        }
 
-        if (contextMenuVideo != null && contextMenuBounds != null && contextMenuStartBounds != null) {
+        if (playing == null && contextMenuVideo != null && contextMenuBounds != null && contextMenuStartBounds != null) {
             val video = contextMenuVideo!!
             val targetBounds = contextMenuBounds!!
             val startBounds = contextMenuStartBounds!!
@@ -2501,7 +2503,7 @@ private fun FrameNativeApp(
                 }
             }
         }
-        if (showClearDataDialog || clearDialogProgress > 0f) {
+        if (playing == null && (showClearDataDialog || clearDialogProgress > 0f)) {
             Box(Modifier.fillMaxSize().zIndex(5f).background(Color.Black.copy(alpha = .28f * clearDialogProgress)).noRippleClickable { showClearDataDialog = false }, contentAlignment = Alignment.Center) {
                 androidx.compose.animation.AnimatedVisibility(visible = showClearDataDialog,
                     enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
@@ -2517,7 +2519,7 @@ private fun FrameNativeApp(
                 }
             }
         }
-        if (showImportDataDialog || importDialogProgress > 0f) {
+        if (playing == null && (showImportDataDialog || importDialogProgress > 0f)) {
             Box(Modifier.fillMaxSize().zIndex(7f).background(Color.Black.copy(alpha = .28f * importDialogProgress)).noRippleClickable { showImportDataDialog = false; pendingImportUri = null }, contentAlignment = Alignment.Center) {
                 androidx.compose.animation.AnimatedVisibility(visible = showImportDataDialog,
                     enter = androidx.compose.animation.scaleIn(initialScale = .8f, animationSpec = tween(340, easing = androidx.compose.animation.core.CubicBezierEasing(.34f, 1.56f, .64f, 1f))) + fadeIn(tween(340)),
@@ -2538,6 +2540,7 @@ private fun FrameNativeApp(
                 }
             }
         }
+    if (playing == null) {
     Box(Modifier.fillMaxSize().zIndex(if (sheet == SheetType.DELETE_CATEGORY || sheet == SheetType.NEW_CATEGORY) 2f else 10f)) {
             AnimatedVisibility(
                 visible = showCategoryDrawer,
@@ -2782,6 +2785,7 @@ private fun FrameNativeApp(
                 }
             }
         }
+    }
 
     }
 
