@@ -586,7 +586,6 @@ private fun FrameNativeApp(
             }
         }
     }
-    var toast by remember { mutableStateOf("") }
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showImportDataDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -746,7 +745,9 @@ private fun FrameNativeApp(
         parentSheet = SheetType.NONE
         sheet = SheetType.NOTE
     }
-    fun notify(message: String) { toast = message }
+    fun notify(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
     fun playVideo(item: VideoItem) {
         speedIndex = 0
         controlsVisible = true
@@ -926,7 +927,6 @@ private fun FrameNativeApp(
         }
     }
 
-    LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(2100); toast = "" } }
     val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
     val showNestedCategorySheet = showCategoryDrawer && (sheet == SheetType.DELETE_CATEGORY || sheet == SheetType.NEW_CATEGORY)
     LaunchedEffect(sheet, showCategoryDrawer) {
@@ -2330,8 +2330,8 @@ private fun FrameNativeApp(
                             onConfirm = {
                                 val name = newCategoryName.trim()
                                 when {
-                                    name.isEmpty() -> toast = "分类名称不能为空"
-                                    name in categories -> toast = "分类名称已存在"
+                                    name.isEmpty() -> notify("分类名称不能为空")
+                                    name in categories -> notify("分类名称已存在")
                                     else -> {
                                         repository.saveCategories(if (categories.lastOrNull() == "全部分类") categories.dropLast(1) + name + "全部分类" else categories + name)
                                         newCategoryName = ""
@@ -2503,14 +2503,6 @@ private fun FrameNativeApp(
                 }
             }
         }
-        if (toast.isNotBlank()) {
-            Box(Modifier.fillMaxSize()) {
-                Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp), shape = CircleShape, color = Color(0xDD222222)) {
-                    Text(toast, color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
-                }
-            }
-        }
-
     Box(Modifier.fillMaxSize().zIndex(if (sheet == SheetType.DELETE_CATEGORY || sheet == SheetType.NEW_CATEGORY) 2f else 10f)) {
             AnimatedVisibility(
                 visible = showCategoryDrawer,
@@ -2626,8 +2618,8 @@ private fun FrameNativeApp(
                                         Box(Modifier.size(28.dp).noRippleClickable {
                                             val renamed = editingCategoryDraft.trim()
                                             when {
-                                                renamed.isEmpty() -> toast = "分类名称不能为空"
-                                                renamed != value && renamed in categories -> toast = "分类名称已存在"
+                                                renamed.isEmpty() -> notify("分类名称不能为空")
+                                                renamed != value && renamed in categories -> notify("分类名称已存在")
                                                 else -> {
                                                     val renamedCategories = categories.map { if (it == value) renamed else it }
                                                     repository.saveCategories(renamedCategories)
@@ -2735,8 +2727,8 @@ private fun FrameNativeApp(
                                 onConfirm = {
                                     val name = newCategoryName.trim()
                                     when {
-                                        name.isEmpty() -> toast = "分类名称不能为空"
-                                        name in categories -> toast = "分类名称已存在"
+                                        name.isEmpty() -> notify("分类名称不能为空")
+                                        name in categories -> notify("分类名称已存在")
                                         else -> {
                                             repository.saveCategories(if (categories.lastOrNull() == "全部分类") categories.dropLast(1) + name + "全部分类" else categories + name)
                                             newCategoryName = ""
