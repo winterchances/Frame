@@ -307,8 +307,14 @@ class MainActivity : ComponentActivity() {
                                     else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                                 },
                                 onSystemBarsVisible = { visible ->
-                                    val controller = WindowInsetsControllerCompat(window, window.decorView)
-                                    if (visible) controller.show(WindowInsetsCompat.Type.statusBars()) else controller.hide(WindowInsetsCompat.Type.statusBars())
+                                    val decorView = window.decorView
+                                    val controller = WindowInsetsControllerCompat(window, decorView)
+                                    if (visible) {
+                                        controller.show(WindowInsetsCompat.Type.statusBars())
+                                        decorView.post { decorView.requestApplyInsets() }
+                                    } else {
+                                        controller.hide(WindowInsetsCompat.Type.statusBars())
+                                    }
                                 },
                                 onCategoryDrawerOverlay = { progress ->
                                     val factor = 1f - 0.28f * progress.coerceIn(0f, 1f)
