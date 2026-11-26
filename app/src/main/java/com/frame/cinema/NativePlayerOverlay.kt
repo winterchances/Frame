@@ -187,7 +187,8 @@ internal fun NativePlayerOverlay(
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onWatchTime: (Long) -> Unit,
     onFlushWatchTime: () -> Unit,
-    onSaveTimestampRecord: (Long, String) -> Unit
+    onSaveTimestampRecord: (Long, String) -> Unit,
+    onSystemBarsVisible: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val playerActivity = remember(context) {
@@ -198,6 +199,26 @@ internal fun NativePlayerOverlay(
         currentContext as? Activity
     }
     val screenshotScope = rememberCoroutineScope()
+    val playerWindowInsetsController = remember(playerActivity) {
+        playerActivity?.window?.let { WindowInsetsControllerCompat(it, it.decorView) }
+    }
+    val previousLightStatusBarAppearance = remember(playerWindowInsetsController) {
+        playerWindowInsetsController?.isAppearanceLightStatusBars
+    }
+    LaunchedEffect(controlsVisible, locked) {
+        val showStatusBar = controlsVisible && !locked
+        if (showStatusBar) {
+            playerWindowInsetsController?.isAppearanceLightStatusBars = false
+        }
+        onSystemBarsVisible(showStatusBar)
+    }
+    DisposableEffect(playerWindowInsetsController) {
+        onDispose {
+            previousLightStatusBarAppearance?.let {
+                playerWindowInsetsController?.isAppearanceLightStatusBars = it
+            }
+        }
+    }
     var videoTextureView by remember(item.id) { mutableStateOf<TextureView?>(null) }
     var pendingScreenshot by remember(item.id) { mutableStateOf<Bitmap?>(null) }
 
