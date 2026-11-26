@@ -1285,7 +1285,8 @@ private fun FrameNativeApp(
                             notify("记录内容不能为空")
                         }
                     }
-                }
+                },
+                onSystemBarsVisible = onSystemBarsVisible
             )
           }
         }
