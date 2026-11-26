@@ -184,6 +184,7 @@ internal fun RecordsPage(
     hazeState: HazeState,
     listState: LazyListState,
     videos: List<VideoItem>,
+    hiddenVideoIds: Set<Long>,
     reviews: List<ReviewEntry>,
     movieReviews: List<MovieReviewEntry>,
     targetReviewId: Long?,
@@ -200,6 +201,7 @@ internal fun RecordsPage(
     onOpenMovieReviews: (VideoItem) -> Unit,
     onOpenStandaloneMovieReview: (ReviewEntry) -> Unit,
     onPlayVideo: (VideoItem) -> Unit,
+    onDeleteCardRequest: (VideoItem) -> Unit,
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
@@ -295,8 +297,9 @@ internal fun RecordsPage(
     val sortedReviewsByVideo = remember(reviewsByVideo) {
         reviewsByVideo.mapValues { (_, entries) -> entries.sortedByDescending { it.createdAt } }
     }
-    val displayVideos = remember(videos, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection) {
+    val displayVideos = remember(videos, hiddenVideoIds, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection) {
         videos.filter { video ->
+            if (video.id in hiddenVideoIds) return@filter false
             val completed = video.status == "watched" || video.progress >= 100f
             val hasReviews = reviewsByVideo[video.id].orEmpty().isNotEmpty()
             val hasMovieReviews = movieReviewsByVideo[video.id].orEmpty().isNotEmpty()
@@ -542,7 +545,9 @@ internal fun RecordsPage(
                             ) {
                                 VideoCardTitle(
                                     video.name,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().noRippleClickable {
+                                        onDeleteCardRequest(video)
+                                    },
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
