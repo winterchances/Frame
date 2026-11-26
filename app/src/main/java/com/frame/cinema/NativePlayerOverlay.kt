@@ -815,6 +815,8 @@ internal fun NativePlayerOverlay(
             }
         }
         if (timestampNoteSheetVisible) {
+            val timestampNoteLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            val timestampNoteShape = if (timestampNoteLandscape) RoundedCornerShape(24.dp) else RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
             Box(Modifier.fillMaxSize().zIndex(20f)) {
                 Box(
                     Modifier.fillMaxSize()
@@ -825,22 +827,33 @@ internal fun NativePlayerOverlay(
                         ) { timestampNoteSheetVisible = false }
                 )
                 Column(
-                    Modifier.align(Alignment.BottomCenter)
-                        .fillMaxWidth()
+                    Modifier.align(if (timestampNoteLandscape) Alignment.Center else Alignment.BottomCenter)
+                        .then(
+                            if (timestampNoteLandscape) {
+                                Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(horizontal = 16.dp)
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        )
                         .imePadding()
-                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
-                        .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * if (timestampNoteLandscape) .72f else .85f)
+                        .shadow(10.dp, timestampNoteShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                        .clip(timestampNoteShape)
                         .background(PageBg)
                         .verticalScroll(rememberScrollState())
-                        .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 30.dp)
+                        .padding(
+                            start = 20.dp,
+                            top = if (timestampNoteLandscape) 18.dp else 26.dp,
+                            end = 20.dp,
+                            bottom = if (timestampNoteLandscape) 18.dp else 30.dp
+                        )
                 ) {
                     SheetHeading("记录此刻")
                     BasicTextField(
                         value = timestampNoteText,
                         onValueChange = { timestampNoteText = it },
                         modifier = Modifier.fillMaxWidth()
-                            .heightIn(min = 110.dp)
+                            .heightIn(min = if (timestampNoteLandscape) 72.dp else 110.dp)
                             .focusRequester(timestampNoteFocusRequester)
                             .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                             .clip(RoundedCornerShape(16.dp))
@@ -856,7 +869,7 @@ internal fun NativePlayerOverlay(
                             }
                         }
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(if (timestampNoteLandscape) 8.dp else 12.dp))
                     SheetActionPair(
                         confirmOnRight = true,
                         confirmTheme = true,
