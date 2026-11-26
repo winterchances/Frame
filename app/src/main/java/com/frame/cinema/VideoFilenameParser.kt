@@ -166,7 +166,7 @@ object VideoFilenameParser {
         if (hasLatin && !hasHan) return null to title
         if (!hasHan || !hasLatin) return null
 
-        val delimiters = Regex("""\s+|\s*[-_–—]\s*""")
+        val delimiters = Regex("""\s+""")
         for (delimiter in delimiters.findAll(title)) {
             val left = title.substring(0, delimiter.range.first).trim()
             val right = title.substring(delimiter.range.last + 1).trim()
