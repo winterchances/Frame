@@ -488,20 +488,22 @@ internal fun NativePlayerOverlay(
                     onTap = {
                         if (locked) {
                             unlockVisible = !unlockVisible
-                        } else if (!controlsVisible) {
-                            onToggleControls()
                         } else {
-                            if (player.isPlaying) player.pause() else player.play()
+                            onToggleControls()
                         }
                     },
-                    onDoubleTap = { offset ->
+                    onDoubleTap = {
                         if (!locked) {
-                            val forward = offset.x > size.width / 2f
-                            val target = (player.currentPosition + if (forward) 10_000L else -10_000L)
-                                .coerceIn(0L, duration.coerceAtLeast(0L))
-                            player.seekTo(target)
-                            current = target
-                            showCenterMessage(if (forward) "快进 10s" else "快退 10s")
+                            if (playbackEnded || player.playbackState == Player.STATE_ENDED) {
+                                player.seekTo(0L)
+                                current = 0L
+                                playbackEnded = false
+                                player.play()
+                            } else if (player.isPlaying) {
+                                player.pause()
+                            } else {
+                                player.play()
+                            }
                         }
                     },
                     onLongPress = {
@@ -644,24 +646,40 @@ internal fun NativePlayerOverlay(
                         Text(formatClock(duration), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        PlayerIconButton(
-                            icon = when {
-                                playbackEnded || player.playbackState == Player.STATE_ENDED -> Icons.Outlined.Replay
-                                isPlaying -> Icons.Outlined.Pause
-                                else -> Icons.Outlined.PlayArrow
-                            },
-                            description = when {
-                                playbackEnded || player.playbackState == Player.STATE_ENDED -> "重播"
-                                isPlaying -> "暂停"
-                                else -> "播放"
-                            }
-                        ) {
-                            if (playbackEnded || player.playbackState == Player.STATE_ENDED) {
-                                player.seekTo(0L)
-                                current = 0L
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                            PlayerIconButton(Icons.Outlined.FastRewind, "快退 10 秒") {
+                                val target = (player.currentPosition - 10_000L).coerceAtLeast(0L)
+                                player.seekTo(target)
+                                current = target
                                 playbackEnded = false
-                                player.play()
-                            } else if (player.isPlaying) player.pause() else player.play()
+                                showCenterMessage("快退 10s")
+                            }
+                            PlayerIconButton(
+                                icon = when {
+                                    playbackEnded || player.playbackState == Player.STATE_ENDED -> Icons.Outlined.Replay
+                                    isPlaying -> Icons.Outlined.Pause
+                                    else -> Icons.Outlined.PlayArrow
+                                },
+                                description = when {
+                                    playbackEnded || player.playbackState == Player.STATE_ENDED -> "重播"
+                                    isPlaying -> "暂停"
+                                    else -> "播放"
+                                }
+                            ) {
+                                if (playbackEnded || player.playbackState == Player.STATE_ENDED) {
+                                    player.seekTo(0L)
+                                    current = 0L
+                                    playbackEnded = false
+                                    player.play()
+                                } else if (player.isPlaying) player.pause() else player.play()
+                            }
+                            PlayerIconButton(Icons.Outlined.FastForward, "快进 10 秒") {
+                                val target = (player.currentPosition + 10_000L).coerceAtMost(duration.coerceAtLeast(0L))
+                                player.seekTo(target)
+                                current = target
+                                playbackEnded = false
+                                showCenterMessage("快进 10s")
+                            }
                         }
                         Spacer(Modifier.weight(1f))
                         Box(
