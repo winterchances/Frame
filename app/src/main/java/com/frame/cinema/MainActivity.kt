@@ -1254,9 +1254,19 @@ private fun FrameNativeApp(
                 locked = locked,
                 controlsVisible = controlsVisible,
                 onClose = { closePlayer() },
-                onToggleControls = { controlsVisible = !controlsVisible },
-                onAutoHideControls = { controlsVisible = false },
-                onToggleLock = { locked = !locked; controlsVisible = !locked },
+                onToggleControls = {
+                    controlsVisible = !controlsVisible
+                    onSystemBarsVisible(controlsVisible && !locked)
+                },
+                onAutoHideControls = {
+                    controlsVisible = false
+                    onSystemBarsVisible(false)
+                },
+                onToggleLock = {
+                    locked = !locked
+                    controlsVisible = !locked
+                    onSystemBarsVisible(!locked)
+                },
                 onSpeed = {
                     speedIndex = (speedIndex + 1) % speeds.size
                 },
