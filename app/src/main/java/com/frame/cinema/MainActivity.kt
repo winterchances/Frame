@@ -311,7 +311,10 @@ class MainActivity : ComponentActivity() {
                                     val controller = WindowInsetsControllerCompat(window, decorView)
                                     if (visible) {
                                         controller.show(WindowInsetsCompat.Type.statusBars())
-                                        decorView.post { decorView.requestApplyInsets() }
+                                        decorView.post {
+                                            val contentView = decorView.findViewById<android.view.View>(android.R.id.content)
+                                            androidx.core.view.ViewCompat.requestApplyInsets(contentView)
+                                        }
                                     } else {
                                         controller.hide(WindowInsetsCompat.Type.statusBars())
                                     }
