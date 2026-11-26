@@ -542,6 +542,7 @@ private fun FrameNativeApp(
     var editReviewVideoId by remember { mutableStateOf<Long?>(null) }
     var editStandaloneGroupId by remember { mutableStateOf<Long?>(null) }
     var showReviewVideoActions by remember { mutableStateOf(true) }
+    var allowReviewRating by remember { mutableStateOf(true) }
     var newCategoryName by remember { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf(SortMode.ADDED) }
     var sortDirection by rememberSaveable { mutableStateOf(SortDirection.DESCENDING) }
@@ -703,8 +704,9 @@ private fun FrameNativeApp(
         editingMovieReviewId = null
         movieReviewEditorReturnToList = true
     }
-    fun startNewReview(video: VideoItem? = null, showVideoActions: Boolean = true) {
+    fun startNewReview(video: VideoItem? = null, showVideoActions: Boolean = true, allowRating: Boolean = true) {
         showReviewVideoActions = showVideoActions
+        allowReviewRating = allowRating
         selected = video
         editReviewId = null
         editReviewVideoId = video?.id
@@ -1147,7 +1149,7 @@ private fun FrameNativeApp(
                                                 parentSheet = SheetType.NONE
                                                 sheet = SheetType.REVIEW_CREATE_OPTIONS
                                             } else {
-                                                startNewReview(video, showVideoActions = false)
+                                                startNewReview(video, showVideoActions = false, allowRating = false)
                                             }
                                         },
                                         onCreateStandalone = { groupId -> startStandaloneChildReview(groupId) },
@@ -1933,7 +1935,8 @@ private fun FrameNativeApp(
                                         editReviewCoverPath = null
                                         reviewVideoSearch = ""
                                         parentSheet = SheetType.NONE
-                                        sheet = SheetType.REVIEW_VIDEO_PICKER
+                                        allowReviewRating = false
+                                         sheet = SheetType.REVIEW_VIDEO_PICKER
                                     }
                                     .padding(horizontal = 20.dp),
                                 contentAlignment = Alignment.Center
@@ -2079,7 +2082,7 @@ private fun FrameNativeApp(
                             }
                             }
                         } else {
-                            val canSetVideoRating = editReviewId == null &&
+                            val canSetVideoRating = allowReviewRating && editReviewId == null &&
                                 editReviewVideoId != null &&
                                 reviewEntries.none { it.videoId == editReviewVideoId }
                         if (editReviewId == null && showReviewVideoActions) {
@@ -2156,8 +2159,6 @@ private fun FrameNativeApp(
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ActiveAccent).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
-                            } else if (canSetVideoRating && editRating == 0f) {
-                                notify("请先为视频评分")
                             } else {
                                 val entryId = editReviewId
                                 if (entryId == null) {
@@ -2457,7 +2458,7 @@ private fun FrameNativeApp(
                         .zIndex(2f)
                 ) {
                     ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
-                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video, showVideoActions = false) }
+                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video, showVideoActions = false, allowRating = false) }
                     ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
                     ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
                     ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
