@@ -1936,7 +1936,7 @@ private fun FrameNativeApp(
                                         reviewVideoSearch = ""
                                         parentSheet = SheetType.NONE
                                         allowReviewRating = false
-                                         sheet = SheetType.REVIEW_VIDEO_PICKER
+                                        sheet = SheetType.REVIEW_VIDEO_PICKER
                                     }
                                     .padding(horizontal = 20.dp),
                                 contentAlignment = Alignment.Center
@@ -2159,6 +2159,8 @@ private fun FrameNativeApp(
                         Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(52.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f)).clip(RoundedCornerShape(16.dp)).background(ActiveAccent).noRippleClickable {
                             if (editReview.isBlank()) {
                                 notify("先写下一些感想再保存")
+                            } else if (canSetVideoRating && editRating == 0f) {
+                                notify("请先为视频评分")
                             } else {
                                 val entryId = editReviewId
                                 if (entryId == null) {
