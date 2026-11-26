@@ -261,6 +261,11 @@ internal fun NativePlayerOverlay(
     var volume by remember { mutableFloatStateOf(player.volume) }
     var unlockVisible by remember { mutableStateOf(false) }
     var centerMessage by remember { mutableStateOf("") }
+    var centerMessageRevision by remember { mutableIntStateOf(0) }
+    fun showCenterMessage(message: String) {
+        centerMessage = message
+        centerMessageRevision++
+    }
     var isLevelAdjusting by remember { mutableStateOf(false) }
     var dragMode by remember { mutableStateOf("none") }
     var dragStartX by remember { mutableFloatStateOf(0f) }
@@ -420,7 +425,7 @@ internal fun NativePlayerOverlay(
             }
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 Log.e("FramePlayback", "Playback error code=${error.errorCodeName}: ${error.message}", error)
-                centerMessage = "播放失败"
+                showCenterMessage("播放失败")
             }
             override fun onPositionDiscontinuity(
                 oldPosition: Player.PositionInfo,
@@ -462,7 +467,7 @@ internal fun NativePlayerOverlay(
             onFlushWatchTime()
         }
     }
-    LaunchedEffect(centerMessage, isLevelAdjusting) {
+    LaunchedEffect(centerMessageRevision, isLevelAdjusting) {
         if (centerMessage.isNotEmpty() && !isLevelAdjusting) {
             delay(800)
             centerMessage = ""
@@ -496,13 +501,13 @@ internal fun NativePlayerOverlay(
                                 .coerceIn(0L, duration.coerceAtLeast(0L))
                             player.seekTo(target)
                             current = target
-                            centerMessage = if (forward) "快进 10s" else "快退 10s"
+                            showCenterMessage(if (forward) "快进 10s" else "快退 10s")
                         }
                     },
                     onLongPress = {
                         if (!locked) {
                             player.setPlaybackParameters(PlaybackParameters(2f))
-                            centerMessage = "2.0x 播放中"
+                            showCenterMessage("2.0x 播放中")
                         }
                     },
                     onPress = {
@@ -556,17 +561,17 @@ internal fun NativePlayerOverlay(
                                             screenBrightness = brightnessLevel
                                         }
                                     }
-                                    centerMessage = "亮度 ${(brightnessLevel * 100).toInt()}%"
+                                    showCenterMessage("亮度 ${(brightnessLevel * 100).toInt()}%")
                                 }
                                 dragMode == "volume" && abs(dy) > abs(dx) -> {
                                     volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
                                     player.volume = volume
-                                    centerMessage = "音量 ${(volume * 100).toInt()}%"
+                                    showCenterMessage("音量 ${(volume * 100).toInt()}%")
                                 }
                                 dragMode == "progress" && abs(dx) > abs(dy) -> {
                                     val changeMs = (dx / (size.width * .8f) * duration.coerceAtLeast(0L)).toLong()
                                     current = (dragStartPosition + changeMs).coerceIn(0L, duration.coerceAtLeast(0L))
-                                    centerMessage = "${formatTime(current)} / ${formatTime(duration)}"
+                                    showCenterMessage("${formatTime(current)} / ${formatTime(duration)}")
                                 }
                             }
                         }
