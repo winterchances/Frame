@@ -206,6 +206,15 @@ internal fun RecordsPage(
     val softListFlingBehavior = rememberSoftListFlingBehavior()
     var showRecordSortMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val recordVisibilityPreferences = remember(context) {
+        context.getSharedPreferences("frame_record_visibility", Context.MODE_PRIVATE)
+    }
+    var hiddenRecordVideoIds by remember {
+        mutableStateOf(
+            recordVisibilityPreferences.getStringSet("hidden_video_ids", emptySet())
+                .orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
+        )
+    }
     val exportScope = rememberCoroutineScope()
     var exportingReviewVideoId by remember { mutableStateOf<Long?>(null) }
     var exportingStandaloneReviewId by remember { mutableStateOf<Long?>(null) }
@@ -295,8 +304,9 @@ internal fun RecordsPage(
     val sortedReviewsByVideo = remember(reviewsByVideo) {
         reviewsByVideo.mapValues { (_, entries) -> entries.sortedByDescending { it.createdAt } }
     }
-    val displayVideos = remember(videos, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection) {
+    val displayVideos = remember(videos, reviewsByVideo, movieReviewsByVideo, sortMode, sortDirection, hiddenRecordVideoIds) {
         videos.filter { video ->
+            if (video.id in hiddenRecordVideoIds) return@filter false
             val completed = video.status == "watched" || video.progress >= 100f
             val hasReviews = reviewsByVideo[video.id].orEmpty().isNotEmpty()
             val hasMovieReviews = movieReviewsByVideo[video.id].orEmpty().isNotEmpty()
@@ -667,6 +677,21 @@ internal fun RecordsPage(
                                         setVideoReviewsExpanded(video.id, !expanded)
                                     } else Modifier
                                 ),
+                                color = MutedText,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                "移除",
+                                modifier = Modifier.noRippleClickable {
+                                    val updatedIds = hiddenRecordVideoIds + video.id
+                                    hiddenRecordVideoIds = updatedIds
+                                    recordVisibilityPreferences.edit()
+                                        .putStringSet("hidden_video_ids", updatedIds.map { it.toString() }.toSet())
+                                        .apply()
+                                },
                                 color = MutedText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
