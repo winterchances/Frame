@@ -701,7 +701,7 @@ internal fun NativePlayerOverlay(
                             Text("${speeds[speedIndex]}x", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         }
                         Spacer(Modifier.width(15.dp))
-                        PlayerIconButton(Icons.Outlined.ClosedCaption, "字幕", 22) { {
+                        PlayerIconButton(Icons.Outlined.ClosedCaption, "字幕", 22) {
                             subtitleSheetVisible = true
                         }
                         Spacer(Modifier.width(15.dp))
