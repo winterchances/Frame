@@ -1026,11 +1026,11 @@ private fun FrameNativeApp(
                     ) + fadeIn(tween(350))) togetherWith
                         fadeOut(tween(0))
                 } else {
-                    fadeIn(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)) togetherWith
-                        (androidx.compose.animation.scaleOut(
-                            targetScale = 0.96f,
-                            animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                        ) + fadeOut(tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)))
+                    fadeIn(tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)) togetherWith
+                        (androidx.compose.animation.slideOutVertically(
+                            targetOffsetY = { it / 10 },
+                            animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                        ) + fadeOut(tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)))
                 }
             },
             label = "player-card-transition"
