@@ -345,8 +345,20 @@ class MainActivity : ComponentActivity() {
         // Always resolve the latest persisted video before choosing the start position.
         val item = repository.backupVideos().firstOrNull { it.id == requestedItem.id } ?: requestedItem
         val iconBytes = appIconBytes
+        val parsedNotificationTitle = VideoFilenameParser.parse(item.name)?.metadata
+        val chineseNotificationTitle = parsedNotificationTitle?.chineseTitle
+        val englishNotificationTitle = parsedNotificationTitle?.englishTitle
         val metadataBuilder = MediaMetadata.Builder()
-            .setTitle(item.name)
+            .setTitle(
+                if (!chineseNotificationTitle.isNullOrBlank() && !englishNotificationTitle.isNullOrBlank()) {
+                    chineseNotificationTitle
+                } else {
+                    item.name
+                }
+            )
+        if (!chineseNotificationTitle.isNullOrBlank() && !englishNotificationTitle.isNullOrBlank()) {
+            metadataBuilder.setArtist(englishNotificationTitle)
+        }
         if (iconBytes != null) {
             metadataBuilder.setArtworkData(iconBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
         }
