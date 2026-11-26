@@ -187,8 +187,7 @@ internal fun NativePlayerOverlay(
     onSpeed: () -> Unit, onOrientation: () -> Unit, onEnded: () -> Unit,
     onWatchTime: (Long) -> Unit,
     onFlushWatchTime: () -> Unit,
-    onSaveTimestampRecord: (Long, String) -> Unit,
-    onSystemBarsVisible: (Boolean) -> Unit
+    onSaveTimestampRecord: (Long, String) -> Unit
 ) {
     val context = LocalContext.current
     val playerActivity = remember(context) {
@@ -206,11 +205,9 @@ internal fun NativePlayerOverlay(
         playerWindowInsetsController?.isAppearanceLightStatusBars
     }
     LaunchedEffect(controlsVisible, locked) {
-        val showStatusBar = controlsVisible && !locked
-        if (showStatusBar) {
+        if (controlsVisible && !locked) {
             playerWindowInsetsController?.isAppearanceLightStatusBars = false
         }
-        onSystemBarsVisible(showStatusBar)
     }
     DisposableEffect(playerWindowInsetsController) {
         onDispose {
