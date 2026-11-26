@@ -258,7 +258,13 @@ internal fun NativePlayerOverlay(
         }
     }
     var brightnessLevel by remember(playerActivity) { mutableFloatStateOf(initialBrightness) }
-    var volume by remember { mutableFloatStateOf(player.volume) }
+    val audioManager = remember(context) {
+        context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+    }
+    var volume by remember(audioManager) {
+        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        mutableFloatStateOf(audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC).toFloat() / maxVolume)
+    }
     var unlockVisible by remember { mutableStateOf(false) }
     var centerMessage by remember { mutableStateOf("") }
     var centerMessageRevision by remember { mutableIntStateOf(0) }
@@ -525,7 +531,8 @@ internal fun NativePlayerOverlay(
                             dragStartX = start.x
                             dragStartY = start.y
                             dragStartPosition = player.currentPosition.coerceAtLeast(0L)
-                            dragStartVolume = player.volume
+                            val maxMusicVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+                            dragStartVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC).toFloat() / maxMusicVolume
                             dragStartBrightness = brightnessLevel
                             dragMode = when {
                                 start.y > size.height * .78f -> "none"
@@ -567,7 +574,10 @@ internal fun NativePlayerOverlay(
                                 }
                                 dragMode == "volume" && abs(dy) > abs(dx) -> {
                                     volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
-                                    player.volume = volume
+                                    val maxMusicVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+                                    val targetMusicVolume = (volume * maxMusicVolume).toInt().coerceIn(0, maxMusicVolume)
+                                    audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, targetMusicVolume, 0)
+                                    volume = targetMusicVolume.toFloat() / maxMusicVolume
                                     showCenterMessage("音量 ${(volume * 100).toInt()}%")
                                 }
                                 dragMode == "progress" && abs(dx) > abs(dy) -> {
