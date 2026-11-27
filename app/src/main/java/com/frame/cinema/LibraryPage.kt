@@ -191,7 +191,7 @@ internal fun LibraryPage(
     onSortModeChange: (SortMode) -> Unit, onSortDirectionChange: (SortDirection) -> Unit,
     onCompactChange: (Boolean) -> Unit,
     onStatus: (String) -> Unit, onCategory: (String) -> Unit,
-    categoryDrawerVisible: Boolean, onOpenCategoryDrawer: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
+    categoryDrawerVisible: Boolean, playerActive: Boolean, onOpenCategoryDrawer: () -> Unit, onLongVideo: (VideoItem, Rect) -> Unit, onPlay: (VideoItem) -> Unit,
     contextMenuVideo: VideoItem?, contextMenuReturnProgress: Float, onContextMenuBoundsChanged: (Rect) -> Unit,
     onViewportBoundsChanged: (Rect) -> Unit, onStickyHeaderBoundsChanged: (Rect) -> Unit,
     multiSelectMode: Boolean, onMultiSelectModeChange: (Boolean) -> Unit
@@ -356,7 +356,7 @@ internal fun LibraryPage(
                     ActionIcon(FrameGridIcon, "视图与排序", { showSortMenu = true })
                     AnimatedDropdownPopup(
                         hazeState = hazeState,
-                        expanded = showSortMenu,
+                        expanded = showSortMenu && !playerActive,
                         onDismissRequest = { showSortMenu = false },
                         offset = androidx.compose.ui.unit.IntOffset.Zero,
                         modifier = Modifier.width(192.dp),
@@ -410,6 +410,13 @@ internal fun LibraryBatchActionBar(
     var selectedVideoIds by selectedVideoIdsState
     var showMoveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(playerActive) {
+        if (playerActive) {
+            showSortMenu = false
+            showMoveDialog = false
+            showStatusDialog = false
+        }
+    }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
     val selectedVideos = videos.filter { it.id in selectedVideoIds }
@@ -454,7 +461,7 @@ internal fun LibraryBatchActionBar(
                     }
                     AnimatedDropdownPopup(
                         hazeState = hazeState,
-                        expanded = showMoveDialog,
+                        expanded = showMoveDialog && !playerActive,
                         onDismissRequest = { showMoveDialog = false },
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
@@ -484,7 +491,7 @@ internal fun LibraryBatchActionBar(
                     }
                     AnimatedDropdownPopup(
                         hazeState = hazeState,
-                        expanded = showStatusDialog,
+                        expanded = showStatusDialog && !playerActive,
                         onDismissRequest = { showStatusDialog = false },
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
