@@ -936,7 +936,7 @@ private fun FrameNativeApp(
         }
     }
 
-    val sheetVisibility = remember { androidx.compose.animation.core.MutableTransitionState(false) }
+    var sheetVisibility by remember { mutableStateOf(androidx.compose.animation.core.MutableTransitionState(false)) }
     LaunchedEffect(openPlayerRequestValue) {
         if (openPlayerRequestValue > 0) {
             val mediaId = player.currentMediaItem?.mediaId
@@ -951,7 +951,10 @@ private fun FrameNativeApp(
                 parentSheet = SheetType.NONE
                 sheetKeyboardUp = false
                 displayedSheet = SheetType.NONE
-                sheetVisibility.targetState = false
+                // Replace the transition state instead of only changing its target.
+                // The sheet subtree is detached while the player is open; this prevents
+                // a stale half-open sheet from replaying its exit when the player closes.
+                sheetVisibility = androidx.compose.animation.core.MutableTransitionState(false)
                 contextMenuOpen = false
                 contextMenuVideo = null
                 contextMenuBounds = null
@@ -1332,7 +1335,6 @@ private fun FrameNativeApp(
                         categories = categories,
                         selectedVideoIdsState = librarySelectedVideoIds,
                         multiSelectMode = libraryMultiSelectMode,
-                        playerActive = playing != null,
                         onMultiSelectModeChange = { libraryMultiSelectMode = it },
                         onBatchMove = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
                         onBatchFavorite = { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
