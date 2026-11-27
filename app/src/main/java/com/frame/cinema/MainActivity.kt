@@ -581,6 +581,15 @@ private fun FrameNativeApp(
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
     val playerVisibility = remember { MutableTransitionState(false) }
+    val playerTransitionActive = playerVisibility.currentState || playerVisibility.targetState
+    val playerBackdropAlpha by animateFloatAsState(
+        targetValue = if (playerTransitionActive) .38f else 0f,
+        animationSpec = tween(
+            durationMillis = if (playerTransitionActive) 140 else 100,
+            easing = androidx.compose.animation.core.FastOutSlowInEasing
+        ),
+        label = "player-backdrop-alpha"
+    )
     LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
         if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
             playing = null
@@ -2835,18 +2844,26 @@ private fun FrameNativeApp(
         }
     }
 
+    Box(
+        Modifier.fillMaxSize()
+            .zIndex(99f)
+            .background(Color.Black.copy(alpha = playerBackdropAlpha))
+    )
+
     AnimatedVisibility(
         visibleState = playerVisibility,
-            enter = slideInVertically(
-                initialOffsetY = { it / 10 },
-                animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-            ) + fadeIn(tween(350)),
-            exit = slideOutVertically(
-                targetOffsetY = { it / 10 },
-                animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-            ),
-            modifier = Modifier.fillMaxSize().zIndex(100f)
-        ) {
+        enter = scaleIn(
+            initialScale = .8f,
+            transformOrigin = TransformOrigin(0.5f, 0.5f),
+            animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        ),
+        exit = scaleOut(
+            targetScale = .8f,
+            transformOrigin = TransformOrigin(0.5f, 0.5f),
+            animationSpec = tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
+        ),
+        modifier = Modifier.fillMaxSize().zIndex(100f)
+    ) {
             val overlayVideo = playing
             if (overlayVideo != null) {
                 Box(Modifier.fillMaxSize().background(Color.Black)) {
