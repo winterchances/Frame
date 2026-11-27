@@ -1435,7 +1435,7 @@ private fun FrameNativeApp(
                     )
                 }
                 if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 84.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -1480,8 +1480,20 @@ private fun FrameNativeApp(
                         Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
+                }
+        }
+            }
+        }
+        }
+
+        if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) {
+            Box(
+                Modifier.fillMaxSize()
+                    .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
+            ) {
                 Box(
-                    Modifier.size(56.dp)
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)
+                        .size(56.dp)
                         .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
                         .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
                         .frameGlassSurface(hazeState, CircleShape)
@@ -1490,13 +1502,15 @@ private fun FrameNativeApp(
                 ) {
                     Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp).rotate(fabRotation))
                 }
-                }
-        }
             }
-        }
         }
 
         Box(
+            Modifier.fillMaxSize()
+                .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
+        ) {
+            AnimatedVisibility(
+                visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) &&        Box(
             Modifier.fillMaxSize()
                 .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
         ) {
