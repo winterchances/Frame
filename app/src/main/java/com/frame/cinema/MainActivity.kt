@@ -1458,8 +1458,8 @@ private fun FrameNativeApp(
                 .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
         ) {
             AnimatedVisibility(
-                visible = (playing == null || !playerVisibility.currentState) &&
-                    !(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null,
+                visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) &&
+                    movieReviewScreen == null,
                 enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
                 exit = fadeOut(tween(140)) + slideOutVertically(tween(140)) { it / 3 },
                 modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)
