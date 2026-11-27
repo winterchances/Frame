@@ -2822,6 +2822,7 @@ private fun FrameNativeApp(
                 }
             }
         }
+    }
 
     AnimatedVisibility(
         visibleState = playerVisibility,
@@ -2885,7 +2886,6 @@ private fun FrameNativeApp(
                 }
             }
         }
-    }
 
     }
 
