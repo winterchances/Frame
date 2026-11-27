@@ -582,10 +582,20 @@ private fun FrameNativeApp(
     var playing by remember { mutableStateOf<VideoItem?>(null) }
     val playerVisibility = remember { MutableTransitionState(false) }
     var playerClosing by remember { mutableStateOf(false) }
+    var playerBackgroundFading by remember { mutableStateOf(false) }
+    val playerBackgroundAlpha by animateFloatAsState(
+        targetValue = if (playerBackgroundFading) 0f else 1f,
+        animationSpec = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "player-background-exit"
+    )
     LaunchedEffect(playerClosing) {
         if (playerClosing) {
             delay(300)
-            if (playerClosing) playerVisibility.targetState = false
+            if (playerClosing) {
+                playerBackgroundFading = true
+                delay(220)
+                if (playerClosing) playerVisibility.targetState = false
+            }
         }
     }
     var isLandscape by remember { mutableStateOf(false) }
@@ -772,6 +782,7 @@ private fun FrameNativeApp(
         locked = false
         playing = item
         playerClosing = false
+        playerBackgroundFading = false
         playerVisibility.targetState = true
         onPlay(item)
     }
@@ -980,6 +991,7 @@ private fun FrameNativeApp(
                 showFab = false
                 playing = currentVideo
                 playerClosing = false
+                playerBackgroundFading = false
                 playerVisibility.targetState = true
                 controlsVisible = true
                 locked = false
@@ -1075,7 +1087,9 @@ private fun FrameNativeApp(
                     .blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
-                    modifier = Modifier.fillMaxSize().statusBarsPadding().hazeSource(hazeState, zIndex = 0f),
+                    modifier = Modifier.fillMaxSize()
+                                 .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+                                 .hazeSource(hazeState, zIndex = 0f),
                     targetState = page,
                     transitionSpec = {
                         val forward = targetState.ordinal > initialState.ordinal
@@ -2851,6 +2865,7 @@ private fun FrameNativeApp(
         enter = androidx.compose.animation.EnterTransition.None,
         exit = androidx.compose.animation.ExitTransition.None,
         modifier = Modifier.fillMaxSize().zIndex(100f)
+            .graphicsLayer { alpha = playerBackgroundAlpha }
     ) {
             val overlayVideo = playing
             if (overlayVideo != null) {
