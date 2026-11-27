@@ -1435,7 +1435,7 @@ private fun FrameNativeApp(
                     )
                 }
                 if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 84.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -2037,44 +2037,45 @@ private fun FrameNativeApp(
                             }
                         }
                     }
-                    SheetType.REVIEW_CREATE_OPTIONS -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                    SheetType.REVIEW_CREATE_OPTIONS -> Column(
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         SheetHeading("新增观影感想")
-                        Column(
-                            Modifier.fillMaxWidth()
+                        Box(
+                            Modifier.fillMaxWidth().height(52.dp)
                                 .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surface)
+                                .noRippleClickable {
+                                    selected = null
+                                    editReviewId = null
+                                    editReviewVideoId = null
+                                    editReview = ""
+                                    editRating = 0f
+                                    editReviewTitle = ""
+                                    editReviewCoverUri = null
+                                    editReviewCoverPath = null
+                                    reviewVideoSearch = ""
+                                    parentSheet = SheetType.NONE
+                                    allowReviewRating = false
+                                    sheet = SheetType.REVIEW_VIDEO_PICKER
+                                }
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                Modifier.fillMaxWidth().height(52.dp)
-                                    .noRippleClickable {
-                                        selected = null
-                                        editReviewId = null
-                                        editReviewVideoId = null
-                                        editReview = ""
-                                        editRating = 0f
-                                        editReviewTitle = ""
-                                        editReviewCoverUri = null
-                                        editReviewCoverPath = null
-                                        reviewVideoSearch = ""
-                                        parentSheet = SheetType.NONE
-                                        allowReviewRating = false
-                                        sheet = SheetType.REVIEW_VIDEO_PICKER
-                                    }
-                                    .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("关联视频", color = MainText, fontSize = 16.sp)
-                            }
-                            Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
-                            Box(
-                                Modifier.fillMaxWidth().height(52.dp)
-                                    .noRippleClickable { startNewReview(null) }
-                                    .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("不关联视频", color = MainText, fontSize = 16.sp)
-                            }
+                            Text("关联视频", color = MainText, fontSize = 16.sp)
+                        }
+                        Box(
+                            Modifier.fillMaxWidth().height(52.dp)
+                                .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .noRippleClickable { startNewReview(null) }
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("不关联视频", color = MainText, fontSize = 16.sp)
                         }
                     }
                     SheetType.NOTE -> Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
