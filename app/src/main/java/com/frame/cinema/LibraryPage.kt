@@ -404,7 +404,6 @@ internal fun LibraryBatchActionBar(
     categories: List<String>,
     selectedVideoIdsState: MutableState<Set<Long>>,
     multiSelectMode: Boolean,
-    playerActive: Boolean,
     onMultiSelectModeChange: (Boolean) -> Unit,
     onBatchMove: (Set<Long>, String) -> Unit,
     onBatchFavorite: (Set<Long>, Boolean) -> Unit,
@@ -414,12 +413,6 @@ internal fun LibraryBatchActionBar(
     var selectedVideoIds by selectedVideoIdsState
     var showMoveDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
-    LaunchedEffect(playerActive) {
-        if (playerActive) {
-            showMoveDialog = false
-            showStatusDialog = false
-        }
-    }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val selectedCount = selectedVideoIds.size
     val selectedVideos = videos.filter { it.id in selectedVideoIds }
@@ -464,7 +457,7 @@ internal fun LibraryBatchActionBar(
                     }
                     AnimatedDropdownPopup(
                         hazeState = hazeState,
-                        expanded = showMoveDialog && !playerActive,
+                        expanded = showMoveDialog,
                         onDismissRequest = { showMoveDialog = false },
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
@@ -494,7 +487,7 @@ internal fun LibraryBatchActionBar(
                     }
                     AnimatedDropdownPopup(
                         hazeState = hazeState,
-                        expanded = showStatusDialog && !playerActive,
+                        expanded = showStatusDialog,
                         onDismissRequest = { showStatusDialog = false },
                         alignment = Alignment.BottomCenter,
                         offset = with(LocalDensity.current) { androidx.compose.ui.unit.IntOffset(0, -66.dp.roundToPx()) },
