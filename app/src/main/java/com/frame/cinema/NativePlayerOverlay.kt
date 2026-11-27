@@ -883,10 +883,13 @@ internal fun NativePlayerOverlay(
                         ) { timestampNoteSheetVisible = false }
                 )
                 Column(
-                    Modifier.align(if (timestampNoteLandscape) Alignment.CenterStart else Alignment.BottomCenter)
+                    Modifier.align(if (timestampNoteLandscape) Alignment.BottomStart else Alignment.BottomCenter)
                         .then(
                             if (timestampNoteLandscape) {
-                                Modifier.padding(start = 16.dp + timestampNoteCutoutLeft)
+                                Modifier.padding(
+                                    start = 16.dp + timestampNoteCutoutLeft,
+                                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 12.dp
+                                )
                                     .width(LocalConfiguration.current.screenWidthDp.dp * 0.5f - 16.dp - timestampNoteCutoutLeft)
                             } else {
                                 Modifier.fillMaxWidth()
