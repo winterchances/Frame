@@ -537,6 +537,11 @@ private fun FrameNativeApp(
     var category by rememberSaveable { mutableStateOf("全部") }
     var compact by rememberSaveable { mutableStateOf(true) }
     var showFab by remember { mutableStateOf(false) }
+    val fabRotation by animateFloatAsState(
+        if (showFab) 45f else 0f,
+        tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)),
+        label = "fab-rotation"
+    )
     var search by remember { mutableStateOf("") }
     var recordSearch by remember { mutableStateOf("") }
     var reviewVideoSearch by remember { mutableStateOf("") }
@@ -1376,11 +1381,6 @@ private fun FrameNativeApp(
           }
         }
 
-        val fabRotation by animateFloatAsState(
-            if (showFab) 45f else 0f,
-            tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)),
-            label = "fab-rotation"
-        )
         if (playing == null) {
             val bottomFadePageBg = PageBg
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
