@@ -979,6 +979,7 @@ private fun FrameNativeApp(
     }
     BackHandler(enabled = movieReviewScreen != null || showCategoryDrawer || contextMenuOpen || showClearDataDialog || showImportDataDialog || clearDialogProgress > 0f || sheet != SheetType.NONE || sheetVisibility.currentState || sheetVisibility.targetState || playing != null || showFab) {
         when {
+            playing != null -> closePlayer()
             showNestedCategorySheet -> sheet = SheetType.NONE
             showCategoryDrawer -> { showCategoryDrawer = false; categoryEditMode = false }
             contextMenuOpen -> { contextMenuOpen = false }
@@ -987,7 +988,6 @@ private fun FrameNativeApp(
             sheet != SheetType.NONE && parentSheet != SheetType.NONE -> { sheet = parentSheet; parentSheet = SheetType.NONE }
             sheet != SheetType.NONE -> sheet = SheetType.NONE
             sheetVisibility.currentState || sheetVisibility.targetState -> Unit
-            playing != null -> closePlayer()
             movieReviewScreen == MovieReviewScreen.EDITOR -> {
                 when {
                     editingMovieReviewId != null -> movieReviewScreen = MovieReviewScreen.DETAIL
@@ -1103,6 +1103,7 @@ private fun FrameNativeApp(
                                 onStatus = { status = it },
                                 onCategory = { category = it },
                                 categoryDrawerVisible = showCategoryDrawer,
+                                playerActive = playing != null,
                                 onOpenCategoryDrawer = { showCategoryDrawer = true },
                                 onLongVideo = { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
                                 onPlay = { selected = it; playVideo(it) },
