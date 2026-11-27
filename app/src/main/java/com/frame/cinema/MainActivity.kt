@@ -506,6 +506,7 @@ private fun FrameNativeApp(
     }
     var pendingRecordCardDeleteId by remember { mutableStateOf<Long?>(null) }
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
+    var contextMenuFromRecords by remember { mutableStateOf(false) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuStartBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuViewportBounds by remember { mutableStateOf<Rect?>(null) }
@@ -640,6 +641,7 @@ private fun FrameNativeApp(
         if (!contextMenuOpen && contextMenuVideo != null) {
             delay(260)
             contextMenuVideo = null
+            contextMenuFromRecords = false
             contextMenuBounds = null
             contextMenuStartBounds = null
             contextMenuViewportBounds = null
@@ -979,6 +981,7 @@ private fun FrameNativeApp(
                 sheetVisibility = androidx.compose.animation.core.MutableTransitionState(false)
                 contextMenuOpen = false
                 contextMenuVideo = null
+                contextMenuFromRecords = false
                 contextMenuBounds = null
                 contextMenuStartBounds = null
                 contextMenuViewportBounds = null
@@ -1134,7 +1137,7 @@ private fun FrameNativeApp(
                                 categoryDrawerVisible = showCategoryDrawer,
                                 playerActive = playing != null,
                                 onOpenCategoryDrawer = { showCategoryDrawer = true },
-                                onLongVideo = { item, bounds -> selected = item; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
+                                onLongVideo = { item, bounds -> selected = item; contextMenuFromRecords = false; contextMenuVideo = item; contextMenuBounds = bounds; contextMenuStartBounds = bounds; contextMenuOpen = true; showFab = false },
                                 onPlay = { selected = it; playVideo(it) },
                                 contextMenuVideo = contextMenuVideo,
                                 contextMenuReturnProgress = contextMenuReturnProgress,
@@ -1230,9 +1233,14 @@ private fun FrameNativeApp(
                                         onOpenMovieReviews = { video -> openMovieReviewList(video) },
                                         onOpenStandaloneMovieReview = { root -> openStandaloneMovieReview(root) },
                                         onPlayVideo = { video -> playVideo(video) },
-                                        onDeleteCardRequest = { video ->
-                                            pendingRecordCardDeleteId = video.id
-                                            sheet = SheetType.DELETE_RECORD_CARD
+                                        onLongRecordCard = { video, bounds ->
+                                            selected = video
+                                            contextMenuFromRecords = true
+                                            contextMenuVideo = video
+                                            contextMenuBounds = bounds
+                                            contextMenuStartBounds = bounds
+                                            contextMenuOpen = true
+                                            showFab = false
                                         },
                                         onSeekToTimestamp = { video, positionMs -> playVideoAt(video, positionMs) },
                                         onTargetHandled = { targetReviewId = null; targetRecordVideoId = null }
@@ -2487,7 +2495,7 @@ private fun FrameNativeApp(
                 val menuAnchorWidth = with(density) { startBounds.width.toDp() }
                 val menuAnchorBottom = with(density) { startBounds.bottom.toDp() }
                 val menuWidth = minOf(196.dp, maxWidth - 32.dp)
-                val menuHeight = 42.dp * 7 + 8.dp
+                val menuHeight = if (contextMenuFromRecords) 42.dp * 3 + 12.dp else 42.dp * 7 + 8.dp
                 val menuX = (menuAnchorLeft + menuAnchorWidth / 2f - menuWidth / 2f)
                     .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
                 val safeTop = 60.dp
@@ -2496,62 +2504,64 @@ private fun FrameNativeApp(
                 val menuY = if (menuAnchorBottom + menuHeight + safeBottom <= maxHeight) menuAnchorBottom + 8.dp
                     else (menuAnchorTop - menuHeight - 8.dp).coerceIn(safeTop, maxMenuY)
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f * contextMenuProgress)).noRippleClickable { contextMenuOpen = false })
-                Box(
-                    Modifier.offset(x = cardLeft, y = cardTop)
-                        .width(cardWidth)
-                        .graphicsLayer {
-                            alpha = contextMenuProgress
-                            compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
-                        }
-                        .drawWithContent {
-                            drawContent()
-                            fun clearRootRect(rect: Rect) {
-                                val left = maxOf(rect.left, bounds.left)
-                                val top = maxOf(rect.top, bounds.top)
-                                val right = minOf(rect.right, bounds.right)
-                                val bottom = minOf(rect.bottom, bounds.bottom)
-                                if (right > left && bottom > top) {
-                                    drawRect(
+                if (!contextMenuFromRecords) {
+                    Box(
+                        Modifier.offset(x = cardLeft, y = cardTop)
+                            .width(cardWidth)
+                            .graphicsLayer {
+                                alpha = contextMenuProgress
+                                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                            }
+                            .drawWithContent {
+                                drawContent()
+                                fun clearRootRect(rect: Rect) {
+                                    val left = maxOf(rect.left, bounds.left)
+                                    val top = maxOf(rect.top, bounds.top)
+                                    val right = minOf(rect.right, bounds.right)
+                                    val bottom = minOf(rect.bottom, bounds.bottom)
+                                    if (right > left && bottom > top) {
+                                        drawRect(
+                                            color = Color.Transparent,
+                                            topLeft = Offset(left - bounds.left, top - bounds.top),
+                                            size = Size(right - left, bottom - top),
+                                            blendMode = androidx.compose.ui.graphics.BlendMode.Clear
+                                        )
+                                    }
+                                }
+                                fun clearRootRoundRect(rect: Rect, radius: Float) {
+                                    drawRoundRect(
                                         color = Color.Transparent,
-                                        topLeft = Offset(left - bounds.left, top - bounds.top),
-                                        size = Size(right - left, bottom - top),
+                                        topLeft = Offset(rect.left - bounds.left, rect.top - bounds.top),
+                                        size = Size(rect.width, rect.height),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
                                         blendMode = androidx.compose.ui.graphics.BlendMode.Clear
                                     )
                                 }
-                            }
-                            fun clearRootRoundRect(rect: Rect, radius: Float) {
-                                drawRoundRect(
-                                    color = Color.Transparent,
-                                    topLeft = Offset(rect.left - bounds.left, rect.top - bounds.top),
-                                    size = Size(rect.width, rect.height),
-                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
-                                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
-                                )
-                            }
-                            fun clearRootCircle(rect: Rect) {
-                                drawCircle(
-                                    color = Color.Transparent,
-                                    radius = minOf(rect.width, rect.height) / 2f,
-                                    center = Offset(
-                                        rect.center.x - bounds.left,
-                                        rect.center.y - bounds.top
-                                    ),
-                                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
-                                )
-                            }
-                            val viewport = contextMenuViewportBounds
-                            if (viewport != null) {
-                                if (bounds.top < viewport.top) clearRootRect(Rect(bounds.left, bounds.top, bounds.right, viewport.top))
-                                if (bounds.bottom > viewport.bottom) clearRootRect(Rect(bounds.left, viewport.bottom, bounds.right, bounds.bottom))
-                                if (bounds.left < viewport.left) clearRootRect(Rect(bounds.left, bounds.top, viewport.left, bounds.bottom))
-                                if (bounds.right > viewport.right) clearRootRect(Rect(viewport.right, bounds.top, bounds.right, bounds.bottom))
-                            }
-                            contextMenuStickyHeaderBounds?.let { clearRootRect(it) }
-                            contextMenuNavigationBounds?.let { clearRootRoundRect(it, 28.dp.toPx()) }
-                            contextMenuFabBounds?.let { clearRootCircle(it) }
-                        },
-                    content = { PosterCardVisual(video, compact) }
-                )
+                                fun clearRootCircle(rect: Rect) {
+                                    drawCircle(
+                                        color = Color.Transparent,
+                                        radius = minOf(rect.width, rect.height) / 2f,
+                                        center = Offset(
+                                            rect.center.x - bounds.left,
+                                            rect.center.y - bounds.top
+                                        ),
+                                        blendMode = androidx.compose.ui.graphics.BlendMode.Clear
+                                    )
+                                }
+                                val viewport = contextMenuViewportBounds
+                                if (viewport != null) {
+                                    if (bounds.top < viewport.top) clearRootRect(Rect(bounds.left, bounds.top, bounds.right, viewport.top))
+                                    if (bounds.bottom > viewport.bottom) clearRootRect(Rect(bounds.left, viewport.bottom, bounds.right, bounds.bottom))
+                                    if (bounds.left < viewport.left) clearRootRect(Rect(bounds.left, bounds.top, viewport.left, bounds.bottom))
+                                    if (bounds.right > viewport.right) clearRootRect(Rect(viewport.right, bounds.top, bounds.right, bounds.bottom))
+                                }
+                                contextMenuStickyHeaderBounds?.let { clearRootRect(it) }
+                                contextMenuNavigationBounds?.let { clearRootRoundRect(it, 28.dp.toPx()) }
+                                contextMenuFabBounds?.let { clearRootCircle(it) }
+                            },
+                        content = { PosterCardVisual(video, compact) }
+                    )
+                }
                 Column(
                     Modifier.offset(x = menuX, y = menuY).width(menuWidth)
                         .graphicsLayer {
@@ -2567,13 +2577,24 @@ private fun FrameNativeApp(
                         .padding(vertical = 4.dp)
                         .zIndex(2f)
                 ) {
-                    ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
-                    ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video, showVideoActions = false, allowRating = false) }
-                    ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
-                    ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
-                    ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
-                    ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
-                    ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.removeFromLibrary(video.id); refresh(); contextMenuOpen = false }
+                    if (contextMenuFromRecords) {
+                        ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
+                        ContextMenuAction(Icons.Outlined.Edit, "修改标题") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
+                        HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 12.dp))
+                        ContextMenuAction(Icons.Outlined.DeleteOutline, "删除记录卡片", danger = true) {
+                            pendingRecordCardDeleteId = video.id
+                            contextMenuOpen = false
+                            sheet = SheetType.DELETE_RECORD_CARD
+                        }
+                    } else {
+                        ContextMenuAction(Icons.Outlined.PlayArrow, "立即播放") { contextMenuOpen = false; playVideo(video) }
+                        ContextMenuAction(Icons.Outlined.Edit, "记录感想") { contextMenuOpen = false; startNewReview(video, showVideoActions = false, allowRating = false) }
+                        ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
+                        ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
+                        ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
+                        ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
+                        ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.removeFromLibrary(video.id); refresh(); contextMenuOpen = false }
+                    }
                 }
             }
         }
