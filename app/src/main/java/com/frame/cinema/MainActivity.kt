@@ -2588,6 +2588,20 @@ private fun FrameNativeApp(
                             },
                         content = { PosterCardVisual(video, compact) }
                     )
+                } else {
+                    Box(
+                        Modifier.offset(x = cardLeft, y = cardTop)
+                            .width(cardWidth)
+                            .graphicsLayer { alpha = contextMenuProgress }
+                    ) {
+                        RecordCardContextPreview(
+                            video = video,
+                            entries = reviewEntries.filter { it.videoId == video.id }.sortedByDescending { it.createdAt },
+                            movieReviewCount = movieReviewEntries.count { it.videoId == video.id },
+                            expanded = contextMenuRecordExpanded,
+                            targetReviewId = targetReviewId
+                        )
+                    }
                 }
                 Column(
                     Modifier.offset(x = menuX, y = menuY).width(menuWidth)
