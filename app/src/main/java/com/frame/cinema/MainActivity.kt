@@ -1435,7 +1435,7 @@ private fun FrameNativeApp(
                     )
                 }
                 if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) Column(
-                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 84.dp),
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
