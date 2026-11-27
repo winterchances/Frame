@@ -155,6 +155,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -869,6 +870,9 @@ internal fun NativePlayerOverlay(
         if (timestampNoteSheetVisible) {
             val timestampNoteLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
             val timestampNoteShape = if (timestampNoteLandscape) RoundedCornerShape(24.dp) else RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+            val timestampNoteCutoutLeft = if (timestampNoteLandscape) {
+                WindowInsets.displayCutout.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
+            } else 0.dp
             Box(Modifier.fillMaxSize().zIndex(20f)) {
                 Box(
                     Modifier.fillMaxSize()
@@ -882,11 +886,8 @@ internal fun NativePlayerOverlay(
                     Modifier.align(if (timestampNoteLandscape) Alignment.CenterStart else Alignment.BottomCenter)
                         .then(
                             if (timestampNoteLandscape) {
-                                Modifier.padding(
-                                    start = 16.dp,
-                                    top = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-                                )
-                                    .width(LocalConfiguration.current.screenWidthDp.dp * 0.5f - 16.dp)
+                                Modifier.padding(start = 16.dp + timestampNoteCutoutLeft)
+                                    .width(LocalConfiguration.current.screenWidthDp.dp * 0.5f - 16.dp - timestampNoteCutoutLeft)
                             } else {
                                 Modifier.fillMaxWidth()
                             }
