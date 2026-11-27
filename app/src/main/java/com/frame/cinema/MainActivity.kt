@@ -588,13 +588,6 @@ private fun FrameNativeApp(
             if (playerClosing) playerVisibility.targetState = false
         }
     }
-    LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
-        if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
-            refresh()
-            playing = null
-            playerClosing = false
-        }
-    }
     var isLandscape by remember { mutableStateOf(false) }
     var speedIndex by remember { mutableIntStateOf(0) }
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
@@ -654,6 +647,13 @@ private fun FrameNativeApp(
         movieReviewEntries = repository.movieReviews()
         categories = repository.categories()
         weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
+    }
+    LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
+        if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
+            refresh()
+            playing = null
+            playerClosing = false
+        }
     }
     fun openMovieReviewList(video: VideoItem) {
         showFab = false
@@ -780,6 +780,7 @@ private fun FrameNativeApp(
         controlsVisible = true
         locked = false
         playing = item
+        playerClosing = false
         playerVisibility.targetState = true
         onPlayAt(item, positionMs)
     }
@@ -978,6 +979,7 @@ private fun FrameNativeApp(
                 pendingImportUri = null
                 showFab = false
                 playing = currentVideo
+                playerClosing = false
                 playerVisibility.targetState = true
                 controlsVisible = true
                 locked = false
