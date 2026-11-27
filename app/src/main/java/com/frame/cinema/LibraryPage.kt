@@ -198,6 +198,9 @@ internal fun LibraryPage(
 ) {
     var selectedVideoIds by selectedVideoIdsState
     var showSortMenu by remember { mutableStateOf(false) }
+    LaunchedEffect(playerActive) {
+        if (playerActive) showSortMenu = false
+    }
     val selectedCount = selectedVideoIds.size
     BackHandler(enabled = multiSelectMode && !categoryDrawerVisible) {
         selectedVideoIds = emptySet()
@@ -412,7 +415,6 @@ internal fun LibraryBatchActionBar(
     var showStatusDialog by remember { mutableStateOf(false) }
     LaunchedEffect(playerActive) {
         if (playerActive) {
-            showSortMenu = false
             showMoveDialog = false
             showStatusDialog = false
         }
