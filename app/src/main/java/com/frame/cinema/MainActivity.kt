@@ -1332,6 +1332,7 @@ private fun FrameNativeApp(
                         categories = categories,
                         selectedVideoIdsState = librarySelectedVideoIds,
                         multiSelectMode = libraryMultiSelectMode,
+                        playerActive = playing != null,
                         onMultiSelectModeChange = { libraryMultiSelectMode = it },
                         onBatchMove = { ids, target -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(category = target)) } }; refresh() },
                         onBatchFavorite = { ids, value -> ids.forEach { id -> videos.firstOrNull { it.id == id }?.let { repository.update(it.copy(isFav = value)) } }; refresh() },
