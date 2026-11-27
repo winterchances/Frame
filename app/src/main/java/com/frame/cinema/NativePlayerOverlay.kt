@@ -180,6 +180,7 @@ import kotlin.math.roundToInt
 
 
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun NativePlayerOverlay(
     item: VideoItem, player: Player, repository: NativeLibraryRepository, speeds: List<Float>, speedIndex: Int, locked: Boolean, controlsVisible: Boolean,
@@ -881,7 +882,10 @@ internal fun NativePlayerOverlay(
                     Modifier.align(if (timestampNoteLandscape) Alignment.CenterStart else Alignment.BottomCenter)
                         .then(
                             if (timestampNoteLandscape) {
-                                Modifier.padding(start = 16.dp)
+                                Modifier.padding(
+                                    start = 16.dp,
+                                    top = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+                                )
                                     .width(LocalConfiguration.current.screenWidthDp.dp * 0.5f - 16.dp)
                             } else {
                                 Modifier.fillMaxWidth()
