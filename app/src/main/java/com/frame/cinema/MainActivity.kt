@@ -790,6 +790,7 @@ private fun FrameNativeApp(
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
     fun playVideo(item: VideoItem) {
+        showFab = false
         speedIndex = 0
         controlsVisible = true
         locked = false
@@ -800,6 +801,7 @@ private fun FrameNativeApp(
         onPlay(item)
     }
     fun playVideoAt(item: VideoItem, positionMs: Long) {
+        showFab = false
         speedIndex = 0
         controlsVisible = true
         locked = false
@@ -1371,6 +1373,11 @@ private fun FrameNativeApp(
           }
         }
 
+        val fabRotation by animateFloatAsState(
+            if (showFab) 45f else 0f,
+            tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, .2f, 1f)),
+            label = "fab-rotation"
+        )
         if (playing == null) {
             val bottomFadePageBg = PageBg
             Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
@@ -1440,11 +1447,6 @@ private fun FrameNativeApp(
                     tween(300, delayMillis = 100, easing = fabEasing),
                     label = "fab-import-progress"
                 )
-                val fabRotation by animateFloatAsState(
-                    if (showFab) 45f else 0f,
-                    tween(300, easing = fabEasing),
-                    label = "fab-rotation"
-                )
                 Box(
                     Modifier.size(48.dp)
                         .graphicsLayer {
@@ -1475,33 +1477,23 @@ private fun FrameNativeApp(
                         Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
-                Box(
-                    Modifier.size(56.dp)
-                        .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
-                        .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                        .frameGlassSurface(hazeState, CircleShape)
-                        .noRippleClickable { showFab = !showFab },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp).rotate(fabRotation))
-                }
                 }
         }
             }
         }
         }
 
-        if (playing != null) {
-            Box(
-                Modifier.align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 16.dp)
-                    .size(56.dp)
-                    .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                    .frameGlassSurface(hazeState, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp))
-            }
+        Box(
+            Modifier.align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 16.dp)
+                .size(56.dp)
+                .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
+                .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                .frameGlassSurface(hazeState, CircleShape)
+                .noRippleClickable { if (playing == null) showFab = !showFab },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp).rotate(fabRotation))
         }
 
         Box(
