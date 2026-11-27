@@ -697,8 +697,7 @@ internal fun RecordsPage(
                             label = "record-timeline-spacing-${video.id}"
                         )
                         Spacer(Modifier.height(timelineTopSpacing))
-                        val timelineAccent = ActiveAccent
-            entries.forEachIndexed { index, entry ->
+                        entries.forEachIndexed { index, entry ->
                             val entryBringIntoView = remember(entry.id) { BringIntoViewRequester() }
                             val entryHighlight = entry.id == targetReviewId || reviews.any { it.id == targetReviewId && it.standaloneGroupId == entry.id }
                             val expandDelay = index * 60
@@ -1271,6 +1270,7 @@ internal fun RecordCardContextPreview(
         }
         if (entries.isNotEmpty() && expanded) {
             Spacer(Modifier.height(16.dp))
+            val timelineAccent = ActiveAccent
             entries.forEachIndexed { index, entry ->
                 Row(
                     Modifier.fillMaxWidth().drawBehind {
