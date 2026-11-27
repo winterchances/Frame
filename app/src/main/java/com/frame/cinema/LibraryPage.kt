@@ -404,6 +404,7 @@ internal fun LibraryBatchActionBar(
     categories: List<String>,
     selectedVideoIdsState: MutableState<Set<Long>>,
     multiSelectMode: Boolean,
+    playerActive: Boolean,
     onMultiSelectModeChange: (Boolean) -> Unit,
     onBatchMove: (Set<Long>, String) -> Unit,
     onBatchFavorite: (Set<Long>, Boolean) -> Unit,
