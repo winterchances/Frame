@@ -1373,14 +1373,6 @@ private fun FrameNativeApp(
                             }
                     )
                 }
-                AnimatedVisibility(
-                    visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null,
-                    enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
-                    exit = fadeOut(tween(140)) + slideOutVertically(tween(140)) { it / 3 },
-                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)
-                ) {
-                    BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
-                }
                 if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) Column(
                     Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1446,6 +1438,21 @@ private fun FrameNativeApp(
         }
             }
         }
+        }
+
+        Box(
+            Modifier.fillMaxSize()
+                .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
+        ) {
+            AnimatedVisibility(
+                visible = (playing == null || !playerVisibility.currentState) &&
+                    !(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null,
+                enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
+                exit = fadeOut(tween(140)) + slideOutVertically(tween(140)) { it / 3 },
+                modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().zIndex(1f)
+            ) {
+                BottomPillNavigation(page, hazeState, backdropBlur, onBoundsChanged = { contextMenuNavigationBounds = it }) { page = it; showFab = false }
+            }
         }
 
         if (dropdownScrimAlpha > 0f) {
