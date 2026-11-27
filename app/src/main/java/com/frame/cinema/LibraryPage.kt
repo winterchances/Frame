@@ -598,7 +598,7 @@ internal fun LibraryFilterHeader(
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = categoryBottomPadding),
+            Modifier.fillMaxWidth().padding(top = 0.dp, bottom = categoryBottomPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             ActionIcon(Icons.Outlined.FolderOpen, "分类总览", onOpenCategoryDrawer)
