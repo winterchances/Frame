@@ -1510,11 +1510,6 @@ private fun FrameNativeApp(
                 .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
         ) {
             AnimatedVisibility(
-                visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) &&        Box(
-            Modifier.fillMaxSize()
-                .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
-        ) {
-            AnimatedVisibility(
                 visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) &&
                     movieReviewScreen == null,
                 enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 },
