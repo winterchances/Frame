@@ -2823,8 +2823,8 @@ private fun FrameNativeApp(
             }
         }
 
-        AnimatedVisibility(
-            visibleState = playerVisibility,
+    AnimatedVisibility(
+        visibleState = playerVisibility,
             enter = slideInVertically(
                 initialOffsetY = { it / 10 },
                 animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
