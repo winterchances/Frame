@@ -108,12 +108,12 @@ class NativeLibraryRepository(context: Context) {
         store.deleteMovieReview(id)
     }
 
-    fun addReview(videoId: Long?, content: String, rating: Float) {
+    fun addReview(videoId: Long?, content: String, rating: Float): Long {
         val text = content.trim()
-        if (text.isNotEmpty()) {
-            store.addReview(videoId, text, 0f, System.currentTimeMillis())
-            if (videoId != null && rating > 0f) updateVideoRating(videoId, rating)
-        }
+        if (text.isEmpty()) return -1L
+        val reviewId = store.addReview(videoId, text, 0f, System.currentTimeMillis())
+        if (videoId != null && rating > 0f) updateVideoRating(videoId, rating)
+        return reviewId
     }
 
     fun addTimestampReview(videoId: Long, content: String, playbackPositionMs: Long): Boolean {
