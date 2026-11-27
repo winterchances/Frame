@@ -580,11 +580,10 @@ private fun FrameNativeApp(
         onKeepAwake(keepAwake)
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
-    var playerExitInProgress by remember { mutableStateOf(false) }
-    LaunchedEffect(playerExitInProgress) {
-        if (playerExitInProgress) {
-            delay(350)
-            playerExitInProgress = false
+    val playerVisibility = remember { MutableTransitionState(false) }
+    LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
+        if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
+            playing = null
         }
     }
     var isLandscape by remember { mutableStateOf(false) }
@@ -762,23 +761,23 @@ private fun FrameNativeApp(
         speedIndex = 0
         controlsVisible = true
         locked = false
-        playerExitInProgress = false
         playing = item
+        playerVisibility.targetState = true
         onPlay(item)
     }
     fun playVideoAt(item: VideoItem, positionMs: Long) {
         speedIndex = 0
         controlsVisible = true
         locked = false
-        playerExitInProgress = false
         playing = item
+        playerVisibility.targetState = true
         onPlayAt(item, positionMs)
     }
     fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
+        if (playing == null || !playerVisibility.targetState) return
         playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
         player.pause()
-        playerExitInProgress = true
-        playing = null
+        playerVisibility.targetState = false
         locked = false
         controlsVisible = true
         if (isLandscape) { isLandscape = false; onOrientation(false) }
@@ -966,8 +965,8 @@ private fun FrameNativeApp(
                 showImportDataDialog = false
                 pendingImportUri = null
                 showFab = false
-                playerExitInProgress = false
                 playing = currentVideo
+                playerVisibility.targetState = true
                 controlsVisible = true
                 locked = false
             }
@@ -1035,9 +1034,9 @@ private fun FrameNativeApp(
                 }
             ) {
         androidx.compose.animation.AnimatedContent(
-            targetState = playing,
+            targetState = null as VideoItem?,
             contentKey = { it },
-            modifier = Modifier.fillMaxSize().background(if (playing == null) Color.Transparent else Color.Black),
+            modifier = Modifier.fillMaxSize().background(Color.Transparent),
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 if (targetState != null) {
@@ -1059,9 +1058,6 @@ private fun FrameNativeApp(
           if (targetPlaying == null) {
             Box(
                 Modifier.fillMaxSize()
-                    .graphicsLayer {
-                        alpha = if (playing == null && !playerExitInProgress) 1f else 0f
-                    }
                     .blur(backdropBlur)
             ) {
                 androidx.compose.animation.AnimatedContent(
@@ -2823,6 +2819,69 @@ private fun FrameNativeApp(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visibleState = playerVisibility,
+            enter = slideInVertically(
+                initialOffsetY = { it / 10 },
+                animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ) + fadeIn(tween(350)),
+            exit = slideOutVertically(
+                targetOffsetY = { it / 10 },
+                animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ),
+            modifier = Modifier.fillMaxSize().zIndex(100f)
+        ) {
+            val overlayVideo = playing
+            if (overlayVideo != null) {
+                Box(Modifier.fillMaxSize().background(Color.Black)) {
+                    NativePlayerOverlay(
+                        item = overlayVideo,
+                        player = player,
+                        repository = repository,
+                        speeds = speeds,
+                        speedIndex = speedIndex,
+                        locked = locked,
+                        controlsVisible = controlsVisible,
+                        onClose = { closePlayer() },
+                        onToggleControls = {
+                            controlsVisible = !controlsVisible
+                            onSystemBarsVisible(controlsVisible && !locked)
+                        },
+                        onAutoHideControls = {
+                            controlsVisible = false
+                            onSystemBarsVisible(false)
+                        },
+                        onToggleLock = {
+                            locked = !locked
+                            controlsVisible = !locked
+                            onSystemBarsVisible(!locked)
+                        },
+                        onSpeed = { speedIndex = (speedIndex + 1) % speeds.size },
+                        onOrientation = {
+                            isLandscape = !isLandscape
+                            onOrientation(isLandscape)
+                        },
+                        onEnded = {
+                            controlsVisible = true
+                            playing?.let { repository.updatePlayback(it.id, player.currentPosition.coerceAtLeast(0L), player.duration.coerceAtLeast(0L), ended = true) }
+                            refresh()
+                        },
+                        onWatchTime = { deltaMs -> playing?.let { repository.recordWatchTime(it.id, deltaMs) } },
+                        onFlushWatchTime = { repository.flushWatchTime() },
+                        onSaveTimestampRecord = { positionMs, content ->
+                            playing?.let { currentVideo ->
+                                if (repository.addTimestampReview(currentVideo.id, content, positionMs)) {
+                                    reviewEntries = repository.reviews()
+                                } else {
+                                    notify("记录内容不能为空")
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
