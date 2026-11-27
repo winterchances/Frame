@@ -580,6 +580,13 @@ private fun FrameNativeApp(
         onKeepAwake(keepAwake)
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
+    var playerExitInProgress by remember { mutableStateOf(false) }
+    LaunchedEffect(playerExitInProgress) {
+        if (playerExitInProgress) {
+            delay(350)
+            playerExitInProgress = false
+        }
+    }
     var isLandscape by remember { mutableStateOf(false) }
     var speedIndex by remember { mutableIntStateOf(0) }
     val speeds = listOf(1f, 1.25f, 1.5f, 2f, .75f)
@@ -755,6 +762,7 @@ private fun FrameNativeApp(
         speedIndex = 0
         controlsVisible = true
         locked = false
+        playerExitInProgress = false
         playing = item
         onPlay(item)
     }
@@ -762,12 +770,14 @@ private fun FrameNativeApp(
         speedIndex = 0
         controlsVisible = true
         locked = false
+        playerExitInProgress = false
         playing = item
         onPlayAt(item, positionMs)
     }
     fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
         playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
         player.pause()
+        playerExitInProgress = true
         playing = null
         locked = false
         controlsVisible = true
@@ -956,6 +966,7 @@ private fun FrameNativeApp(
                 showImportDataDialog = false
                 pendingImportUri = null
                 showFab = false
+                playerExitInProgress = false
                 playing = currentVideo
                 controlsVisible = true
                 locked = false
@@ -1049,7 +1060,7 @@ private fun FrameNativeApp(
             Box(
                 Modifier.fillMaxSize()
                     .graphicsLayer {
-                        alpha = if (transition.currentState == null && transition.targetState == null && !transition.isRunning) 1f else 0f
+                        alpha = if (playing == null && !playerExitInProgress) 1f else 0f
                     }
                     .blur(backdropBlur)
             ) {
