@@ -507,6 +507,7 @@ private fun FrameNativeApp(
     var pendingRecordCardDeleteId by remember { mutableStateOf<Long?>(null) }
     var contextMenuVideo by remember { mutableStateOf<VideoItem?>(null) }
     var contextMenuFromRecords by remember { mutableStateOf(false) }
+    var contextMenuRecordExpanded by remember { mutableStateOf(true) }
     var contextMenuBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuStartBounds by remember { mutableStateOf<Rect?>(null) }
     var contextMenuViewportBounds by remember { mutableStateOf<Rect?>(null) }
@@ -660,6 +661,15 @@ private fun FrameNativeApp(
         categories = repository.categories()
         weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
     }
+    fun restoreRecordCard(videoId: Long) {
+        if (videoId in hiddenRecordCardVideoIds) {
+            val updatedIds = hiddenRecordCardVideoIds - videoId
+            hiddenRecordCardVideoIds = updatedIds
+            recordCardVisibilityPreferences.edit()
+                .putStringSet("removed_card_video_ids", updatedIds.map { it.toString() }.toSet())
+                .apply()
+        }
+    }
     LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
         if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
             refresh()
@@ -715,6 +725,7 @@ private fun FrameNativeApp(
                 val videoId = movieReviewVideoId ?: return
                 repository.addMovieReview(videoId, workTitle, content)
             } ?: return
+            if (standaloneId == null) movieReviewVideoId?.let(::restoreRecordCard)
             selectedMovieReviewId = newId
         } else {
             if (!repository.updateMovieReview(editingId, workTitle, content)) return
@@ -1233,9 +1244,10 @@ private fun FrameNativeApp(
                                         onOpenMovieReviews = { video -> openMovieReviewList(video) },
                                         onOpenStandaloneMovieReview = { root -> openStandaloneMovieReview(root) },
                                         onPlayVideo = { video -> playVideo(video) },
-                                        onLongRecordCard = { video, bounds ->
+                                        onLongRecordCard = { video, bounds, expanded ->
                                             selected = video
                                             contextMenuFromRecords = true
+                                            contextMenuRecordExpanded = expanded
                                             contextMenuVideo = video
                                             contextMenuBounds = bounds
                                             contextMenuStartBounds = bounds
@@ -1348,6 +1360,7 @@ private fun FrameNativeApp(
                 onSaveTimestampRecord = { positionMs, content ->
                     playing?.let { currentVideo ->
                         if (repository.addTimestampReview(currentVideo.id, content, positionMs)) {
+                            restoreRecordCard(currentVideo.id)
                             reviewEntries = repository.reviews()
                         } else {
                             notify("记录内容不能为空")
@@ -1476,6 +1489,19 @@ private fun FrameNativeApp(
         }
             }
         }
+        }
+
+        if (playing != null) {
+            Box(
+                Modifier.align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 16.dp)
+                    .size(56.dp)
+                    .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                    .frameGlassSurface(hazeState, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp))
+            }
         }
 
         Box(
@@ -2266,7 +2292,8 @@ private fun FrameNativeApp(
                             } else {
                                 val entryId = editReviewId
                                 if (entryId == null) {
-                                    repository.addReview(editReviewVideoId, editReview, if (canSetVideoRating) editRating else 0f)
+                                    val newReviewId = repository.addReview(editReviewVideoId, editReview, if (canSetVideoRating) editRating else 0f)
+                                    if (newReviewId > 0L) editReviewVideoId?.let(::restoreRecordCard)
                                 } else {
                                     repository.updateReview(entryId, editReviewVideoId, editReview, 0f)
                                 }
