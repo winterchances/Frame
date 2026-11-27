@@ -662,13 +662,16 @@ private fun FrameNativeApp(
         weeklyWatchTimeMs = repository.weeklyWatchTimeMs()
     }
     fun restoreRecordCard(videoId: Long) {
-        if (videoId in hiddenRecordCardVideoIds) {
-            val updatedIds = hiddenRecordCardVideoIds - videoId
-            hiddenRecordCardVideoIds = updatedIds
-            recordCardVisibilityPreferences.edit()
-                .putStringSet("removed_card_video_ids", updatedIds.map { it.toString() }.toSet())
-                .apply()
-        }
+        val storedIds = recordCardVisibilityPreferences
+            .getStringSet("removed_card_video_ids", emptySet())
+            .orEmpty()
+            .mapNotNull { it.toLongOrNull() }
+            .toSet()
+        val updatedIds = storedIds - videoId
+        hiddenRecordCardVideoIds = updatedIds
+        recordCardVisibilityPreferences.edit()
+            .putStringSet("removed_card_video_ids", updatedIds.map { it.toString() }.toSet())
+            .apply()
     }
     LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
         if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
@@ -2288,6 +2291,7 @@ private fun FrameNativeApp(
                                     if (newReviewId > 0L) editReviewVideoId?.let(::restoreRecordCard)
                                 } else {
                                     repository.updateReview(entryId, editReviewVideoId, editReview, 0f)
+                                    editReviewVideoId?.let(::restoreRecordCard)
                                 }
                                 refresh()
                                 sheet = SheetType.NONE
@@ -2584,7 +2588,11 @@ private fun FrameNativeApp(
                     Box(
                         Modifier.offset(x = cardLeft, y = cardTop)
                             .width(cardWidth)
-                            .graphicsLayer { alpha = contextMenuProgress }
+                            .graphicsLayer {
+                                alpha = contextMenuProgress
+                                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                            }
+                            .zIndex(1f)
                     ) {
                         RecordCardContextPreview(
                             video = video,
