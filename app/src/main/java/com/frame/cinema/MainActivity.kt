@@ -581,18 +581,18 @@ private fun FrameNativeApp(
     }
     var playing by remember { mutableStateOf<VideoItem?>(null) }
     val playerVisibility = remember { MutableTransitionState(false) }
-    val playerTransitionActive = playerVisibility.currentState || playerVisibility.targetState
-    val playerBackdropAlpha by animateFloatAsState(
-        targetValue = if (playerTransitionActive) .38f else 0f,
-        animationSpec = tween(
-            durationMillis = if (playerTransitionActive) 140 else 100,
-            easing = androidx.compose.animation.core.FastOutSlowInEasing
-        ),
-        label = "player-backdrop-alpha"
-    )
+    var playerClosing by remember { mutableStateOf(false) }
+    LaunchedEffect(playerClosing) {
+        if (playerClosing) {
+            delay(300)
+            if (playerClosing) playerVisibility.targetState = false
+        }
+    }
     LaunchedEffect(playerVisibility.currentState, playerVisibility.targetState) {
         if (!playerVisibility.currentState && !playerVisibility.targetState && playing != null) {
+            refresh()
             playing = null
+            playerClosing = false
         }
     }
     var isLandscape by remember { mutableStateOf(false) }
@@ -771,6 +771,7 @@ private fun FrameNativeApp(
         controlsVisible = true
         locked = false
         playing = item
+        playerClosing = false
         playerVisibility.targetState = true
         onPlay(item)
     }
@@ -783,14 +784,13 @@ private fun FrameNativeApp(
         onPlayAt(item, positionMs)
     }
     fun closePlayer(completed: Boolean = player.playbackState == Player.STATE_ENDED) {
-        if (playing == null || !playerVisibility.targetState) return
+        if (playing == null || !playerVisibility.targetState || playerClosing) return
         playing?.let { repository.updatePlayback(it.id, player.currentPosition, player.duration.coerceAtLeast(0L), completed) }
         player.pause()
-        playerVisibility.targetState = false
+        playerClosing = true
+        controlsVisible = false
         locked = false
-        controlsVisible = true
         if (isLandscape) { isLandscape = false; onOrientation(false) }
-        refresh()
     }
 
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -2844,24 +2844,10 @@ private fun FrameNativeApp(
         }
     }
 
-    Box(
-        Modifier.fillMaxSize()
-            .zIndex(99f)
-            .background(Color.Black.copy(alpha = playerBackdropAlpha))
-    )
-
     AnimatedVisibility(
         visibleState = playerVisibility,
-        enter = scaleIn(
-            initialScale = .8f,
-            transformOrigin = TransformOrigin(0.5f, 0.5f),
-            animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-        ),
-        exit = scaleOut(
-            targetScale = .8f,
-            transformOrigin = TransformOrigin(0.5f, 0.5f),
-            animationSpec = tween(250, easing = androidx.compose.animation.core.CubicBezierEasing(.4f, 0f, 1f, 1f))
-        ),
+        enter = androidx.compose.animation.EnterTransition.None,
+        exit = androidx.compose.animation.ExitTransition.None,
         modifier = Modifier.fillMaxSize().zIndex(100f)
     ) {
             val overlayVideo = playing
