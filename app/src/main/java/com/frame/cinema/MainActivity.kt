@@ -2827,11 +2827,11 @@ private fun FrameNativeApp(
             visibleState = playerVisibility,
             enter = slideInVertically(
                 initialOffsetY = { it / 10 },
-                animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-            ) + fadeIn(tween(350)),
+                animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+            ) + fadeIn(tween(250)),
             exit = slideOutVertically(
                 targetOffsetY = { it / 10 },
-                animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing)
             ),
             modifier = Modifier.fillMaxSize().zIndex(100f)
         ) {
