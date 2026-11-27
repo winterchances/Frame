@@ -792,6 +792,7 @@ private fun FrameNativeApp(
         locked = false
         playing = item
         playerClosing = false
+        playerBackgroundFading = false
         playerVisibility.targetState = true
         onPlayAt(item, positionMs)
     }
