@@ -1480,23 +1480,20 @@ private fun FrameNativeApp(
                         Icon(Icons.Outlined.Add, "导入视频", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
+                Box(
+                    Modifier.size(56.dp)
+                        .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
+                        .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                        .frameGlassSurface(hazeState, CircleShape)
+                        .noRippleClickable { if (playing == null) showFab = !showFab },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp).rotate(fabRotation))
+                }
                 }
         }
             }
         }
-        }
-
-        Box(
-            Modifier.align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 16.dp)
-                .size(56.dp)
-                .onGloballyPositioned { contextMenuFabBounds = it.boundsInRoot() }
-                .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                .frameGlassSurface(hazeState, CircleShape)
-                .noRippleClickable { if (playing == null) showFab = !showFab },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(FrameHamburgerIcon, null, tint = MainText, modifier = Modifier.size(20.dp).rotate(fabRotation))
         }
 
         Box(
