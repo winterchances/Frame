@@ -584,7 +584,7 @@ internal fun NativePlayerOverlay(
                             val dy = change.position.y - dragStartY
                             when {
                                 dragMode == "brightness" && abs(dy) > abs(dx) -> {
-                                    brightnessLevel = (dragStartBrightness - dy / 200f).coerceIn(0f, 1f)
+                                    brightnessLevel = (dragStartBrightness - dy / 400f).coerceIn(0f, 1f)
                                     playerActivity?.window?.let { window ->
                                         window.attributes = window.attributes.apply {
                                             screenBrightness = brightnessLevel
@@ -593,7 +593,7 @@ internal fun NativePlayerOverlay(
                                     showCenterMessage("亮度 ${(brightnessLevel * 100).toInt()}%")
                                 }
                                 dragMode == "volume" && abs(dy) > abs(dx) -> {
-                                    volume = (dragStartVolume - dy / 200f).coerceIn(0f, 1f)
+                                    volume = (dragStartVolume - dy / 400f).coerceIn(0f, 1f)
                                     val maxMusicVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC).coerceAtLeast(1)
                                     val targetMusicVolume = (volume * maxMusicVolume).toInt().coerceIn(0, maxMusicVolume)
                                     audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, targetMusicVolume, 0)
