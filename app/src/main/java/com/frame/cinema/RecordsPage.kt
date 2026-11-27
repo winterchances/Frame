@@ -204,7 +204,7 @@ internal fun RecordsPage(
     onOpenMovieReviews: (VideoItem) -> Unit,
     onOpenStandaloneMovieReview: (ReviewEntry) -> Unit,
     onPlayVideo: (VideoItem) -> Unit,
-    onLongRecordCard: (VideoItem, androidx.compose.ui.geometry.Rect) -> Unit,
+    onLongRecordCard: (VideoItem, androidx.compose.ui.geometry.Rect, Boolean) -> Unit,
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
@@ -529,7 +529,7 @@ internal fun RecordsPage(
                             .pointerInput(video.id) {
                                 detectTapGestures(onLongPress = {
                                     if (recordCardBounds != androidx.compose.ui.geometry.Rect.Zero) {
-                                        onLongRecordCard(video, recordCardBounds)
+                                        onLongRecordCard(video, recordCardBounds, expanded)
                                     }
                                 })
                             }
@@ -1174,6 +1174,140 @@ internal fun RecordsPage(
                 exit = fadeOut(tween(200))
             ) {
                 Text("记录", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+            }
+        }
+    }
+}
+
+
+@Composable
+internal fun RecordCardContextPreview(
+    video: VideoItem,
+    entries: List<ReviewEntry>,
+    movieReviewCount: Int,
+    expanded: Boolean,
+    targetReviewId: Long?
+) {
+    val completed = video.status == "watched" || video.progress >= 100f
+    Column(
+        Modifier.fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 16.dp)
+            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
+            Box(
+                Modifier.size(80.dp, 106.dp)
+                    .shadow(2.dp, RoundedCornerShape(10.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(PosterBrush(video.bgIndex))
+            ) { Thumbnail(video, Modifier.fillMaxSize()) }
+            Column(Modifier.weight(1f).height(106.dp)) {
+                VideoCardTitle(
+                    video.name,
+                    modifier = Modifier.fillMaxWidth(),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
+                    englishFontSize = 14.sp,
+                    englishColor = MutedText,
+                    lineHeight = 22.sp,
+                    englishSpacing = 2.dp,
+                    maxLines = 1,
+                    showEnglish = true
+                )
+                Spacer(Modifier.weight(1f))
+                RatingStars(video.rating, 14.dp, onRate = {}, spacing = 1.dp, modifier = Modifier.graphicsLayer { translationX = -4.dp.toPx() })
+                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.weight(1f))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (completed) video.date + " · 已看完" else "尚未看完 · ${video.progress.toInt()}%",
+                        color = MutedText,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                    )
+                    if (completed || movieReviewCount > 0) {
+                        Text(" · ", color = MutedText, fontSize = 12.sp, lineHeight = 16.sp)
+                        Text(
+                            if (movieReviewCount > 0) "影评" else "写影评",
+                            color = ActiveAccent,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            maxLines = 1,
+                            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(LocalFramePalette.current.divider))
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth().padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("随记", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+            Spacer(Modifier.width(6.dp))
+            Text("${entries.size} 条", color = MutedText, fontSize = 13.sp, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+            Spacer(Modifier.weight(1f))
+            Text("导出", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text("添加", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+            Text(" 〡 ", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(
+                if (entries.isEmpty()) "展开" else if (expanded) "关闭" else "展开",
+                color = MutedText,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+            )
+        }
+        if (entries.isNotEmpty() && expanded) {
+            Spacer(Modifier.height(16.dp))
+            entries.forEachIndexed { index, entry ->
+                Row(
+                    Modifier.fillMaxWidth().drawBehind {
+                        val axisX = 7.dp.toPx()
+                        val dotCenterY = 8.dp.toPx()
+                        val dotRadius = 3.dp.toPx()
+                        val lineColor = ActiveAccent.copy(alpha = 0.32f)
+                        if (entries.size > 1) {
+                            if (index > 0) drawLine(lineColor, Offset(axisX, 0f), Offset(axisX, dotCenterY - dotRadius), strokeWidth = 0.8.dp.toPx())
+                            if (index < entries.lastIndex) drawLine(lineColor, Offset(axisX, dotCenterY + dotRadius), Offset(axisX, size.height), strokeWidth = 0.8.dp.toPx())
+                        }
+                        drawCircle(ActiveAccent.copy(alpha = 0.48f), 3.dp.toPx(), Offset(axisX, dotCenterY))
+                    }
+                ) {
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f).padding(start = 10.dp, top = 1.dp, bottom = 8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(
+                                SimpleDateFormat("M/d/yyyy HH:mm", Locale.getDefault()).format(Date(entry.createdAt)),
+                                color = MutedText.copy(alpha = 0.8f),
+                                fontSize = 10.sp,
+                                lineHeight = 14.sp,
+                                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            )
+                            entry.playbackPositionMs?.let { positionMs ->
+                                Text("|", color = MutedText, fontSize = 10.sp, lineHeight = 14.sp, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                                Text(formatTime(positionMs), color = ActiveAccent, fontSize = 10.sp, lineHeight = 14.sp, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
+                            }
+                        }
+                        Text(
+                            entry.content,
+                            color = if (entry.id == targetReviewId || entries.any { it.id == targetReviewId && it.standaloneGroupId == entry.id }) ActiveAccent else MainText.copy(alpha = 0.78f),
+                            fontSize = 14.sp,
+                            lineHeight = 21.sp,
+                            modifier = Modifier.padding(top = 7.dp)
+                        )
+                    }
+                }
             }
         }
     }
