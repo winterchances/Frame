@@ -134,9 +134,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.FocusRequester
@@ -201,7 +204,7 @@ internal fun RecordsPage(
     onOpenMovieReviews: (VideoItem) -> Unit,
     onOpenStandaloneMovieReview: (ReviewEntry) -> Unit,
     onPlayVideo: (VideoItem) -> Unit,
-    onDeleteCardRequest: (VideoItem) -> Unit,
+    onLongRecordCard: (VideoItem, androidx.compose.ui.geometry.Rect) -> Unit,
     onSeekToTimestamp: (VideoItem, Long) -> Unit,
     onTargetHandled: () -> Unit
 ) {
@@ -519,8 +522,17 @@ internal fun RecordsPage(
                     val entries = sortedReviewsByVideo[video.id].orEmpty()
                     val completed = video.status == "watched" || video.progress >= 100f
                     val expanded = expandedVideoReviews[video.id] ?: true
+                    var recordCardBounds by remember(video.id) { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
                     Column(
                         Modifier.fillMaxWidth()
+                            .onGloballyPositioned { recordCardBounds = it.boundsInRoot() }
+                            .pointerInput(video.id) {
+                                detectTapGestures(onLongPress = {
+                                    if (recordCardBounds != androidx.compose.ui.geometry.Rect.Zero) {
+                                        onLongRecordCard(video, recordCardBounds)
+                                    }
+                                })
+                            }
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 16.dp)
                             .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = .03f), spotColor = Color.Black.copy(alpha = .03f))
@@ -545,9 +557,7 @@ internal fun RecordsPage(
                             ) {
                                 VideoCardTitle(
                                     video.name,
-                                    modifier = Modifier.fillMaxWidth().noRippleClickable {
-                                        onDeleteCardRequest(video)
-                                    },
+                                    modifier = Modifier.fillMaxWidth(),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp,
                                     color = if (displayVideoName(video.name) == "未命名") MutedText else MainText,
