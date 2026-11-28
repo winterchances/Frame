@@ -355,7 +355,7 @@ internal fun PosterCardVisual(video: VideoItem, compact: Boolean, highlighted: B
 }
 
 @Composable
-internal fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
+internal fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Crop) {
     val bitmap = produceState<ImageBitmap?>(
         initialValue = video.thumbPath?.let { thumbnailBitmapCache.get(it)?.asImageBitmap() },
         key1 = video.thumbPath
@@ -384,7 +384,7 @@ internal fun Thumbnail(video: VideoItem, modifier: Modifier = Modifier) {
             bitmap,
             contentDescription = displayVideoName(video.name),
             modifier = modifier,
-            contentScale = ContentScale.Crop
+            contentScale = contentScale
         )
     } else {
         Box(modifier)
