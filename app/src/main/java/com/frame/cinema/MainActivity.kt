@@ -2518,6 +2518,7 @@ private fun FrameNativeApp(
                         if (detailVideo != null) {
                             val details = videoDetailsDraft
                             val fields = listOf("原名" to details.originalTitle, "年份" to details.year, "地区" to details.region, "类型" to details.genre, "导演" to details.director, "演员" to details.cast, "制作公司" to details.production)
+                            val visibleFields = fields.filter { videoDetailsEditing || it.second.isNotBlank() }
                             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                                 Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(24.dp), ambientColor = Color.Black.copy(alpha = .04f), spotColor = Color.Black.copy(alpha = .04f)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface)) {
                                     Box(Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(PosterBrush(detailVideo.bgIndex))) {
@@ -2537,22 +2538,20 @@ private fun FrameNativeApp(
                                             } else Text("编辑", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.noRippleClickable { videoDetailsEditing = true }.padding(horizontal = 8.dp, vertical = 6.dp))
                                         }
                                         Text(detailVideo.name, color = MainText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, lineHeight = 27.sp, modifier = Modifier.padding(top = 8.dp, bottom = 14.dp))
-                                        HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp)
-                                        fields.forEachIndexed { index, field ->
-                                            if (videoDetailsEditing || field.second.isNotBlank()) {
+                                        if (visibleFields.isNotEmpty()) HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp)
+                                        visibleFields.forEachIndexed { index, field ->
                                                 Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                                                     Text(field.first, Modifier.width(66.dp), color = MutedText, fontSize = 13.sp)
                                                     if (videoDetailsEditing) {
-                                                        BasicTextField(value = field.second, onValueChange = { value -> videoDetailsDraft = when (index) { 0 -> videoDetailsDraft.copy(originalTitle = value); 1 -> videoDetailsDraft.copy(year = value); 2 -> videoDetailsDraft.copy(region = value); 3 -> videoDetailsDraft.copy(genre = value); 4 -> videoDetailsDraft.copy(director = value); 5 -> videoDetailsDraft.copy(cast = value); else -> videoDetailsDraft.copy(production = value) } }, modifier = Modifier.weight(1f), singleLine = true, decorationBox = { inner -> Box { if (field.second.isEmpty()) Text("填写${field.first}", color = MutedText.copy(alpha = .65f), fontSize = 14.sp); inner() } }, textStyle = TextStyle(fontSize = 14.sp, color = MainText))
+                                                        BasicTextField(value = field.second, onValueChange = { value -> videoDetailsDraft = when (index) { 0 -> videoDetailsDraft.copy(originalTitle = value); 1 -> videoDetailsDraft.copy(year = value); 2 -> videoDetailsDraft.copy(region = value); 3 -> videoDetailsDraft.copy(genre = value); 4 -> videoDetailsDraft.copy(director = value); 5 -> videoDetailsDraft.copy(cast = value); else -> videoDetailsDraft.copy(production = value) } }, modifier = Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }, singleLine = true, decorationBox = { inner -> Box { if (field.second.isEmpty()) Text("填写${field.first}", color = MutedText.copy(alpha = .65f), fontSize = 14.sp); inner() } }, textStyle = TextStyle(fontSize = 14.sp, color = MainText))
                                                     } else Text(field.second, Modifier.weight(1f), color = MainText, fontSize = 14.sp)
                                                 }
-                                                if (index < fields.lastIndex) HorizontalDivider(color = LocalFramePalette.current.divider.copy(alpha = .65f), thickness = 0.5.dp)
-                                            }
+                                                if (index < visibleFields.lastIndex) HorizontalDivider(color = LocalFramePalette.current.divider.copy(alpha = .65f), thickness = 0.5.dp)
                                         }
                                         if (videoDetailsEditing || details.tips.isNotBlank()) {
                                             HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
                                             Text("Tips", color = MainText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                            if (videoDetailsEditing) BasicTextField(value = details.tips, onValueChange = { videoDetailsDraft = videoDetailsDraft.copy(tips = it) }, modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 110.dp).padding(top = 10.dp), decorationBox = { inner -> Box { if (details.tips.isEmpty()) Text("填写想补充的影片资料……", color = MutedText.copy(alpha = .7f), fontSize = 14.sp); inner() } }, textStyle = TextStyle(fontSize = 14.sp, color = MainText, lineHeight = 22.sp))
+                                            if (videoDetailsEditing) BasicTextField(value = details.tips, onValueChange = { videoDetailsDraft = videoDetailsDraft.copy(tips = it) }, modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 110.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.padding(top = 10.dp), decorationBox = { inner -> Box { if (details.tips.isEmpty()) Text("填写想补充的影片资料……", color = MutedText.copy(alpha = .7f), fontSize = 14.sp); inner() } }, textStyle = TextStyle(fontSize = 14.sp, color = MainText, lineHeight = 22.sp))
                                             else Text(details.tips, color = MainText, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 10.dp))
                                         }
                                     }
@@ -3057,5 +3056,4 @@ private fun FrameNativeApp(
         }
 
     }
-
 
