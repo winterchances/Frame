@@ -644,7 +644,11 @@ private fun FrameNativeApp(
         animationSpec = tween(if (showImportDataDialog) 300 else 240, easing = androidx.compose.animation.core.CubicBezierEasing(.2f, 0f, .2f, 1f)),
         label = "import-data-backdrop-progress"
     )
-    val contextMenuProgress by animateFloatAsState(if (contextMenuOpen) 1f else 0f, tween(200), label = "library-context-backdrop")
+    val contextMenuProgress by animateFloatAsState(
+        if (contextMenuOpen) 1f else 0f,
+        tween(if (contextMenuOpen) 200 else 260, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "library-context-backdrop"
+    )
     val categoryDrawerProgress by animateFloatAsState(
         targetValue = if (showCategoryDrawer) 1f else 0f,
         animationSpec = tween(if (showCategoryDrawer) 300 else 220, easing = if (showCategoryDrawer) androidx.compose.animation.core.FastOutSlowInEasing else androidx.compose.animation.core.FastOutLinearInEasing),
@@ -1102,8 +1106,8 @@ private fun FrameNativeApp(
         Box(Modifier.fillMaxSize().background(PageBg)) {
             Box(
                 Modifier.fillMaxSize().graphicsLayer {
-                    scaleX = 1f - .02f * sheetProgress
-                    scaleY = 1f - .02f * sheetProgress
+                    scaleX = if (sheet == SheetType.VIDEO_DETAILS) 1f else 1f - .02f * sheetProgress
+                    scaleY = if (sheet == SheetType.VIDEO_DETAILS) 1f else 1f - .02f * sheetProgress
                 }
             ) {
         androidx.compose.animation.AnimatedContent(

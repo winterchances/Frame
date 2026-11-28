@@ -1234,7 +1234,7 @@ internal fun RecordCardContextPreview(
                         style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                     )
                     if (completed || movieReviewCount > 0) {
-                        Text(" · ", color = MutedText, fontSize = 12.sp, lineHeight = 16.sp)
+                        Text(" · ", color = MutedText, fontSize = 12.sp, lineHeight = 16.sp, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
                         Text(
                             if (movieReviewCount > 0) "影评" else "写影评",
                             color = ActiveAccent,
