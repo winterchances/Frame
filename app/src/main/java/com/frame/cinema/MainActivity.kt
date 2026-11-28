@@ -2542,7 +2542,7 @@ private fun FrameNativeApp(
                                                 Text("保存", color = ActiveAccent, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
                                                     val json = if (videoDetailsDraft.isEmpty()) null else com.google.gson.Gson().toJson(videoDetailsDraft)
                                                     repository.update(detailVideo.copy(detailsJson = json)); videoDetailsTarget = detailVideo.copy(detailsJson = json); refresh()
-                                                    videoDetailsEditing = false; sheetKeyboardUp = false
+                                                    videoDetailsTagInput = ""; videoDetailsEditing = false; sheetKeyboardUp = false
                                                 }.padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp))
                                             } else {
                                                 Box(Modifier.size(32.dp).noRippleClickable { videoDetailsEditing = true }, contentAlignment = Alignment.Center) {
