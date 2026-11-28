@@ -2617,7 +2617,7 @@ private fun FrameNativeApp(
                 val menuAnchorWidth = with(density) { startBounds.width.toDp() }
                 val menuAnchorBottom = with(density) { startBounds.bottom.toDp() }
                 val menuWidth = minOf(196.dp, maxWidth - 32.dp)
-                val menuHeight = if (contextMenuFromRecords) 42.dp * 4 + 12.dp else 42.dp * 7 + 8.dp
+                val menuHeight = if (contextMenuFromRecords) 42.dp * 4 + 12.dp else 42.dp * 8 + 8.dp
                 val menuX = (menuAnchorLeft + menuAnchorWidth / 2f - menuWidth / 2f)
                     .coerceIn(16.dp, (maxWidth - menuWidth - 16.dp).coerceAtLeast(16.dp))
                 val safeTop = 60.dp
@@ -2733,6 +2733,7 @@ private fun FrameNativeApp(
                         ContextMenuAction(if (video.isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, if (video.isFav) "取消收藏" else "加入收藏") { repository.favorite(video.id); refresh(); contextMenuOpen = false }
                         ContextMenuAction(Icons.Outlined.FolderOpen, "移动到分类") { selected = video; parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.MOVE }
                         ContextMenuAction(Icons.Outlined.Edit, "重命名") { selected = video; editName = displayVideoName(video.name); parentSheet = SheetType.NONE; contextMenuOpen = false; sheet = SheetType.RENAME }
+                        ContextMenuAction(Icons.Outlined.Info, "查看详情") { openVideoDetails(video) }
                         ContextMenuAction(Icons.Outlined.Image, "更换封面") { selected = video; contextMenuOpen = false; coverPicker.launch("image/*") }
                         ContextMenuAction(Icons.Outlined.DeleteOutline, "移出片库", danger = true) { repository.removeFromLibrary(video.id); refresh(); contextMenuOpen = false }
                     }
