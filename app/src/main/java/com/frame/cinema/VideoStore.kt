@@ -80,7 +80,8 @@ data class VideoItem(
     val isInLibrary: Boolean? = true,
     val originalFileName: String? = null,
     val filenameMetadataJson: String? = null,
-    val nameManuallyEdited: Boolean = false
+    val nameManuallyEdited: Boolean = false,
+    val detailsJson: String? = null
 ) {
     val contentUri: Uri get() = Uri.parse(uri)
 }
@@ -89,7 +90,7 @@ data class SubtitlePreference(val selectedUri: String? = null, val enabled: Bool
 data class SubtitleTrackEntry(val uri: String, val name: String, val manual: Boolean = true)
 data class VideoFolderSource(val treeUri: String, val relativePath: String)
 
-class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 15) {
+class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db", null, 16) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE videos (
@@ -114,7 +115,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                 is_in_library INTEGER NOT NULL DEFAULT 1,
                 original_file_name TEXT,
                 filename_metadata_json TEXT,
-                name_manually_edited INTEGER NOT NULL DEFAULT 0
+                name_manually_edited INTEGER NOT NULL DEFAULT 0,
+                details_json TEXT
             )""".trimIndent()
         )
         db.execSQL("CREATE TABLE categories (name TEXT PRIMARY KEY NOT NULL, position INTEGER NOT NULL)")
@@ -218,6 +220,9 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
         if (oldVersion < 15) {
             db.execSQL("ALTER TABLE movie_reviews ADD COLUMN standalone_review_id INTEGER")
         }
+        if (oldVersion < 16) {
+            db.execSQL("ALTER TABLE videos ADD COLUMN details_json TEXT")
+        }
         if (oldVersion < 5) {
             db.execSQL("""
                 UPDATE videos
@@ -263,7 +268,8 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     isInLibrary = cursor.getInt(cursor.getColumnIndexOrThrow("is_in_library")) != 0,
                     originalFileName = cursor.getString(cursor.getColumnIndexOrThrow("original_file_name")),
                     filenameMetadataJson = cursor.getString(cursor.getColumnIndexOrThrow("filename_metadata_json")),
-                    nameManuallyEdited = cursor.getInt(cursor.getColumnIndexOrThrow("name_manually_edited")) != 0
+                    nameManuallyEdited = cursor.getInt(cursor.getColumnIndexOrThrow("name_manually_edited")) != 0,
+                    detailsJson = cursor.getString(cursor.getColumnIndexOrThrow("details_json"))
                 )
             )
         }
@@ -330,6 +336,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
             put("original_file_name", video.originalFileName)
             put("filename_metadata_json", video.filenameMetadataJson)
             put("name_manually_edited", if (video.nameManuallyEdited) 1 else 0)
+            if (video.detailsJson == null) putNull("details_json") else put("details_json", video.detailsJson)
         }
         writableDatabase.insertWithOnConflict("videos", null, v, SQLiteDatabase.CONFLICT_REPLACE)
     }
@@ -394,6 +401,7 @@ class VideoStore(context: Context) : SQLiteOpenHelper(context, "frame_library.db
                     put("original_file_name", video.originalFileName)
                     put("filename_metadata_json", video.filenameMetadataJson)
                     put("name_manually_edited", if (video.nameManuallyEdited) 1 else 0)
+                    if (video.detailsJson == null) putNull("details_json") else put("details_json", video.detailsJson)
                 }
                 db.insertWithOnConflict("videos", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             }
