@@ -1106,8 +1106,8 @@ private fun FrameNativeApp(
         Box(Modifier.fillMaxSize().background(PageBg)) {
             Box(
                 Modifier.fillMaxSize().graphicsLayer {
-                    scaleX = if (sheet == SheetType.VIDEO_DETAILS) 1f else 1f - .02f * sheetProgress
-                    scaleY = if (sheet == SheetType.VIDEO_DETAILS) 1f else 1f - .02f * sheetProgress
+                    scaleX = if (displayedSheet == SheetType.VIDEO_DETAILS) 1f else 1f - .02f * sheetProgress
+                    scaleY = if (displayedSheet == SheetType.VIDEO_DETAILS) 1f else 1f - .02f * sheetProgress
                 }
             ) {
         androidx.compose.animation.AnimatedContent(
