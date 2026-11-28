@@ -2537,7 +2537,7 @@ private fun FrameNativeApp(
                                     Box(Modifier.fillMaxWidth().height(184.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(PosterBrush(detailVideo.bgIndex)).verticalScroll(rememberScrollState())) {
                                         Thumbnail(detailVideo, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
                                     }
-                                    Row(Modifier.fillMaxWidth().height(44.dp).padding(start = 18.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Row(Modifier.fillMaxWidth().height(48.dp).padding(start = 18.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text("影片详情", Modifier.weight(1f), color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                         if (videoDetailsEditing) {
                                             Text("取消", color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
