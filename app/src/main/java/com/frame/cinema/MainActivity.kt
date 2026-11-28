@@ -180,11 +180,13 @@ import kotlin.math.roundToInt
 internal enum class MainPage(val label: String) { HOME("首页"), LIBRARY("片库"), RECENT("最近"), RECORDS("记录") }
 private enum class SheetType { NONE, IMPORT, SETTINGS, SEARCH, RECORD_SEARCH, RENAME, MOVE, NOTE, REVIEW_CREATE_OPTIONS, REVIEW_VIDEO_PICKER, CLEAR_RECENT, CLEAR_DATA, DELETE_RECENT, DELETE_RECORD_CARD, DELETE_MOVIE_REVIEW, DELETE_CATEGORY, NEW_CATEGORY, VIDEO_DETAILS }
 private data class VideoDetailsDraft(
-    val originalTitle: String = "", val year: String = "", val region: String = "",
-    val genre: String = "", val director: String = "", val cast: String = "",
-    val production: String = "", val tips: String = ""
+    val genre: String = "",
+    val production: String = "",
+    val platform: String = "",
+    val tips: String = "",
+    val tags: List<String> = emptyList()
 ) {
-    fun isEmpty(): Boolean = listOf(originalTitle, year, region, genre, director, cast, production, tips).all { it.isBlank() }
+    fun isEmpty(): Boolean = listOf(genre, production, platform, tips).all { it.isBlank() } && tags.orEmpty().isEmpty()
 }
 private enum class MovieReviewScreen { LIST, DETAIL, EDITOR }
 internal enum class SortMode { ADDED, NAME }
@@ -505,6 +507,7 @@ private fun FrameNativeApp(
     var videoDetailsTarget by remember { mutableStateOf<VideoItem?>(null) }
     var videoDetailsEditing by remember { mutableStateOf(false) }
     var videoDetailsDraft by remember { mutableStateOf(VideoDetailsDraft()) }
+    var videoDetailsTagInput by remember { mutableStateOf("") }
     val recordCardVisibilityPreferences = remember(context) {
         context.getSharedPreferences("frame_record_card_visibility", Context.MODE_PRIVATE)
     }
@@ -807,6 +810,7 @@ private fun FrameNativeApp(
     fun openVideoDetails(video: VideoItem) {
         videoDetailsTarget = video
         videoDetailsDraft = runCatching { video.detailsJson?.let { com.google.gson.Gson().fromJson(it, VideoDetailsDraft::class.java) } }.getOrNull() ?: VideoDetailsDraft()
+        videoDetailsTagInput = ""
         videoDetailsEditing = false
         selected = video
         contextMenuOpen = false
@@ -1401,7 +1405,7 @@ private fun FrameNativeApp(
 
         if (playing == null) {
             val bottomFadePageBg = PageBg
-            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
+            Box(Modifier.fillMaxSize().blur(5.dp * maxOf(sheetProgress, contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))) {
                 if (page == MainPage.LIBRARY && libraryMultiSelectMode && movieReviewScreen == null) {
                     CompositionLocalProvider(LocalDropdownScrimReporter provides dropdownScrimReporter) {
                         LibraryBatchActionBar(
@@ -1507,7 +1511,7 @@ private fun FrameNativeApp(
         if (!(page == MainPage.LIBRARY && libraryMultiSelectMode) && movieReviewScreen == null) {
             Box(
                 Modifier.fillMaxSize()
-                    .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
+                    .blur(5.dp * maxOf(sheetProgress, contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
             ) {
                 Box(
                     Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)
@@ -1525,7 +1529,7 @@ private fun FrameNativeApp(
 
         Box(
             Modifier.fillMaxSize()
-                .blur(5.dp * maxOf(contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
+                .blur(5.dp * maxOf(sheetProgress, contextMenuProgress, clearDialogProgress, importDialogProgress, categoryDrawerProgress))
         ) {
             AnimatedVisibility(
                 visible = !(page == MainPage.LIBRARY && libraryMultiSelectMode) &&
@@ -2519,21 +2523,21 @@ private fun FrameNativeApp(
                         val detailVideo = videos.firstOrNull { it.id == videoDetailsTarget?.id } ?: videoDetailsTarget
                         if (detailVideo != null) {
                             val details = videoDetailsDraft
-                            val fields = listOf("原名" to details.originalTitle, "年份" to details.year, "地区" to details.region, "类型" to details.genre, "导演" to details.director, "演员" to details.cast, "制作公司" to details.production)
-                            val visibleFields = fields.filter { videoDetailsEditing || it.second.isNotBlank() }
+                            val fields = listOf("类型" to details.genre, "制作组" to details.production, "平台" to details.platform)
+                            val filledFields = fields.filter { it.second.isNotBlank() }
+                            val emptyFields = fields.filter { it.second.isBlank() }
                             val detailTextStyle = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = MainText, letterSpacing = 0.sp, platformStyle = PlatformTextStyle(includeFontPadding = false))
                             Column(Modifier.fillMaxSize()) {
                                 Column(Modifier.fillMaxSize().shadow(4.dp, RoundedCornerShape(24.dp), ambientColor = Color.Black.copy(alpha = .04f), spotColor = Color.Black.copy(alpha = .04f)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface)) {
                                     Box(Modifier.fillMaxWidth().height(184.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(PosterBrush(detailVideo.bgIndex)).verticalScroll(rememberScrollState())) {
                                         Thumbnail(detailVideo, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
                                     }
-                                    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
-                                        Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 12.dp, top = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Text("影片详情", Modifier.weight(1f), color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                             if (videoDetailsEditing) {
                                                 Text("取消", color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
                                                     videoDetailsDraft = runCatching { detailVideo.detailsJson?.let { com.google.gson.Gson().fromJson(it, VideoDetailsDraft::class.java) } }.getOrNull() ?: VideoDetailsDraft()
-                                                    videoDetailsEditing = false; sheetKeyboardUp = false
+                                                    videoDetailsTagInput = ""; videoDetailsEditing = false; sheetKeyboardUp = false
                                                 }.padding(horizontal = 8.dp, vertical = 6.dp))
                                                 Text("保存", color = ActiveAccent, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
                                                     val json = if (videoDetailsDraft.isEmpty()) null else com.google.gson.Gson().toJson(videoDetailsDraft)
@@ -2546,38 +2550,91 @@ private fun FrameNativeApp(
                                                 }
                                             }
                                         }
+                                        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
                                         VideoCardTitle(name = detailVideo.name, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
                                             fontSize = 16.sp, color = MainText, englishFontSize = 14.sp, englishColor = MutedText,
                                             fontWeight = FontWeight.Medium,
                                             maxLines = 2, showEnglish = true, lineHeight = 22.sp, englishSpacing = 2.dp)
-                                        if (visibleFields.isNotEmpty()) HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp)
-                                        visibleFields.forEachIndexed { index, field ->
-                                            Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        if (filledFields.isNotEmpty()) HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp)
+                                        val renderDetailField: @Composable (Pair<String, String>) -> Unit = { field ->
+                                            Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
                                                 Text(field.first, Modifier.width(66.dp), color = MutedText, fontSize = 13.sp)
                                                 if (videoDetailsEditing) {
-                                                    BasicTextField(value = field.second, onValueChange = { value ->
-                                                        videoDetailsDraft = when (index) {
-                                                            0 -> videoDetailsDraft.copy(originalTitle = value); 1 -> videoDetailsDraft.copy(year = value)
-                                                            2 -> videoDetailsDraft.copy(region = value); 3 -> videoDetailsDraft.copy(genre = value)
-                                                            4 -> videoDetailsDraft.copy(director = value); 5 -> videoDetailsDraft.copy(cast = value)
-                                                            else -> videoDetailsDraft.copy(production = value)
-                                                        }
-                                                    }, modifier = Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }, singleLine = true,
-                                                        decorationBox = { inner -> Box { if (field.second.isEmpty()) Text("填写${field.first}", style = detailTextStyle.copy(color = MutedText.copy(alpha = .65f))); inner() } },
-                                                        textStyle = detailTextStyle)
+                                                    BasicTextField(
+                                                        value = field.second,
+                                                        onValueChange = { value ->
+                                                            videoDetailsDraft = when (field.first) {
+                                                                "类型" -> videoDetailsDraft.copy(genre = value)
+                                                                "制作组" -> videoDetailsDraft.copy(production = value)
+                                                                else -> videoDetailsDraft.copy(platform = value)
+                                                            }
+                                                        },
+                                                        modifier = Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused },
+                                                        singleLine = true,
+                                                        decorationBox = { inner ->
+                                                            Box {
+                                                                if (field.second.isEmpty()) Text("填写" + field.first, style = detailTextStyle.copy(color = MutedText.copy(alpha = .65f)))
+                                                                inner()
+                                                            }
+                                                        },
+                                                        textStyle = detailTextStyle
+                                                    )
                                                 } else Text(field.second, Modifier.weight(1f), style = detailTextStyle)
                                             }
-                                            if (index < visibleFields.lastIndex) HorizontalDivider(color = LocalFramePalette.current.divider.copy(alpha = .65f), thickness = 0.5.dp)
+                                            HorizontalDivider(color = LocalFramePalette.current.divider.copy(alpha = .65f), thickness = 0.5.dp)
                                         }
+                                        filledFields.forEach { renderDetailField(it) }
                                         if (videoDetailsEditing || details.tips.isNotBlank()) {
                                             HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
-                                            Text("Tips", color = MainText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                            Text("Tips", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                             if (videoDetailsEditing) {
                                                 BasicTextField(value = details.tips, onValueChange = { videoDetailsDraft = videoDetailsDraft.copy(tips = it) },
                                                     modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 110.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.padding(top = 10.dp),
                                                     decorationBox = { inner -> Box { if (details.tips.isEmpty()) Text("填写想补充的影片资料……", style = detailTextStyle.copy(color = MutedText.copy(alpha = .7f), lineHeight = 22.sp)); inner() } },
                                                     textStyle = detailTextStyle.copy(lineHeight = 22.sp))
                                             } else Text(details.tips, style = detailTextStyle.copy(lineHeight = 22.sp), modifier = Modifier.padding(top = 10.dp))
+                                        }
+                                        if (videoDetailsEditing) emptyFields.forEach { renderDetailField(it) }
+                                        if (videoDetailsEditing || details.tags.orEmpty().isNotEmpty()) {
+                                            HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(top = 12.dp, bottom = 12.dp))
+                                            Text("标签", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                            if (details.tags.orEmpty().isNotEmpty()) {
+                                                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    details.tags.orEmpty().forEach { tag ->
+                                                        Box(
+                                                            Modifier.clip(RoundedCornerShape(50)).background(LocalFramePalette.current.secondarySurface)
+                                                                .then(if (videoDetailsEditing) Modifier.noRippleClickable {
+                                                                    videoDetailsDraft = videoDetailsDraft.copy(tags = videoDetailsDraft.tags.orEmpty() - tag)
+                                                                } else Modifier)
+                                                                .padding(horizontal = 11.dp, vertical = 6.dp)
+                                                        ) { Text("#" + tag, color = MutedText, fontSize = 12.sp) }
+                                                    }
+                                                }
+                                            }
+                                            if (videoDetailsEditing) {
+                                                Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    BasicTextField(
+                                                        value = videoDetailsTagInput,
+                                                        onValueChange = { videoDetailsTagInput = it },
+                                                        modifier = Modifier.weight(1f).heightIn(min = 36.dp).padding(vertical = 8.dp),
+                                                        singleLine = true,
+                                                        decorationBox = { inner ->
+                                                            Box {
+                                                                if (videoDetailsTagInput.isEmpty()) Text("输入标签", color = MutedText.copy(alpha = .65f), fontSize = 14.sp)
+                                                                inner()
+                                                            }
+                                                        },
+                                                        textStyle = detailTextStyle
+                                                    )
+                                                    Text("添加", color = ActiveAccent, fontSize = 13.sp, modifier = Modifier.noRippleClickable {
+                                                        val tag = videoDetailsTagInput.trim().removePrefix("#")
+                                                        if (tag.isNotEmpty() && tag !in videoDetailsDraft.tags.orEmpty()) {
+                                                            videoDetailsDraft = videoDetailsDraft.copy(tags = videoDetailsDraft.tags.orEmpty() + tag)
+                                                        }
+                                                        videoDetailsTagInput = ""
+                                                    }.padding(start = 12.dp, top = 8.dp, bottom = 8.dp))
+                                                }
+                                            }
                                         }
                                         if (videoDetailsEditing) Text("未填写的资料在查看时会自动隐藏", color = MutedText, fontSize = 11.sp, modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 20.dp), textAlign = TextAlign.Center)
                                         else Spacer(Modifier.height(20.dp))
