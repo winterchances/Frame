@@ -1575,16 +1575,21 @@ private fun FrameNativeApp(
                 ) {
                     Box(Modifier.fillMaxSize()) {
                     Column(
-                    Modifier.align(Alignment.BottomCenter)
+                    Modifier.align(if (displayedSheet == SheetType.VIDEO_DETAILS) Alignment.Center else Alignment.BottomCenter)
                         .animateEnterExit(
-                            enter = slideInVertically(
-                                animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                            ) { fullHeight -> fullHeight } + fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)),
-                            exit = slideOutVertically(
-                                animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)
-                            ) { fullHeight -> fullHeight }
+                            enter = if (displayedSheet == SheetType.VIDEO_DETAILS) {
+                                scaleIn(tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing), initialScale = .96f) + fadeIn(tween(260))
+                            } else {
+                                slideInVertically(animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { fullHeight -> fullHeight } + fadeIn(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+                            },
+                            exit = if (displayedSheet == SheetType.VIDEO_DETAILS) {
+                                scaleOut(tween(180, easing = androidx.compose.animation.core.FastOutLinearInEasing), targetScale = .98f) + fadeOut(tween(180))
+                            } else {
+                                slideOutVertically(animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { fullHeight -> fullHeight }
+                            }
                         )
-                        .fillMaxWidth()
+                        .fillMaxWidth(if (displayedSheet == SheetType.VIDEO_DETAILS) .88f else 1f)
+                        .then(if (displayedSheet == SheetType.VIDEO_DETAILS) Modifier.fillMaxHeight(.78f) else Modifier)
                         .then(
                             when (displayedSheet) {
                                 SheetType.SETTINGS ->
@@ -1596,14 +1601,15 @@ private fun FrameNativeApp(
                                     Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp.dp * .85f)
                             }
                         )
-                        .shadow(10.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .10f), spotColor = Color.Black.copy(alpha = .10f))
-                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                        .shadow(12.dp, if (displayedSheet == SheetType.VIDEO_DETAILS) RoundedCornerShape(28.dp) else RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp), ambientColor = Color.Black.copy(alpha = .12f), spotColor = Color.Black.copy(alpha = .12f))
+                        .clip(if (displayedSheet == SheetType.VIDEO_DETAILS) RoundedCornerShape(28.dp) else RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(PageBg)
                         .then(
                             if (displayedSheet == SheetType.SETTINGS ||
                                 displayedSheet == SheetType.RECORD_SEARCH ||
                                 displayedSheet == SheetType.SEARCH ||
-                                displayedSheet == SheetType.MOVE
+                                displayedSheet == SheetType.MOVE ||
+                                displayedSheet == SheetType.VIDEO_DETAILS
                             ) Modifier
                             else Modifier.verticalScroll(rememberScrollState())
                         )
@@ -1612,19 +1618,16 @@ private fun FrameNativeApp(
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { }
                          .padding(
-                            top = 26.dp,
+                            top = if (displayedSheet == SheetType.VIDEO_DETAILS) 0.dp else 26.dp,
                             bottom = when {
-                                sheetKeyboardUp &&
-                                    displayedSheet != SheetType.SEARCH &&
-                                    displayedSheet != SheetType.RECORD_SEARCH -> 400.dp
-                                displayedSheet == SheetType.SETTINGS ||
-                                    displayedSheet == SheetType.SEARCH ||
-                                    displayedSheet == SheetType.RECORD_SEARCH ||
-                                    displayedSheet == SheetType.MOVE -> 24.dp
+                                displayedSheet == SheetType.VIDEO_DETAILS -> 0.dp
+                                sheetKeyboardUp && displayedSheet != SheetType.SEARCH && displayedSheet != SheetType.RECORD_SEARCH -> 400.dp
+                                displayedSheet == SheetType.SETTINGS || displayedSheet == SheetType.SEARCH ||
+                                    displayedSheet == SheetType.RECORD_SEARCH || displayedSheet == SheetType.MOVE -> 24.dp
                                 else -> 50.dp
                             }
                         )
-                        .navigationBarsPadding()
+                        .then(if (displayedSheet == SheetType.VIDEO_DETAILS) Modifier else Modifier.navigationBarsPadding())
                 ) {
                 when (displayedSheet) {
                     SheetType.IMPORT -> SheetContent("导入本地视频") {
@@ -2519,44 +2522,68 @@ private fun FrameNativeApp(
                             val details = videoDetailsDraft
                             val fields = listOf("原名" to details.originalTitle, "年份" to details.year, "地区" to details.region, "类型" to details.genre, "导演" to details.director, "演员" to details.cast, "制作公司" to details.production)
                             val visibleFields = fields.filter { videoDetailsEditing || it.second.isNotBlank() }
-                            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                                Column(Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(24.dp), ambientColor = Color.Black.copy(alpha = .04f), spotColor = Color.Black.copy(alpha = .04f)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface)) {
-                                    Box(Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(PosterBrush(detailVideo.bgIndex))) {
-                                        Thumbnail(detailVideo, Modifier.fillMaxSize())
+                            val detailTextStyle = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = MainText, letterSpacing = 0.sp, platformStyle = PlatformTextStyle(includeFontPadding = false))
+                            Column(Modifier.fillMaxSize()) {
+                                Column(Modifier.fillMaxSize().shadow(4.dp, RoundedCornerShape(24.dp), ambientColor = Color.Black.copy(alpha = .04f), spotColor = Color.Black.copy(alpha = .04f)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surface)) {
+                                    Box(Modifier.fillMaxWidth().height(184.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(PosterBrush(detailVideo.bgIndex)).verticalScroll(rememberScrollState())) {
+                                        Thumbnail(detailVideo, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
                                     }
-                                    Column(Modifier.fillMaxWidth().padding(18.dp)) {
-                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
+                                        Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Text("影片详情", Modifier.weight(1f), color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                             if (videoDetailsEditing) {
-                                                Text("取消", color = MutedText, fontSize = 13.sp, modifier = Modifier.noRippleClickable {
-                                                    videoDetailsDraft = runCatching { detailVideo.detailsJson?.let { com.google.gson.Gson().fromJson(it, VideoDetailsDraft::class.java) } }.getOrNull() ?: VideoDetailsDraft(); videoDetailsEditing = false
+                                                Text("取消", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
+                                                    videoDetailsDraft = runCatching { detailVideo.detailsJson?.let { com.google.gson.Gson().fromJson(it, VideoDetailsDraft::class.java) } }.getOrNull() ?: VideoDetailsDraft()
+                                                    videoDetailsEditing = false; sheetKeyboardUp = false
                                                 }.padding(horizontal = 8.dp, vertical = 6.dp))
-                                                Text("保存", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.noRippleClickable {
+                                                Text("保存", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
                                                     val json = if (videoDetailsDraft.isEmpty()) null else com.google.gson.Gson().toJson(videoDetailsDraft)
-                                                    repository.update(detailVideo.copy(detailsJson = json)); videoDetailsTarget = detailVideo.copy(detailsJson = json); refresh(); videoDetailsEditing = false
+                                                    repository.update(detailVideo.copy(detailsJson = json)); videoDetailsTarget = detailVideo.copy(detailsJson = json); refresh()
+                                                    videoDetailsEditing = false; sheetKeyboardUp = false
                                                 }.padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp))
-                                            } else Text("编辑", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.noRippleClickable { videoDetailsEditing = true }.padding(horizontal = 8.dp, vertical = 6.dp))
+                                            } else {
+                                                Box(Modifier.size(32.dp).noRippleClickable { videoDetailsEditing = true }, contentAlignment = Alignment.Center) {
+                                                    Icon(FrameFeatherIcon, "编辑", tint = ActiveAccent, modifier = Modifier.size(19.dp))
+                                                }
+                                            }
                                         }
-                                        Text(detailVideo.name, color = MainText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, lineHeight = 27.sp, modifier = Modifier.padding(top = 8.dp, bottom = 14.dp))
+                                        VideoCardTitle(name = detailVideo.name, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                                            fontSize = 16.sp, color = MainText, englishFontSize = 14.sp, englishColor = MutedText,
+                                            fontWeight = FontWeight.Medium, englishFontWeight = FontWeight.Normal,
+                                            maxLines = 2, showEnglish = true, lineHeight = 21.sp, englishSpacing = 2.dp)
                                         if (visibleFields.isNotEmpty()) HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp)
                                         visibleFields.forEachIndexed { index, field ->
-                                                Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    Text(field.first, Modifier.width(66.dp), color = MutedText, fontSize = 13.sp)
-                                                    if (videoDetailsEditing) {
-                                                        BasicTextField(value = field.second, onValueChange = { value -> videoDetailsDraft = when (index) { 0 -> videoDetailsDraft.copy(originalTitle = value); 1 -> videoDetailsDraft.copy(year = value); 2 -> videoDetailsDraft.copy(region = value); 3 -> videoDetailsDraft.copy(genre = value); 4 -> videoDetailsDraft.copy(director = value); 5 -> videoDetailsDraft.copy(cast = value); else -> videoDetailsDraft.copy(production = value) } }, modifier = Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }, singleLine = true, decorationBox = { inner -> Box { if (field.second.isEmpty()) Text("填写${field.first}", color = MutedText.copy(alpha = .65f), fontSize = 14.sp); inner() } }, textStyle = TextStyle(fontSize = 14.sp, color = MainText))
-                                                    } else Text(field.second, Modifier.weight(1f), color = MainText, fontSize = 14.sp)
-                                                }
-                                                if (index < visibleFields.lastIndex) HorizontalDivider(color = LocalFramePalette.current.divider.copy(alpha = .65f), thickness = 0.5.dp)
+                                            Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Text(field.first, Modifier.width(66.dp), color = MutedText, fontSize = 13.sp)
+                                                if (videoDetailsEditing) {
+                                                    BasicTextField(value = field.second, onValueChange = { value ->
+                                                        videoDetailsDraft = when (index) {
+                                                            0 -> videoDetailsDraft.copy(originalTitle = value); 1 -> videoDetailsDraft.copy(year = value)
+                                                            2 -> videoDetailsDraft.copy(region = value); 3 -> videoDetailsDraft.copy(genre = value)
+                                                            4 -> videoDetailsDraft.copy(director = value); 5 -> videoDetailsDraft.copy(cast = value)
+                                                            else -> videoDetailsDraft.copy(production = value)
+                                                        }
+                                                    }, modifier = Modifier.weight(1f).onFocusChanged { sheetKeyboardUp = it.isFocused }, singleLine = true,
+                                                        decorationBox = { inner -> Box { if (field.second.isEmpty()) Text("填写${field.first}", style = detailTextStyle.copy(color = MutedText.copy(alpha = .65f))); inner() } },
+                                                        textStyle = detailTextStyle)
+                                                } else Text(field.second, Modifier.weight(1f), style = detailTextStyle)
+                                            }
+                                            if (index < visibleFields.lastIndex) HorizontalDivider(color = LocalFramePalette.current.divider.copy(alpha = .65f), thickness = 0.5.dp)
                                         }
                                         if (videoDetailsEditing || details.tips.isNotBlank()) {
                                             HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
-                                            Text("Tips", color = MainText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                            if (videoDetailsEditing) BasicTextField(value = details.tips, onValueChange = { videoDetailsDraft = videoDetailsDraft.copy(tips = it) }, modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 110.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.padding(top = 10.dp), decorationBox = { inner -> Box { if (details.tips.isEmpty()) Text("填写想补充的影片资料……", color = MutedText.copy(alpha = .7f), fontSize = 14.sp); inner() } }, textStyle = TextStyle(fontSize = 14.sp, color = MainText, lineHeight = 22.sp))
-                                            else Text(details.tips, color = MainText, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 10.dp))
+                                            Text("Tips", color = MainText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                            if (videoDetailsEditing) {
+                                                BasicTextField(value = details.tips, onValueChange = { videoDetailsDraft = videoDetailsDraft.copy(tips = it) },
+                                                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 110.dp).onFocusChanged { sheetKeyboardUp = it.isFocused }.padding(top = 10.dp),
+                                                    decorationBox = { inner -> Box { if (details.tips.isEmpty()) Text("填写想补充的影片资料……", style = detailTextStyle.copy(color = MutedText.copy(alpha = .7f), lineHeight = 22.sp)); inner() } },
+                                                    textStyle = detailTextStyle.copy(lineHeight = 22.sp))
+                                            } else Text(details.tips, style = detailTextStyle.copy(lineHeight = 22.sp), modifier = Modifier.padding(top = 10.dp))
                                         }
+                                        if (videoDetailsEditing) Text("未填写的资料在查看时会自动隐藏", color = MutedText, fontSize = 11.sp, modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 20.dp), textAlign = TextAlign.Center)
+                                        else Spacer(Modifier.height(20.dp))
                                     }
                                 }
-                                if (videoDetailsEditing) Text("未填写的资料在查看时会自动隐藏", color = MutedText, fontSize = 11.sp, modifier = Modifier.fillMaxWidth().padding(top = 12.dp), textAlign = TextAlign.Center)
                             }
                         }
                     }
