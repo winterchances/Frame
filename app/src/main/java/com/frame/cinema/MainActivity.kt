@@ -2557,11 +2557,11 @@ private fun FrameNativeApp(
                                             }.padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp))
                                         } else {
                                             Box(Modifier.size(32.dp).noRippleClickable { videoDetailsEditing = true }, contentAlignment = Alignment.Center) {
+                                                val featherColor = ActiveAccent
                                                 Canvas(Modifier.size(20.dp)) {
                                                     val scale = size.width / 24f
-                                                    val feather = androidx.compose.ui.graphics.Path(
+                                                    val feather = androidx.compose.ui.graphics.Path().apply {
                                                         fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
-                                                    ).apply {
                                                         moveTo(3.1f, 22.4f)
                                                         cubicTo(4.2f, 18.7f, 5.5f, 15.0f, 7.0f, 11.8f)
                                                         lineTo(6.1f, 10.4f); lineTo(8.0f, 11.0f)
@@ -2580,7 +2580,7 @@ private fun FrameNativeApp(
                                                         close()
                                                     }
                                                     drawContext.transform.scale(scale, scale, pivot = androidx.compose.ui.geometry.Offset.Zero)
-                                                    drawPath(feather, color = ActiveAccent)
+                                                    drawPath(feather, color = featherColor)
                                                     drawContext.transform.scale(1f / scale, 1f / scale, pivot = androidx.compose.ui.geometry.Offset.Zero)
                                                 }
                                             }
