@@ -216,6 +216,23 @@ internal val FrameTimelinePlayIcon: ImageVector = ImageVector.Builder("FrameTime
         moveTo(5f, 3f); lineTo(19f, 12f); lineTo(5f, 21f); close()
     }
 }.build()
+internal val FrameFeatherIcon: ImageVector = ImageVector.Builder("FrameFeather", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.25f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(20.5f, 3.5f)
+        curveTo(15.7f, 2.8f, 9.1f, 5.2f, 6.1f, 10.1f)
+        curveTo(3.9f, 13.7f, 4.1f, 18.1f, 6.8f, 20.5f)
+        curveTo(10.4f, 20.1f, 14.1f, 16.8f, 16.8f, 11.8f)
+        lineTo(20.5f, 3.5f)
+        moveTo(6.2f, 19.2f)
+        curveTo(9.1f, 14.4f, 13.4f, 9.6f, 19.1f, 4.7f)
+        moveTo(9.1f, 15.1f); lineTo(6.8f, 13.7f)
+        moveTo(12.1f, 11.8f); lineTo(9.7f, 10.2f)
+        moveTo(15.1f, 8.5f); lineTo(12.9f, 7.1f)
+        moveTo(8.4f, 17.3f); lineTo(10.9f, 17.8f)
+        moveTo(11.4f, 13.9f); lineTo(14f, 14.4f)
+    }
+}.build()
+
 internal val FrameRecordsIcon: ImageVector = ImageVector.Builder("FrameRecords", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(4f, 19.5f); quadTo(4f, 17f, 6.5f, 17f); lineTo(20f, 17f); moveTo(6.5f, 2f); lineTo(20f, 2f); lineTo(20f, 22f); lineTo(6.5f, 22f); quadTo(4f, 22f, 4f, 19.5f); lineTo(4f, 4.5f); quadTo(4f, 2f, 6.5f, 2f); close()
