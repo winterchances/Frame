@@ -2531,11 +2531,11 @@ private fun FrameNativeApp(
                                         Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Text("影片详情", Modifier.weight(1f), color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                             if (videoDetailsEditing) {
-                                                Text("取消", color = MutedText, fontSize = 13.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
+                                                Text("取消", color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
                                                     videoDetailsDraft = runCatching { detailVideo.detailsJson?.let { com.google.gson.Gson().fromJson(it, VideoDetailsDraft::class.java) } }.getOrNull() ?: VideoDetailsDraft()
                                                     videoDetailsEditing = false; sheetKeyboardUp = false
                                                 }.padding(horizontal = 8.dp, vertical = 6.dp))
-                                                Text("保存", color = ActiveAccent, fontSize = 13.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
+                                                Text("保存", color = ActiveAccent, fontSize = 12.sp, fontWeight = FontWeight.Normal, modifier = Modifier.noRippleClickable {
                                                     val json = if (videoDetailsDraft.isEmpty()) null else com.google.gson.Gson().toJson(videoDetailsDraft)
                                                     repository.update(detailVideo.copy(detailsJson = json)); videoDetailsTarget = detailVideo.copy(detailsJson = json); refresh()
                                                     videoDetailsEditing = false; sheetKeyboardUp = false
