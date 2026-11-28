@@ -2557,7 +2557,32 @@ private fun FrameNativeApp(
                                             }.padding(start = 8.dp, end = 2.dp, top = 6.dp, bottom = 6.dp))
                                         } else {
                                             Box(Modifier.size(32.dp).noRippleClickable { videoDetailsEditing = true }, contentAlignment = Alignment.Center) {
-                                                Icon(Icons.Outlined.Edit, "编辑", tint = ActiveAccent, modifier = Modifier.size(18.dp))
+                                                Canvas(Modifier.size(20.dp)) {
+                                                    val scale = size.width / 24f
+                                                    val feather = androidx.compose.ui.graphics.Path(
+                                                        fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+                                                    ).apply {
+                                                        moveTo(3.1f, 22.4f)
+                                                        cubicTo(4.2f, 18.7f, 5.5f, 15.0f, 7.0f, 11.8f)
+                                                        lineTo(6.1f, 10.4f); lineTo(8.0f, 11.0f)
+                                                        lineTo(7.7f, 8.9f); lineTo(9.5f, 10.0f)
+                                                        lineTo(9.8f, 7.8f); lineTo(11.2f, 9.0f)
+                                                        cubicTo(13.8f, 5.8f, 17.8f, 2.8f, 22.3f, 1.2f)
+                                                        cubicTo(21.8f, 6.8f, 19.2f, 12.2f, 15.2f, 16.0f)
+                                                        lineTo(13.4f, 16.2f); lineTo(14.6f, 17.1f)
+                                                        lineTo(11.9f, 17.2f); lineTo(13.0f, 18.2f)
+                                                        lineTo(10.2f, 18.0f); lineTo(11.1f, 19.1f)
+                                                        cubicTo(8.2f, 19.6f, 5.4f, 21.0f, 3.1f, 22.4f)
+                                                        close()
+                                                        moveTo(4.0f, 21.2f)
+                                                        cubicTo(9.0f, 14.0f, 14.7f, 7.8f, 21.0f, 2.2f)
+                                                        cubicTo(15.8f, 8.8f, 10.3f, 15.0f, 4.0f, 21.2f)
+                                                        close()
+                                                    }
+                                                    drawContext.transform.scale(scale, scale, pivot = androidx.compose.ui.geometry.Offset.Zero)
+                                                    drawPath(feather, color = ActiveAccent)
+                                                    drawContext.transform.scale(1f / scale, 1f / scale, pivot = androidx.compose.ui.geometry.Offset.Zero)
+                                                }
                                             }
                                         }
                                     }
