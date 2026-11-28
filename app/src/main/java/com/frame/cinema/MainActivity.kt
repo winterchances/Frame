@@ -1589,12 +1589,11 @@ private fun FrameNativeApp(
                             }
                         )
                         .fillMaxWidth(if (displayedSheet == SheetType.VIDEO_DETAILS) .88f else 1f)
-                        .then(if (displayedSheet == SheetType.VIDEO_DETAILS) Modifier.fillMaxHeight(.78f) else Modifier)
                         .then(
                             when (displayedSheet) {
                                 SheetType.SETTINGS ->
                                     Modifier.height(LocalConfiguration.current.screenHeightDp.dp * .5f)
-                                SheetType.VIDEO_DETAILS -> Modifier.fillMaxHeight(.85f)
+                                SheetType.VIDEO_DETAILS -> Modifier.fillMaxHeight(.78f)
                                 SheetType.SEARCH, SheetType.RECORD_SEARCH ->
                                     Modifier.fillMaxHeight(.85f)
                                 else ->
@@ -2549,8 +2548,8 @@ private fun FrameNativeApp(
                                         }
                                         VideoCardTitle(name = detailVideo.name, modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
                                             fontSize = 16.sp, color = MainText, englishFontSize = 14.sp, englishColor = MutedText,
-                                            fontWeight = FontWeight.Medium, englishFontWeight = FontWeight.Normal,
-                                            maxLines = 2, showEnglish = true, lineHeight = 21.sp, englishSpacing = 2.dp)
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 2, showEnglish = true, lineHeight = 22.sp, englishSpacing = 2.dp)
                                         if (visibleFields.isNotEmpty()) HorizontalDivider(color = LocalFramePalette.current.divider, thickness = 0.5.dp)
                                         visibleFields.forEachIndexed { index, field ->
                                             Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
