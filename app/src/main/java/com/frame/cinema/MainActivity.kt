@@ -2560,27 +2560,35 @@ private fun FrameNativeApp(
                                                 val featherColor = ActiveAccent
                                                 Canvas(Modifier.size(20.dp)) {
                                                     val scale = size.width / 24f
-                                                    val feather = androidx.compose.ui.graphics.Path().apply {
-                                                        fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
-                                                        moveTo(3.1f, 22.4f)
-                                                        cubicTo(4.2f, 18.7f, 5.5f, 15.0f, 7.0f, 11.8f)
-                                                        lineTo(6.1f, 10.4f); lineTo(8.0f, 11.0f)
-                                                        lineTo(7.7f, 8.9f); lineTo(9.5f, 10.0f)
-                                                        lineTo(9.8f, 7.8f); lineTo(11.2f, 9.0f)
-                                                        cubicTo(13.8f, 5.8f, 17.8f, 2.8f, 22.3f, 1.2f)
-                                                        cubicTo(21.8f, 6.8f, 19.2f, 12.2f, 15.2f, 16.0f)
-                                                        lineTo(13.4f, 16.2f); lineTo(14.6f, 17.1f)
-                                                        lineTo(11.9f, 17.2f); lineTo(13.0f, 18.2f)
-                                                        lineTo(10.2f, 18.0f); lineTo(11.1f, 19.1f)
-                                                        cubicTo(8.2f, 19.6f, 5.4f, 21.0f, 3.1f, 22.4f)
-                                                        close()
-                                                        moveTo(4.0f, 21.2f)
-                                                        cubicTo(9.0f, 14.0f, 14.7f, 7.8f, 21.0f, 2.2f)
-                                                        cubicTo(15.8f, 8.8f, 10.3f, 15.0f, 4.0f, 21.2f)
+                                                    val featherOutline = androidx.compose.ui.graphics.Path().apply {
+                                                        moveTo(4.2f, 20.1f)
+                                                        cubicTo(3.8f, 15.4f, 7.2f, 7.0f, 17.8f, 3.0f)
+                                                        cubicTo(19.4f, 2.4f, 20.9f, 2.1f, 22.0f, 2.0f)
+                                                        cubicTo(21.8f, 3.4f, 21.4f, 5.0f, 20.7f, 6.5f)
+                                                        cubicTo(16.8f, 14.7f, 9.8f, 18.8f, 4.2f, 20.1f)
+                                                    }
+                                                    val featherDetails = androidx.compose.ui.graphics.Path().apply {
+                                                        moveTo(3.0f, 22.0f)
+                                                        cubicTo(8.2f, 15.5f, 14.4f, 8.4f, 21.0f, 3.0f)
+                                                        moveTo(7.0f, 16.8f)
+                                                        cubicTo(7.0f, 14.4f, 6.9f, 12.8f, 6.5f, 11.7f)
+                                                        moveTo(10.0f, 13.8f)
+                                                        cubicTo(10.0f, 11.7f, 10.2f, 10.2f, 10.7f, 8.9f)
+                                                        moveTo(13.1f, 10.6f)
+                                                        cubicTo(13.4f, 8.9f, 14.0f, 7.6f, 14.8f, 6.4f)
+                                                        moveTo(7.4f, 18.2f)
+                                                        cubicTo(9.0f, 18.1f, 10.6f, 17.7f, 12.1f, 17.0f)
+                                                    }
+                                                    val nib = androidx.compose.ui.graphics.Path().apply {
+                                                        moveTo(3.0f, 22.0f)
+                                                        lineTo(4.2f, 20.1f)
+                                                        lineTo(5.2f, 21.0f)
                                                         close()
                                                     }
                                                     drawContext.transform.scale(scale, scale, pivot = androidx.compose.ui.geometry.Offset.Zero)
-                                                    drawPath(feather, color = featherColor)
+                                                    drawPath(featherOutline, color = featherColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                                                    drawPath(featherDetails, color = featherColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.1f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                                                    drawPath(nib, color = featherColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.35f, cap = StrokeCap.Round, join = StrokeJoin.Round))
                                                     drawContext.transform.scale(1f / scale, 1f / scale, pivot = androidx.compose.ui.geometry.Offset.Zero)
                                                 }
                                             }
